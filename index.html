@@ -423,7 +423,7 @@ select.apple-input {
     <button onclick="switchTab(0)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-active" data-tab="0" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">홈</button>
     <button onclick="switchTab(1)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="1" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">점수 입력</button>
     <button onclick="switchTab(2)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="2" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">점수 조회</button>
-    <button onclick="switchTab(3)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="3" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">통계 대시보드</button>
+    <button onclick="switchTab(3)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="3" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">통계</button>
     <button onclick="switchTab(4)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="4" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">분석</button>
     <button onclick="switchTab(5)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="5" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">심사 일정</button>
     <button onclick="switchTab(6)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="6" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">데이터 관리</button>
@@ -656,17 +656,27 @@ select.apple-input {
     </div>
   </div>
 
-  <!-- Tab 3: Statistics Dashboard -->
+  <!-- Tab 3: Statistics -->
   <div id="tab3" class="tab-content hidden fade-in">
     <div class="flex items-end justify-between mb-6">
       <div>
-        <h2 class="section-title">통계 대시보드</h2>
+        <h2 class="section-title">통계</h2>
         <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
       </div>
       <select id="statsYear" class="apple-input" style="width:auto;font-size:14px;" onchange="renderStatsDashboard()">
-        <option value="2025">2025</option>
-        <option value="2026" selected>2026</option>
       </select>
+      <script>
+      (function() {
+        const y = new Date().getFullYear();
+        const sel = document.getElementById('statsYear');
+        for (let i = y - 2; i <= y; i++) {
+          const opt = document.createElement('option');
+          opt.value = i; opt.textContent = i;
+          if (i === y) opt.selected = true;
+          sel.appendChild(opt);
+        }
+      })();
+      </script>
     </div>
     <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
     <div class="apple-card p-6 mb-6">
@@ -687,9 +697,13 @@ select.apple-input {
       <p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">반복적으로 낮은 점수를 보이는 지점과 항목을 분석합니다</p>
       <div id="stationWeakPatterns"></div>
     </div>
-    <div class="apple-card p-6">
+    <div class="apple-card p-6 mb-6">
       <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">심사원 활동 현황</h3>
       <div class="overflow-x-auto" id="auditorStatsTable"></div>
+    </div>
+    <div class="apple-card p-6">
+      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">3개년 비교</h3>
+      <div id="threeYearComparison"></div>
     </div>
   </div>
 
@@ -701,9 +715,19 @@ select.apple-input {
         <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
       </div>
       <select id="analysisYear" class="apple-input" style="width:auto;font-size:14px;" onchange="renderAnalysis()">
-        <option value="2025">2025</option>
-        <option value="2026" selected>2026</option>
       </select>
+      <script>
+      (function() {
+        const y = new Date().getFullYear();
+        const sel = document.getElementById('analysisYear');
+        for (let i = y - 2; i <= y; i++) {
+          const opt = document.createElement('option');
+          opt.value = i; opt.textContent = i;
+          if (i === y) opt.selected = true;
+          sel.appendChild(opt);
+        }
+      })();
+      </script>
     </div>
     <div id="analysisContainer"></div>
   </div>
@@ -3057,6 +3081,119 @@ function renderStatsDashboard() {
   }
   audHtml += '</tbody></table>';
   document.getElementById('auditorStatsTable').innerHTML = audHtml;
+
+  // ========== 3개년 비교 (올해/작년/재작년) ==========
+  const thisYear = new Date().getFullYear();
+  const years = [thisYear - 2, thisYear - 1, thisYear];
+  const yearLabels = [`${thisYear-2}년 (재작년)`, `${thisYear-1}년 (작년)`, `${thisYear}년 (올해)`];
+
+  let threeYearHtml = '';
+
+  // 연도별 전체 평균 비교 카드
+  threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
+  years.forEach((y, i) => {
+    const yData = allData.filter(d => d.year == y);
+    let avg = 0, count = 0;
+    yData.forEach(d => {
+      avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+      count++;
+    });
+    const yearAvg = count > 0 ? (avg / count).toFixed(2) : '-';
+    const stations = new Set(yData.map(d => d.station)).size;
+    const isThisYear = y === thisYear;
+    threeYearHtml += `<div class="apple-card" style="padding:16px;text-align:center;${isThisYear ? 'border:2px solid #D20015;' : ''}">`;
+    threeYearHtml += `<div style="font-size:12px;color:#9EA2A1;">${yearLabels[i]}</div>`;
+    threeYearHtml += `<div style="font-size:28px;font-weight:600;color:${isThisYear ? '#D20015' : '#303A3C'};letter-spacing:-0.28px;">${yearAvg}</div>`;
+    threeYearHtml += `<div style="font-size:12px;color:#9EA2A1;">${count}건 심사 (${stations}개 지점)</div>`;
+    threeYearHtml += `</div>`;
+  });
+  threeYearHtml += '</div>';
+
+  // 연도별 지점 비교 테이블
+  const allStations = new Set();
+  years.forEach(y => allData.filter(d => d.year == y).forEach(d => allStations.add(d.station)));
+
+  threeYearHtml += '<div class="overflow-x-auto">';
+  threeYearHtml += '<table class="apple-table"><thead><tr>';
+  threeYearHtml += '<th style="text-align:left;">지점</th>';
+  years.forEach((y, i) => {
+    threeYearHtml += `<th style="text-align:center;">${y}년</th>`;
+  });
+  threeYearHtml += '<th style="text-align:center;">추이</th>';
+  threeYearHtml += '</tr></thead><tbody>';
+
+  [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
+    const yearAvgs = years.map(y => {
+      const stData = allData.filter(d => d.year == y && d.station === station);
+      if (stData.length === 0) return null;
+      return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
+    });
+
+    threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
+    yearAvgs.forEach(avg => {
+      if (avg !== null) {
+        threeYearHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span></td>`;
+      } else {
+        threeYearHtml += `<td style="text-align:center;color:#C0CED1;">-</td>`;
+      }
+    });
+
+    // 추이 (작년→올해 변화)
+    const last = yearAvgs[1];
+    const curr = yearAvgs[2];
+    if (last !== null && curr !== null) {
+      const delta = curr - last;
+      const arrow = delta > 0.01 ? '\u25B2' : delta < -0.01 ? '\u25BC' : '-';
+      const color = delta > 0.01 ? '#22C55E' : delta < -0.01 ? '#D20015' : '#9EA2A1';
+      threeYearHtml += `<td style="text-align:center;font-weight:600;color:${color};">${arrow} ${Math.abs(delta).toFixed(2)}</td>`;
+    } else {
+      threeYearHtml += `<td style="text-align:center;color:#C0CED1;">-</td>`;
+    }
+    threeYearHtml += '</tr>';
+  });
+
+  threeYearHtml += '</tbody></table></div>';
+
+  // 3개년 추이 차트
+  threeYearHtml += '<div style="margin-top:16px;height:300px;"><canvas id="threeYearChart"></canvas></div>';
+
+  document.getElementById('threeYearComparison').innerHTML = threeYearHtml;
+
+  // Render 3-year trend chart
+  destroyChart('threeYearChart');
+  const ctx3y = document.getElementById('threeYearChart')?.getContext('2d');
+  if (ctx3y) {
+    const commonStations3y = [...allStations].filter(station => {
+      return years.some(y => allData.some(d => d.year == y && d.station === station));
+    }).sort((a, b) => a.localeCompare(b, 'ko'));
+
+    const datasets3y = years.map((y, i) => {
+      const colors = ['#9EA2A1', '#565A5B', '#D20015'];
+      return {
+        label: `${y}년`,
+        data: commonStations3y.map(station => {
+          const stData = allData.filter(d => d.year == y && d.station === station);
+          if (stData.length === 0) return null;
+          return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
+        }),
+        backgroundColor: colors[i] + 'CC',
+        borderRadius: 4
+      };
+    });
+
+    chartInstances['threeYearChart'] = new Chart(ctx3y, {
+      type: 'bar',
+      data: { labels: commonStations3y, datasets: datasets3y },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 4, ticks: { stepSize: 0.5 }, grid: { color: 'rgba(192,206,209,0.3)' } },
+          x: { grid: { display: false } }
+        },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  }
 }
 
 function toggleWeakDetail(id, header) {
@@ -3090,7 +3227,12 @@ function renderAnalysis() {
 
   // ===== Pre-calculate all analysis data =====
 
-  // 1. Trend: year comparison
+  // 1. Trend: 3-year comparison
+  const twoYearsAgoData = allData.filter(d => d.year == year - 2);
+  const stationsTwoYearsAgo = {};
+  twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
+    stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
+  });
   const stations2025 = {};
   prevYearData.filter(d => d.type === 'branch').forEach(d => {
     stations2025[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
@@ -3099,15 +3241,21 @@ function renderAnalysis() {
   yearData.filter(d => d.type === 'branch').forEach(d => {
     stations2026[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
   });
-  const commonStations = Object.keys(stations2025).filter(s => stations2026[s] !== undefined);
+  const comparisons = [...new Set([...Object.keys(stationsTwoYearsAgo), ...Object.keys(stations2025), ...Object.keys(stations2026)])].map(s => ({
+    station: s,
+    twoYearsAgo: stationsTwoYearsAgo[s] || null,
+    prev: stations2025[s] || null,
+    curr: stations2026[s] || null,
+    delta: (stations2026[s] && stations2025[s]) ? stations2026[s] - stations2025[s] : null
+  })).sort((a, b) => (b.delta || 0) - (a.delta || 0));
   let improved = 0, declined = 0, unchanged = 0;
-  const comparisons = commonStations.map(s => {
-    const delta = stations2026[s] - stations2025[s];
-    if (delta > 0.01) improved++;
-    else if (delta < -0.01) declined++;
-    else unchanged++;
-    return { station: s, prev: stations2025[s], curr: stations2026[s], delta };
-  }).sort((a, b) => b.delta - a.delta);
+  comparisons.forEach(c => {
+    if (c.delta !== null) {
+      if (c.delta > 0.01) improved++;
+      else if (c.delta < -0.01) declined++;
+      else unchanged++;
+    }
+  });
 
   // 2. Risk matrix data
   const itemRisks = {};
@@ -3282,13 +3430,13 @@ function renderAnalysis() {
   // ===== Render 9 Summary Cards =====
   let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">';
 
-  // Card 1: Trend
+  // Card 1: Trend (3-year)
   html += `<div class="apple-card" style="padding:20px;cursor:pointer;transition:all 0.15s ease;"
     onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
     onmouseout="this.style.boxShadow='none'"
     onclick="toggleAnalysisDetail('analysisDetail1')">`;
   html += `<div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">성숙도 트렌드</div>`;
-  html += `<div style="font-size:13px;color:#303A3C;margin-bottom:8px;">${year-1}년 → ${year}년 변화</div>`;
+  html += `<div style="font-size:13px;color:#303A3C;margin-bottom:8px;">3개년 비교 (${year-2}~${year}년)</div>`;
   html += `<div class="flex gap-4">`;
   html += `<div><span style="font-size:24px;font-weight:600;color:#22C55E;">${improved}</span><span style="font-size:12px;color:#9EA2A1;margin-left:4px;">개선</span></div>`;
   html += `<div><span style="font-size:24px;font-weight:600;color:#D20015;">${declined}</span><span style="font-size:12px;color:#9EA2A1;margin-left:4px;">하락</span></div>`;
@@ -3398,18 +3546,42 @@ function renderAnalysis() {
 
   // ===== Detail Sections (hidden by default) =====
 
-  // Detail 1: Trend
+  // Detail 1: Trend (3-year)
   html += `<div id="analysisDetail1" class="hidden apple-card p-6 mb-6 fade-in">`;
-  html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">성숙도 트렌드 — ${year-1}년 vs ${year}년</h3>`;
+  html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">성숙도 트렌드 — 3개년 비교 (${year-2}~${year}년)</h3>`;
   if (comparisons.length === 0) {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">비교 가능한 데이터가 없습니다.</div>`;
   } else {
-    html += `<div class="overflow-x-auto"><table class="apple-table"><thead><tr><th style="text-align:left;">지점</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화</th></tr></thead><tbody>`;
+    html += `<div class="overflow-x-auto"><table class="apple-table"><thead><tr><th style="text-align:left;">지점</th><th style="text-align:center;">${year-2}년</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화 (작년→올해)</th></tr></thead><tbody>`;
     comparisons.forEach(c => {
-      const arrow = c.delta > 0.01 ? '\u25B2' : c.delta < -0.01 ? '\u25BC' : '-';
-      const deltaColor = c.delta > 0.01 ? '#22C55E' : c.delta < -0.01 ? '#D20015' : '#9EA2A1';
-      html += `<tr><td style="font-weight:600;">${c.station}</td><td style="text-align:center;">${c.prev.toFixed(2)}</td><td style="text-align:center;">${c.curr.toFixed(2)}</td>`;
-      html += `<td style="text-align:center;"><span class="badge-pill" style="background:${deltaColor}22;color:${deltaColor};">${arrow} ${Math.abs(c.delta).toFixed(2)}</span></td></tr>`;
+      html += `<tr><td style="font-weight:600;">${c.station}</td>`;
+      // 재작년
+      if (c.twoYearsAgo !== null) {
+        html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.twoYearsAgo)}">${c.twoYearsAgo.toFixed(2)}</span></td>`;
+      } else {
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
+      }
+      // 작년
+      if (c.prev !== null) {
+        html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.prev)}">${c.prev.toFixed(2)}</span></td>`;
+      } else {
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
+      }
+      // 올해
+      if (c.curr !== null) {
+        html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.curr)}">${c.curr.toFixed(2)}</span></td>`;
+      } else {
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
+      }
+      // 변화
+      if (c.delta !== null) {
+        const arrow = c.delta > 0.01 ? '\u25B2' : c.delta < -0.01 ? '\u25BC' : '-';
+        const deltaColor = c.delta > 0.01 ? '#22C55E' : c.delta < -0.01 ? '#D20015' : '#9EA2A1';
+        html += `<td style="text-align:center;"><span class="badge-pill" style="background:${deltaColor}22;color:${deltaColor};">${arrow} ${Math.abs(c.delta).toFixed(2)}</span></td>`;
+      } else {
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
+      }
+      html += `</tr>`;
     });
     html += `</tbody></table></div>`;
     html += `<div style="margin-top:16px;"><div style="height:300px;"><canvas id="trendChart"></canvas></div></div>`;
@@ -3641,7 +3813,7 @@ function renderAnalysis() {
   container.innerHTML = html;
 
   // Store data for chart rendering when detail sections are opened
-  window._analysisData = { year, yearData, comparisons, riskItems, typeAvgs, stationGroups, heatmapData, consistencyData, priorityItems, regionCatAvgs };
+  window._analysisData = { year, yearData, comparisons, riskItems, typeAvgs, stationGroups, heatmapData, consistencyData, priorityItems, regionCatAvgs, stationsTwoYearsAgo };
 }
 
 function toggleAnalysisDetail(id) {
@@ -3685,7 +3857,8 @@ function renderTrendChart(data) {
     data: {
       labels: data.comparisons.map(c => c.station),
       datasets: [
-        { label: String(data.year - 1), data: data.comparisons.map(c => c.prev), backgroundColor: '#9EA2A1CC', borderRadius: 4 },
+        { label: String(data.year - 2), data: data.comparisons.map(c => c.twoYearsAgo), backgroundColor: '#9EA2A1CC', borderRadius: 4 },
+        { label: String(data.year - 1), data: data.comparisons.map(c => c.prev), backgroundColor: '#565A5BCC', borderRadius: 4 },
         { label: String(data.year), data: data.comparisons.map(c => c.curr), backgroundColor: '#D20015CC', borderRadius: 4 }
       ]
     },
@@ -5181,7 +5354,7 @@ function renderHome() {
       onclick="switchTab(3)">
       <svg class="w-8 h-8 mx-auto mb-2" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       <div style="font-size:14px;font-weight:600;color:#303A3C;">통계</div>
-      <div style="font-size:12px;color:#9EA2A1;margin-top:2px;">대시보드</div>
+      <div style="font-size:12px;color:#9EA2A1;margin-top:2px;">통합 현황</div>
     </div>
     <div class="apple-card" style="padding:20px;text-align:center;cursor:pointer;transition:all 0.15s ease;"
       onmouseover="this.style.boxShadow='rgba(0,0,0,0.12) 0px 2px 12px 0px'"
