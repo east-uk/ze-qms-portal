@@ -4861,12 +4861,14 @@ function setupFirebaseListeners() {
   firebaseDb.ref('assessments').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      const newData = Object.values(data);
-      // Only update if data is different (avoid infinite loops)
+      // Firebase 키 복원: _dot_ → .
+      const newData = Object.values(data).map(d => ({
+        ...d,
+        scores: d.scores ? decodeScoresFromFirebase(d.scores) : {}
+      }));
       if (JSON.stringify(newData) !== JSON.stringify(allData)) {
         allData = newData;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
-        // Refresh current view
         refreshCurrentView();
       }
     }
@@ -4918,14 +4920,30 @@ function refreshCurrentView() {
   if (tab === 5) renderSchedule();
 }
 
+// Firebase 키에 . # $ / [ ] 사용 불가 → 변환 헬퍼
+function encodeScoresForFirebase(scores) {
+  const encoded = {};
+  for (const [k, v] of Object.entries(scores)) {
+    encoded[k.replace(/\./g, '_dot_')] = v;
+  }
+  return encoded;
+}
+function decodeScoresFromFirebase(scores) {
+  const decoded = {};
+  for (const [k, v] of Object.entries(scores)) {
+    decoded[k.replace(/_dot_/g, '.')] = v;
+  }
+  return decoded;
+}
+
 function firebaseSaveAllData() {
   if (!firebaseDb) return;
   try {
-    // Save assessments - use station_type_year as key for easy lookup
     const assessmentObj = {};
     allData.forEach((d, i) => {
       const key = `${d.year}_${d.station}_${d.type}`.replace(/[.#$/\[\]]/g, '_');
-      assessmentObj[key] = d;
+      const copy = { ...d, scores: encodeScoresForFirebase(d.scores || {}) };
+      assessmentObj[key] = copy;
     });
     firebaseDb.ref('assessments').set(assessmentObj);
   } catch(e) { console.warn('Firebase save assessments failed:', e); }
@@ -4986,7 +5004,9 @@ function downloadFromFirebase() {
     const data = snapshot.val();
     if (data) {
       if (data.assessments) {
-        allData = Object.values(data.assessments);
+        allData = Object.values(data.assessments).map(d => ({
+          ...d, scores: d.scores ? decodeScoresFromFirebase(d.scores) : {}
+        }));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
       }
       if (data.auditors) {
