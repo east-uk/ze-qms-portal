@@ -326,77 +326,6 @@ select.apple-input {
   .mobile-tabs { display: none !important; }
 }
 
-/* Mobile Responsive - iPhone optimization */
-@media (max-width: 768px) {
-  .apple-table { border: none; }
-  .apple-table thead { display: none; }
-  .apple-table tbody tr {
-    display: block;
-    margin-bottom: 8px;
-    background: #ffffff;
-    border-radius: 10px;
-    padding: 12px 14px;
-    box-shadow: rgba(0,0,0,0.04) 0px 1px 4px;
-  }
-  .apple-table tbody tr:nth-child(even) { background: #ffffff; }
-  .apple-table tbody tr:hover { background: #ffffff; }
-  .apple-table tbody td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    border: none;
-    border-bottom: 1px solid rgba(192,206,209,0.15);
-    font-size: 13px;
-  }
-  .apple-table tbody td:last-child { border-bottom: none; }
-  .apple-table tbody td:before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #9EA2A1;
-    font-size: 11px;
-    flex-shrink: 0;
-    margin-right: 8px;
-  }
-  /* Rowspan tables: keep standard layout on mobile */
-  .apple-table.no-card thead { display: table-header-group; }
-  .apple-table.no-card tbody tr {
-    display: table-row;
-    margin-bottom: 0;
-    background: transparent;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
-  }
-  .apple-table.no-card tbody tr:nth-child(even) { background-color: #f5f5f7; }
-  .apple-table.no-card tbody td {
-    display: table-cell;
-    padding: 10px 14px;
-    border-bottom: none;
-    font-size: 12px;
-  }
-  .apple-table.no-card tbody td:before { content: none; }
-
-  .section-title { font-size: 20px !important; }
-  .section-subtitle { font-size: 12px !important; }
-
-  .apple-card { padding: 14px !important; }
-  .apple-card.p-6 { padding: 14px !important; }
-  .apple-card.p-5 { padding: 12px !important; }
-
-  main { padding-left: 12px !important; padding-right: 12px !important; }
-}
-
-/* Mobile nav safe area */
-@media (max-width: 768px) {
-  .mobile-tabs {
-    padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important;
-  }
-  .mobile-tab span {
-    font-size: 10px !important;
-  }
-}
-
 /* Fade transition */
 .fade-in {
   animation: fadeIn 0.2s ease;
@@ -502,7 +431,7 @@ select.apple-input {
 </nav>
 
 <!-- Main Content -->
-<main class="flex-1 max-w-7xl mx-auto w-full px-4 py-6 pb-28 md:pb-10">
+<main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 pb-28 md:pb-10">
 
   <!-- Tab 0: Home -->
   <div id="tab0" class="tab-content fade-in">
@@ -581,7 +510,7 @@ select.apple-input {
         <h2 class="section-title" id="phase2StationTitle"></h2>
         <p class="section-subtitle mt-1">심사 정보를 입력합니다</p>
       </div>
-      <div id="typeStatusCards" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6"></div>
+      <div id="typeStatusCards" class="grid grid-cols-3 gap-3 mb-6"></div>
       <div class="apple-card p-6 mb-6">
         <h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">심사 정보 (공통)</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -926,7 +855,7 @@ select.apple-input {
 </main>
 
 <!-- Mobile Bottom Tab Bar - Glass -->
-<nav class="mobile-tabs fixed bottom-0 left-0 right-0 glass-bottom z-50 md:hidden flex justify-around" style="height:auto;padding:6px 0 calc(6px + env(safe-area-inset-bottom));">
+<nav class="mobile-tabs fixed bottom-0 left-0 right-0 glass-bottom z-50 md:hidden flex justify-around" style="height:56px;padding:4px 0 8px;">
   <button onclick="switchTab(0)" class="mobile-tab flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1" data-tab="0" style="background:none;border:none;cursor:pointer;min-height:44px;">
     <svg class="w-5 h-5" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
     <span style="font-size:10px;margin-top:2px;color:#D20015;font-weight:600;letter-spacing:-0.224px;">홈</span>
@@ -2334,13 +2263,13 @@ function renderScoreViewTable() {
       : '<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">심사예정</span>';
 
     html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
-    html += `<td data-label="지점" style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
-    html += `<td data-label="심사일" style="font-size:13px;">${dateDisplay}</td>`;
-    html += `<td data-label="심사원" style="font-size:13px;">${auditorDisplay}</td>`;
-    html += `<td data-label="지점" style="text-align:center;">${typeBadge('branch')}</td>`;
-    html += `<td data-label="여객" style="text-align:center;">${typeBadge('pax')}</td>`;
-    html += `<td data-label="램프" style="text-align:center;">${typeBadge('ramp')}</td>`;
-    html += `<td data-label="상태" style="text-align:center;">${hasAnyData ? statusBadge : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${statusBadge}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
+    html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
+    html += `<td style="font-size:13px;">${dateDisplay}</td>`;
+    html += `<td style="font-size:13px;">${auditorDisplay}</td>`;
+    html += `<td style="text-align:center;">${typeBadge('branch')}</td>`;
+    html += `<td style="text-align:center;">${typeBadge('pax')}</td>`;
+    html += `<td style="text-align:center;">${typeBadge('ramp')}</td>`;
+    html += `<td style="text-align:center;">${hasAnyData ? statusBadge : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${statusBadge}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
     html += `</tr>`;
 
     // Detail row
@@ -2928,11 +2857,11 @@ function renderStatsDashboard() {
     const paxAvg = calcAvgForTypeRegion(regionData, 'pax');
     const rampAvg = calcAvgForTypeRegion(regionData, 'ramp');
     const allAvg = regionData.length > 0 ? regionData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / regionData.length : 0;
-    regHtml += `<tr><td data-label="지역" style="font-weight:600;">${region}</td>`;
-    regHtml += `<td data-label="지점 평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(branchAvg)}">${branchAvg ? branchAvg.toFixed(2) : '-'}</span></td>`;
-    regHtml += `<td data-label="여객 평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(paxAvg)}">${paxAvg ? paxAvg.toFixed(2) : '-'}</span></td>`;
-    regHtml += `<td data-label="램프 평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(rampAvg)}">${rampAvg ? rampAvg.toFixed(2) : '-'}</span></td>`;
-    regHtml += `<td data-label="종합 평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(allAvg)};font-weight:600;">${allAvg ? allAvg.toFixed(2) : '-'}</span></td>`;
+    regHtml += `<tr><td style="font-weight:600;">${region}</td>`;
+    regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(branchAvg)}">${branchAvg ? branchAvg.toFixed(2) : '-'}</span></td>`;
+    regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(paxAvg)}">${paxAvg ? paxAvg.toFixed(2) : '-'}</span></td>`;
+    regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(rampAvg)}">${rampAvg ? rampAvg.toFixed(2) : '-'}</span></td>`;
+    regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(allAvg)};font-weight:600;">${allAvg ? allAvg.toFixed(2) : '-'}</span></td>`;
     regHtml += `</tr>`;
   }
   regHtml += '</tbody></table>';
@@ -2955,7 +2884,7 @@ function renderStatsDashboard() {
     const rankBadge = i < 3
       ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:980px;background:#D20015;color:#fff;font-size:11px;font-weight:600;">${i+1}</span>`
       : `<span style="font-weight:600;color:#565A5B;">${i+1}</span>`;
-    rankHtml += `<tr><td data-label="순위" style="text-align:center;">${rankBadge}</td><td data-label="지점" style="font-weight:600;">${r.station}</td><td data-label="지역" style="color:#565A5B;">${r.region}</td><td data-label="심사 건수" style="text-align:center;">${r.count}</td><td data-label="종합 평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td></tr>`;
+    rankHtml += `<tr><td style="text-align:center;">${rankBadge}</td><td style="font-weight:600;">${r.station}</td><td style="color:#565A5B;">${r.region}</td><td style="text-align:center;">${r.count}</td><td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td></tr>`;
   });
   rankHtml += '</tbody></table>';
   document.getElementById('rankingTable').innerHTML = rankHtml;
@@ -3137,11 +3066,11 @@ function renderStatsDashboard() {
     const ts = getTrainingStatus(a.trainingExpiry);
     const barWidth = Math.min(count * 20, 100);
     audHtml += '<tr>';
-    audHtml += `<td data-label="심사원" style="font-weight:600;">${a.name}</td>`;
-    audHtml += `<td data-label="팀" style="font-size:13px;color:#565A5B;">${a.team}</td>`;
-    audHtml += `<td data-label="권한그룹" style="font-size:13px;">${a.role}</td>`;
-    audHtml += `<td data-label="교육 유효" style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
-    audHtml += `<td data-label="${year}년 실적" style="text-align:center;"><div style="display:flex;align-items:center;gap:8px;justify-content:center;">`;
+    audHtml += `<td style="font-weight:600;">${a.name}</td>`;
+    audHtml += `<td style="font-size:13px;color:#565A5B;">${a.team}</td>`;
+    audHtml += `<td style="font-size:13px;">${a.role}</td>`;
+    audHtml += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
+    audHtml += `<td style="text-align:center;"><div style="display:flex;align-items:center;gap:8px;justify-content:center;">`;
     audHtml += `<div style="width:60px;background:#f5f5f7;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barWidth}%;background:${count > 0 ? '#D20015' : '#C0CED1'};"></div></div>`;
     audHtml += `<span style="font-size:14px;font-weight:600;">${count}건</span>`;
     audHtml += `</div></td></tr>`;
@@ -3161,7 +3090,7 @@ function renderStatsDashboard() {
   let threeYearHtml = '';
 
   // 연도별 전체 평균 비교 카드
-  threeYearHtml += '<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">';
+  threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
     const yData = allData.filter(d => d.year == y);
     let avg = 0, count = 0;
@@ -3200,13 +3129,12 @@ function renderStatsDashboard() {
       return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
     });
 
-    threeYearHtml += `<tr><td data-label="지점" style="font-weight:600;">${station}</td>`;
-    yearAvgs.forEach((avg, yi) => {
-      const yearLabel = years[yi] + '년';
+    threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
+    yearAvgs.forEach(avg => {
       if (avg !== null) {
-        threeYearHtml += `<td data-label="${yearLabel}" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span></td>`;
+        threeYearHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span></td>`;
       } else {
-        threeYearHtml += `<td data-label="${yearLabel}" style="text-align:center;color:#C0CED1;">-</td>`;
+        threeYearHtml += `<td style="text-align:center;color:#C0CED1;">-</td>`;
       }
     });
 
@@ -3217,9 +3145,9 @@ function renderStatsDashboard() {
       const delta = curr - last;
       const arrow = delta > 0.01 ? '\u25B2' : delta < -0.01 ? '\u25BC' : '-';
       const color = delta > 0.01 ? '#22C55E' : delta < -0.01 ? '#D20015' : '#9EA2A1';
-      threeYearHtml += `<td data-label="추이" style="text-align:center;font-weight:600;color:${color};">${arrow} ${Math.abs(delta).toFixed(2)}</td>`;
+      threeYearHtml += `<td style="text-align:center;font-weight:600;color:${color};">${arrow} ${Math.abs(delta).toFixed(2)}</td>`;
     } else {
-      threeYearHtml += `<td data-label="추이" style="text-align:center;color:#C0CED1;">-</td>`;
+      threeYearHtml += `<td style="text-align:center;color:#C0CED1;">-</td>`;
     }
     threeYearHtml += '</tr>';
   });
@@ -3227,7 +3155,7 @@ function renderStatsDashboard() {
   threeYearHtml += '</tbody></table></div>';
 
   // 3개년 추이 차트
-  threeYearHtml += '<div style="margin-top:16px;height:' + Math.min(getChartHeight(), 300) + 'px;"><canvas id="threeYearChart"></canvas></div>';
+  threeYearHtml += '<div style="margin-top:16px;height:300px;"><canvas id="threeYearChart"></canvas></div>';
 
   document.getElementById('threeYearComparison').innerHTML = threeYearHtml;
 
@@ -3284,8 +3212,6 @@ function calcAvgForTypeRegion(data, type) {
 // ============================================================================
 // TAB 4: ANALYSIS (QMS/SMS)
 // ============================================================================
-function getChartHeight() { return window.innerWidth < 768 ? 240 : 350; }
-
 function destroyChart(id) {
   if (chartInstances[id]) {
     chartInstances[id].destroy();
@@ -3628,37 +3554,37 @@ function renderAnalysis() {
   } else {
     html += `<div class="overflow-x-auto"><table class="apple-table"><thead><tr><th style="text-align:left;">지점</th><th style="text-align:center;">${year-2}년</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화 (작년→올해)</th></tr></thead><tbody>`;
     comparisons.forEach(c => {
-      html += `<tr><td data-label="지점" style="font-weight:600;">${c.station}</td>`;
+      html += `<tr><td style="font-weight:600;">${c.station}</td>`;
       // 재작년
       if (c.twoYearsAgo !== null) {
-        html += `<td data-label="${year-2}년" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.twoYearsAgo)}">${c.twoYearsAgo.toFixed(2)}</span></td>`;
+        html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.twoYearsAgo)}">${c.twoYearsAgo.toFixed(2)}</span></td>`;
       } else {
-        html += `<td data-label="${year-2}년" style="text-align:center;color:#C0CED1;">-</td>`;
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
       }
       // 작년
       if (c.prev !== null) {
-        html += `<td data-label="${year-1}년" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.prev)}">${c.prev.toFixed(2)}</span></td>`;
+        html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.prev)}">${c.prev.toFixed(2)}</span></td>`;
       } else {
-        html += `<td data-label="${year-1}년" style="text-align:center;color:#C0CED1;">-</td>`;
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
       }
       // 올해
       if (c.curr !== null) {
-        html += `<td data-label="${year}년" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.curr)}">${c.curr.toFixed(2)}</span></td>`;
+        html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.curr)}">${c.curr.toFixed(2)}</span></td>`;
       } else {
-        html += `<td data-label="${year}년" style="text-align:center;color:#C0CED1;">-</td>`;
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
       }
       // 변화
       if (c.delta !== null) {
         const arrow = c.delta > 0.01 ? '\u25B2' : c.delta < -0.01 ? '\u25BC' : '-';
         const deltaColor = c.delta > 0.01 ? '#22C55E' : c.delta < -0.01 ? '#D20015' : '#9EA2A1';
-        html += `<td data-label="변화" style="text-align:center;"><span class="badge-pill" style="background:${deltaColor}22;color:${deltaColor};">${arrow} ${Math.abs(c.delta).toFixed(2)}</span></td>`;
+        html += `<td style="text-align:center;"><span class="badge-pill" style="background:${deltaColor}22;color:${deltaColor};">${arrow} ${Math.abs(c.delta).toFixed(2)}</span></td>`;
       } else {
-        html += `<td data-label="변화" style="text-align:center;color:#C0CED1;">-</td>`;
+        html += `<td style="text-align:center;color:#C0CED1;">-</td>`;
       }
       html += `</tr>`;
     });
     html += `</tbody></table></div>`;
-    html += `<div style="margin-top:16px;"><div style="height:${Math.min(getChartHeight(), 300)}px;"><canvas id="trendChart"></canvas></div></div>`;
+    html += `<div style="margin-top:16px;"><div style="height:300px;"><canvas id="trendChart"></canvas></div></div>`;
   }
   html += `</div>`;
 
@@ -3666,14 +3592,14 @@ function renderAnalysis() {
   html += `<div id="analysisDetail2" class="hidden apple-card p-6 mb-6 fade-in">`;
   html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:4px;">리스크 매트릭스</h3>`;
   html += `<p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">평균 점수가 낮고, 2점 이하 빈도가 높은 항목 = 고위험</p>`;
-  html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="riskChart"></canvas></div>`;
+  html += `<div style="height:350px;margin-bottom:16px;"><canvas id="riskChart"></canvas></div>`;
   if (highRiskItems.length > 0) {
     html += `<h4 style="font-size:14px;font-weight:600;color:#D20015;margin-bottom:8px;">고위험 항목 목록</h4>`;
     html += `<table class="apple-table"><thead><tr><th>항목</th><th style="text-align:center;">평균</th><th style="text-align:center;">2점이하 빈도</th></tr></thead><tbody>`;
     highRiskItems.forEach(r => {
-      html += `<tr><td data-label="항목" style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 40)}${r.text.length > 40 ? '...' : ''}</td>`;
-      html += `<td data-label="평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td>`;
-      html += `<td data-label="2점이하 빈도" style="text-align:center;font-weight:600;color:#D20015;">${r.lowCount}건 (${(r.freq * 100).toFixed(0)}%)</td></tr>`;
+      html += `<tr><td style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 40)}${r.text.length > 40 ? '...' : ''}</td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td>`;
+      html += `<td style="text-align:center;font-weight:600;color:#D20015;">${r.lowCount}건 (${(r.freq * 100).toFixed(0)}%)</td></tr>`;
     });
     html += `</tbody></table>`;
   } else {
@@ -3684,7 +3610,7 @@ function renderAnalysis() {
   // Detail 3: Type Comparison
   html += `<div id="analysisDetail3" class="hidden apple-card p-6 mb-6 fade-in">`;
   html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">구분별 비교 분석</h3>`;
-  html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="typeCompChart"></canvas></div>`;
+  html += `<div style="height:350px;margin-bottom:16px;"><canvas id="typeCompChart"></canvas></div>`;
   // Gap analysis table
   html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:8px;">지점-외주 격차 분석</h4>`;
   html += `<table class="apple-table"><thead><tr><th>지점</th><th style="text-align:center;">지점 점수</th><th style="text-align:center;">여객 점수</th><th style="text-align:center;">램프 점수</th><th style="text-align:center;">격차</th></tr></thead><tbody>`;
@@ -3701,11 +3627,11 @@ function renderAnalysis() {
     const vals = Object.values(types);
     const gap = vals.length > 1 ? (Math.max(...vals) - Math.min(...vals)).toFixed(2) : '-';
     const gapColor = gap !== '-' && parseFloat(gap) > 0.5 ? '#D20015' : '#9EA2A1';
-    html += `<tr><td data-label="지점" style="font-weight:600;">${station}</td>`;
-    html += `<td data-label="지점 점수" style="text-align:center;">${types.branch ? `<span class="badge-pill" style="${avgBadgeStyle(types.branch)}">${types.branch.toFixed(2)}</span>` : '-'}</td>`;
-    html += `<td data-label="여객 점수" style="text-align:center;">${types.pax ? `<span class="badge-pill" style="${avgBadgeStyle(types.pax)}">${types.pax.toFixed(2)}</span>` : '-'}</td>`;
-    html += `<td data-label="램프 점수" style="text-align:center;">${types.ramp ? `<span class="badge-pill" style="${avgBadgeStyle(types.ramp)}">${types.ramp.toFixed(2)}</span>` : '-'}</td>`;
-    html += `<td data-label="격차" style="text-align:center;font-weight:600;color:${gapColor};">${gap}</td></tr>`;
+    html += `<tr><td style="font-weight:600;">${station}</td>`;
+    html += `<td style="text-align:center;">${types.branch ? `<span class="badge-pill" style="${avgBadgeStyle(types.branch)}">${types.branch.toFixed(2)}</span>` : '-'}</td>`;
+    html += `<td style="text-align:center;">${types.pax ? `<span class="badge-pill" style="${avgBadgeStyle(types.pax)}">${types.pax.toFixed(2)}</span>` : '-'}</td>`;
+    html += `<td style="text-align:center;">${types.ramp ? `<span class="badge-pill" style="${avgBadgeStyle(types.ramp)}">${types.ramp.toFixed(2)}</span>` : '-'}</td>`;
+    html += `<td style="text-align:center;font-weight:600;color:${gapColor};">${gap}</td></tr>`;
   });
   html += `</tbody></table>`;
   html += `</div>`;
@@ -3722,11 +3648,11 @@ function renderAnalysis() {
       const deltaColor = r.delta > 0.01 ? '#22C55E' : r.delta < -0.01 ? '#D20015' : '#9EA2A1';
       const verdict = r.delta > 0.01 ? '소폭 개선' : r.delta < -0.01 ? '악화' : '정체';
       const verdictColor = r.delta > 0.01 ? '#22C55E' : r.delta < -0.01 ? '#D20015' : '#F59E0B';
-      html += `<tr><td data-label="항목" style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 35)}${r.text.length > 35 ? '...' : ''}</td>`;
-      html += `<td data-label="${year-1}년" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.prevAvg)}">${r.prevAvg.toFixed(2)}</span></td>`;
-      html += `<td data-label="${year}년" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.currAvg)}">${r.currAvg.toFixed(2)}</span></td>`;
-      html += `<td data-label="변화" style="text-align:center;color:${deltaColor};font-weight:600;">${r.delta > 0 ? '+' : ''}${r.delta.toFixed(2)}</td>`;
-      html += `<td data-label="판정" style="text-align:center;font-weight:600;color:${verdictColor};">${verdict}</td></tr>`;
+      html += `<tr><td style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 35)}${r.text.length > 35 ? '...' : ''}</td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.prevAvg)}">${r.prevAvg.toFixed(2)}</span></td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.currAvg)}">${r.currAvg.toFixed(2)}</span></td>`;
+      html += `<td style="text-align:center;color:${deltaColor};font-weight:600;">${r.delta > 0 ? '+' : ''}${r.delta.toFixed(2)}</td>`;
+      html += `<td style="text-align:center;font-weight:600;color:${verdictColor};">${verdict}</td></tr>`;
     });
     html += `</tbody></table>`;
   }
@@ -3778,7 +3704,7 @@ function renderAnalysis() {
     html += `<th style="text-align:center;min-width:60px;">전체</th>`;
     html += `</tr></thead><tbody>`;
     heatmapData.forEach(d => {
-      html += `<tr><td data-label="지점" style="font-weight:600;white-space:nowrap;">${d.station}</td>`;
+      html += `<tr><td style="font-weight:600;white-space:nowrap;">${d.station}</td>`;
       heatmapCats.forEach(cat => {
         const val = d.categories[cat];
         let bgColor, textColor;
@@ -3787,7 +3713,7 @@ function renderAnalysis() {
         else if (val <= 3.0) { bgColor = '#FCD34D'; textColor = '#303A3C'; }
         else if (val <= 3.5) { bgColor = '#86EFAC'; textColor = '#303A3C'; }
         else { bgColor = '#22C55E'; textColor = '#ffffff'; }
-        html += `<td data-label="${cat.replace(/^\d+\.\s*/, '').substring(0, 8)}" style="text-align:center;background:${bgColor};color:${textColor};font-weight:600;border-radius:4px;">${val.toFixed(2)}</td>`;
+        html += `<td style="text-align:center;background:${bgColor};color:${textColor};font-weight:600;border-radius:4px;">${val.toFixed(2)}</td>`;
       });
       let ovBg, ovText;
       if (d.overall <= 2.0) { ovBg = '#D20015'; ovText = '#ffffff'; }
@@ -3795,7 +3721,7 @@ function renderAnalysis() {
       else if (d.overall <= 3.0) { ovBg = '#FCD34D'; ovText = '#303A3C'; }
       else if (d.overall <= 3.5) { ovBg = '#86EFAC'; ovText = '#303A3C'; }
       else { ovBg = '#22C55E'; ovText = '#ffffff'; }
-      html += `<td data-label="전체" style="text-align:center;background:${ovBg};color:${ovText};font-weight:600;border-radius:4px;">${d.overall.toFixed(2)}</td>`;
+      html += `<td style="text-align:center;background:${ovBg};color:${ovText};font-weight:600;border-radius:4px;">${d.overall.toFixed(2)}</td>`;
       html += `</tr>`;
     });
     html += `</tbody></table></div>`;
@@ -3825,12 +3751,12 @@ function renderAnalysis() {
       else if (c.stddev < 1.0) { gradeLabel = '보통'; gradeColor = '#F59E0B'; }
       else { gradeLabel = '불안정'; gradeColor = '#D20015'; }
       html += `<tr>`;
-      html += `<td data-label="지점" style="font-weight:600;">${c.station}</td>`;
-      html += `<td data-label="평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.avg)}">${c.avg.toFixed(2)}</span></td>`;
-      html += `<td data-label="표준편차" style="text-align:center;font-weight:600;color:${gradeColor};">${c.stddev.toFixed(2)}</td>`;
-      html += `<td data-label="최소" style="text-align:center;">${c.min.toFixed(1)}</td>`;
-      html += `<td data-label="최대" style="text-align:center;">${c.max.toFixed(1)}</td>`;
-      html += `<td data-label="일관성 등급" style="text-align:center;"><span class="badge-pill" style="background:${gradeColor}22;color:${gradeColor};">${gradeLabel}</span></td>`;
+      html += `<td style="font-weight:600;">${c.station}</td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(c.avg)}">${c.avg.toFixed(2)}</span></td>`;
+      html += `<td style="text-align:center;font-weight:600;color:${gradeColor};">${c.stddev.toFixed(2)}</td>`;
+      html += `<td style="text-align:center;">${c.min.toFixed(1)}</td>`;
+      html += `<td style="text-align:center;">${c.max.toFixed(1)}</td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="background:${gradeColor}22;color:${gradeColor};">${gradeLabel}</span></td>`;
       html += `</tr>`;
     });
     html += `</tbody></table></div>`;
@@ -3841,17 +3767,17 @@ function renderAnalysis() {
   html += `<div id="analysisDetail8" class="hidden apple-card p-6 mb-6 fade-in">`;
   html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:4px;">개선 우선순위 매트릭스</h3>`;
   html += `<p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">X축: 현재 평균 점수 (낮을수록 긴급), Y축: 최대 배점 (높을수록 영향력 큼)</p>`;
-  html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="priorityChart"></canvas></div>`;
+  html += `<div style="height:350px;margin-bottom:16px;"><canvas id="priorityChart"></canvas></div>`;
   html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:8px;">우선순위 목록 (영향도 × 격차)</h4>`;
   html += `<table class="apple-table"><thead><tr><th style="text-align:left;">카테고리</th><th style="text-align:center;">평균</th><th style="text-align:center;">최대배점</th><th style="text-align:center;">격차</th><th style="text-align:center;">우선순위 점수</th></tr></thead><tbody>`;
   priorityItems.forEach(p => {
     const urgentColor = p.avg < 3.0 ? '#D20015' : '#303A3C';
     html += `<tr>`;
-    html += `<td data-label="카테고리" style="font-size:13px;color:${urgentColor};font-weight:${p.avg < 3.0 ? '600' : '400'};">${p.cat.replace(/^\d+\.\s*/, '').substring(0, 25)}</td>`;
-    html += `<td data-label="평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(p.avg)}">${p.avg.toFixed(2)}</span></td>`;
-    html += `<td data-label="최대배점" style="text-align:center;">${p.maxPoints}</td>`;
-    html += `<td data-label="격차" style="text-align:center;">${p.gap.toFixed(2)}</td>`;
-    html += `<td data-label="우선순위 점수" style="text-align:center;font-weight:600;">${p.priority.toFixed(1)}</td>`;
+    html += `<td style="font-size:13px;color:${urgentColor};font-weight:${p.avg < 3.0 ? '600' : '400'};">${p.cat.replace(/^\d+\.\s*/, '').substring(0, 25)}</td>`;
+    html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(p.avg)}">${p.avg.toFixed(2)}</span></td>`;
+    html += `<td style="text-align:center;">${p.maxPoints}</td>`;
+    html += `<td style="text-align:center;">${p.gap.toFixed(2)}</td>`;
+    html += `<td style="text-align:center;font-weight:600;">${p.priority.toFixed(1)}</td>`;
     html += `</tr>`;
   });
   html += `</tbody></table>`;
@@ -3865,7 +3791,7 @@ function renderAnalysis() {
   if (regionEntries.length === 0) {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">지역별 데이터가 없습니다.</div>`;
   } else {
-    html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="regionalRadarChart"></canvas></div>`;
+    html += `<div style="height:350px;margin-bottom:16px;"><canvas id="regionalRadarChart"></canvas></div>`;
     html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:8px;">지역별 취약 카테고리</h4>`;
     html += `<table class="apple-table"><thead><tr><th style="text-align:left;">지역</th><th style="text-align:left;">취약 카테고리</th><th style="text-align:center;">점수</th><th style="text-align:center;">전체 평균</th></tr></thead><tbody>`;
     regionEntries.forEach(([region, cats]) => {
@@ -3874,10 +3800,10 @@ function renderAnalysis() {
       const weakest = entries.sort((a, b) => a[1] - b[1])[0];
       const regionAvg = entries.reduce((s, [, v]) => s + v, 0) / entries.length;
       html += `<tr>`;
-      html += `<td data-label="지역" style="font-weight:600;">${region}</td>`;
-      html += `<td data-label="취약 카테고리" style="font-size:13px;">${weakest[0].replace(/^\d+\.\s*/, '').substring(0, 20)}</td>`;
-      html += `<td data-label="점수" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(weakest[1])}">${weakest[1].toFixed(2)}</span></td>`;
-      html += `<td data-label="전체 평균" style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(regionAvg)}">${regionAvg.toFixed(2)}</span></td>`;
+      html += `<td style="font-weight:600;">${region}</td>`;
+      html += `<td style="font-size:13px;">${weakest[0].replace(/^\d+\.\s*/, '').substring(0, 20)}</td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(weakest[1])}">${weakest[1].toFixed(2)}</span></td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(regionAvg)}">${regionAvg.toFixed(2)}</span></td>`;
       html += `</tr>`;
     });
     html += `</tbody></table>`;
@@ -4258,7 +4184,7 @@ function renderSchedule() {
   html += '<div class="apple-card p-6">';
   html += '<h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">심사 일정 목록</h3>';
   html += '<div class="overflow-x-auto">';
-  html += '<table class="apple-table no-card"><thead><tr><th style="text-align:center;">월</th><th style="text-align:left;">대상</th><th style="text-align:left;">심사원</th><th style="text-align:center;">심사 기간</th><th style="text-align:center;">상태</th></tr></thead><tbody>';
+  html += '<table class="apple-table"><thead><tr><th style="text-align:center;">월</th><th style="text-align:left;">대상</th><th style="text-align:left;">심사원</th><th style="text-align:center;">심사 기간</th><th style="text-align:center;">상태</th></tr></thead><tbody>';
 
   for (let m = 1; m <= 12; m++) {
     const items = monthMap[m];
@@ -4311,12 +4237,12 @@ function renderSchedule() {
 
     allStations.forEach(s => {
       html += '<tr>';
-      html += '<td data-label="지점" style="font-weight:600;">' + s.station + '</td>';
-      html += '<td data-label="지역" style="font-size:13px;color:#565A5B;">' + s.region + '</td>';
-      html += '<td data-label="심사 주기" style="text-align:center;"><span class="badge-pill" style="' + s.cycleBadge.style + '">' + s.cycleBadge.label + '</span></td>';
-      html += '<td data-label="마지막 심사" style="text-align:center;">' + (s.lastYear ? s.lastYear + '년' : '-') + '</td>';
-      html += '<td data-label="다음 예정" style="text-align:center;font-weight:600;">' + (s.nextDue ? s.nextDue + '년' : '-') + '</td>';
-      html += '<td data-label="관리" style="text-align:center;"><button onclick="addExceptionAudit(\'' + s.station + '\')" class="pill-btn pill-btn-outline" style="font-size:11px;padding:3px 10px;">예외 심사 추가</button></td>';
+      html += '<td style="font-weight:600;">' + s.station + '</td>';
+      html += '<td style="font-size:13px;color:#565A5B;">' + s.region + '</td>';
+      html += '<td style="text-align:center;"><span class="badge-pill" style="' + s.cycleBadge.style + '">' + s.cycleBadge.label + '</span></td>';
+      html += '<td style="text-align:center;">' + (s.lastYear ? s.lastYear + '년' : '-') + '</td>';
+      html += '<td style="text-align:center;font-weight:600;">' + (s.nextDue ? s.nextDue + '년' : '-') + '</td>';
+      html += '<td style="text-align:center;"><button onclick="addExceptionAudit(\'' + s.station + '\')" class="pill-btn pill-btn-outline" style="font-size:11px;padding:3px 10px;">예외 심사 추가</button></td>';
       html += '</tr>';
     });
 
@@ -4948,13 +4874,13 @@ function renderAuditorList() {
     const count = getAuditorActivityCount(a.name, currentYear);
     const ts = getTrainingStatus(a.trainingExpiry);
     html += `<tr>`;
-    html += `<td data-label="성명" style="font-weight:600;">${a.name}<div style="font-size:11px;color:#9EA2A1;">${a.empNo}</div></td>`;
-    html += `<td data-label="팀" style="font-size:13px;">${a.team}<div style="font-size:11px;color:#9EA2A1;">${a.division}</div></td>`;
-    html += `<td data-label="권한그룹" style="font-size:13px;">${a.role}</td>`;
-    html += `<td data-label="보수교육" style="text-align:center;font-size:13px;">${a.refreshTraining || '-'}</td>`;
-    html += `<td data-label="교육 유효" style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
-    html += `<td data-label="${currentYear}년 실적" style="text-align:center;font-weight:600;font-size:15px;">${count}건</td>`;
-    html += `<td data-label="관리" style="text-align:center;">`;
+    html += `<td style="font-weight:600;">${a.name}<div style="font-size:11px;color:#9EA2A1;">${a.empNo}</div></td>`;
+    html += `<td style="font-size:13px;">${a.team}<div style="font-size:11px;color:#9EA2A1;">${a.division}</div></td>`;
+    html += `<td style="font-size:13px;">${a.role}</td>`;
+    html += `<td style="text-align:center;font-size:13px;">${a.refreshTraining || '-'}</td>`;
+    html += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
+    html += `<td style="text-align:center;font-weight:600;font-size:15px;">${count}건</td>`;
+    html += `<td style="text-align:center;">`;
     html += `<button onclick="editAuditor(${i})" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:4px 8px;">수정</button>`;
     html += `<button onclick="deleteAuditor(${i})" style="background:none;border:none;color:#565A5B;font-size:13px;cursor:pointer;padding:4px 8px;">삭제</button>`;
     html += `</td></tr>`;
