@@ -7,6 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 tailwind.config = {
   theme: {
@@ -410,6 +412,7 @@ select.apple-input {
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span style="margin-left:8px;">v1.0</span>
+      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
 </header>
@@ -731,6 +734,19 @@ select.apple-input {
           <button onclick="exportStationExcel()" class="pill-btn" style="background:#22C55E;color:#fff;">개별 내보내기</button>
         </div>
       </div>
+    </div>
+
+    <div class="apple-card p-6 mb-5">
+      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">Firebase 실시간 동기화</h3>
+      <div class="flex items-center gap-3 mb-4">
+        <span style="font-size:14px;color:#565A5B;">연결 상태:</span>
+        <span id="firebaseStatusBadge" class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">확인 중</span>
+      </div>
+      <div class="flex gap-3 flex-wrap">
+        <button onclick="uploadAllToFirebase()" class="pill-btn pill-btn-primary">전체 데이터 업로드</button>
+        <button onclick="downloadFromFirebase()" class="pill-btn pill-btn-outline">Firebase에서 불러오기</button>
+      </div>
+      <p style="font-size:12px;color:#9EA2A1;margin-top:8px;">저장 시 자동으로 Firebase에 동기화됩니다. 수동 업로드/다운로드도 가능합니다.</p>
     </div>
 
     <div class="apple-card p-6 mb-5">
@@ -1187,6 +1203,7 @@ function loadAuditors() {
 }
 function saveAuditors() {
   localStorage.setItem(AUDITOR_STORAGE_KEY, JSON.stringify(auditorList));
+  firebaseSaveAuditors();
 }
 function getAuditorActivityCount(auditorName, year) {
   // 같은 지점은 1회로 카운트 (지점 단위 통합)
@@ -1313,6 +1330,52 @@ let currentScheduleId = null;
 const CUSTOM_STATIONS_KEY = 'eastar_custom_stations';
 let customStations = [];
 
+// Firebase
+let firebaseApp = null;
+let firebaseDb = null;
+let firebaseConnected = false;
+
+function initFirebase() {
+  try {
+    const firebaseConfig = {
+      apiKey: "AIzaSyAeEkx3K1ZWdqspcEkF8Bwfzc0ZnxZHtAU",
+      authDomain: "eastar-qms-maturity.firebaseapp.com",
+      databaseURL: "https://eastar-qms-maturity-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "eastar-qms-maturity",
+      storageBucket: "eastar-qms-maturity.firebasestorage.app",
+      messagingSenderId: "1053482887529",
+      appId: "1:1053482887529:web:4338d3943bf0bf9a2a35f8",
+      measurementId: "G-B2XDNG0F25"
+    };
+    firebaseApp = firebase.initializeApp(firebaseConfig);
+    firebaseDb = firebase.database();
+    firebaseConnected = true;
+
+    // Listen for connection state
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+      firebaseConnected = snap.val() === true;
+      updateSyncStatus();
+    });
+
+    // Set up real-time listeners
+    setupFirebaseListeners();
+
+    console.log('Firebase connected');
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+    firebaseConnected = false;
+  }
+}
+
+function updateSyncStatus() {
+  // Update a small indicator if it exists
+  const indicator = document.getElementById('syncIndicator');
+  if (indicator) {
+    indicator.style.background = firebaseConnected ? '#22C55E' : '#D20015';
+    indicator.title = firebaseConnected ? '실시간 동기화 연결됨' : '오프라인 (로컬 저장)';
+  }
+}
+
 function loadCustomStations() {
   try {
     const stored = localStorage.getItem(CUSTOM_STATIONS_KEY);
@@ -1323,6 +1386,7 @@ function loadCustomStations() {
 
 function saveCustomStations() {
   localStorage.setItem(CUSTOM_STATIONS_KEY, JSON.stringify(customStations));
+  firebaseSaveCustomStations();
 }
 
 function mergeCustomStations() {
@@ -1425,6 +1489,7 @@ function loadSchedule() {
 
 function saveSchedule() {
   localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
+  firebaseSaveSchedule();
 }
 
 // ============================================================================
@@ -1572,6 +1637,7 @@ function saveAllData() {
   } catch (e) {
     showToast('저장 공간이 부족합니다.', 'error');
   }
+  firebaseSaveAllData();
 }
 
 function saveGasUrl() {
@@ -4471,6 +4537,18 @@ function renderDataManagement() {
     statusEl.style.cssText = 'background:#f5f5f7;color:#9EA2A1;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
     statusEl.textContent = '연결 안됨';
   }
+
+  // Firebase status
+  const fbBadge = document.getElementById('firebaseStatusBadge');
+  if (fbBadge) {
+    if (firebaseConnected) {
+      fbBadge.style.cssText = 'background:rgba(34,197,94,0.15);color:#22C55E;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
+      fbBadge.textContent = '연결됨 (실시간 동기화)';
+    } else {
+      fbBadge.style.cssText = 'background:rgba(210,0,21,0.15);color:#D20015;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
+      fbBadge.textContent = '연결 안됨';
+    }
+  }
 }
 
 function exportAllExcel() {
@@ -4773,6 +4851,169 @@ function removeAuditorTag(containerId, name) {
   renderAuditorPicker(containerId, current.join(', '));
 }
 
+// ============================================================================
+// FIREBASE REAL-TIME SYNC
+// ============================================================================
+function setupFirebaseListeners() {
+  if (!firebaseDb) return;
+
+  // Listen for allData changes
+  firebaseDb.ref('assessments').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const newData = Object.values(data);
+      // Only update if data is different (avoid infinite loops)
+      if (JSON.stringify(newData) !== JSON.stringify(allData)) {
+        allData = newData;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+        // Refresh current view
+        refreshCurrentView();
+      }
+    }
+  });
+
+  // Listen for auditors changes
+  firebaseDb.ref('auditors').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const newData = Object.values(data);
+      if (JSON.stringify(newData) !== JSON.stringify(auditorList)) {
+        auditorList = newData;
+        localStorage.setItem(AUDITOR_STORAGE_KEY, JSON.stringify(auditorList));
+      }
+    }
+  });
+
+  // Listen for schedule changes
+  firebaseDb.ref('schedule').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const newData = Object.values(data);
+      if (JSON.stringify(newData) !== JSON.stringify(scheduleData)) {
+        scheduleData = newData;
+        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
+        if (activeTab === 5) renderSchedule();
+      }
+    }
+  });
+
+  // Listen for custom stations
+  firebaseDb.ref('customStations').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      customStations = Object.values(data);
+      localStorage.setItem(CUSTOM_STATIONS_KEY, JSON.stringify(customStations));
+      mergeCustomStations();
+    }
+  });
+}
+
+function refreshCurrentView() {
+  // Refresh whichever tab is currently active
+  const tab = activeTab;
+  if (tab === 0) renderHome();
+  if (tab === 2) { /* view tab - user may be in the middle of something, skip auto-refresh */ }
+  if (tab === 3) renderStatsDashboard();
+  if (tab === 4) renderAnalysis();
+  if (tab === 5) renderSchedule();
+}
+
+function firebaseSaveAllData() {
+  if (!firebaseDb) return;
+  try {
+    // Save assessments - use station_type_year as key for easy lookup
+    const assessmentObj = {};
+    allData.forEach((d, i) => {
+      const key = `${d.year}_${d.station}_${d.type}`.replace(/[.#$/\[\]]/g, '_');
+      assessmentObj[key] = d;
+    });
+    firebaseDb.ref('assessments').set(assessmentObj);
+  } catch(e) { console.warn('Firebase save assessments failed:', e); }
+}
+
+function firebaseSaveAuditors() {
+  if (!firebaseDb) return;
+  try {
+    const obj = {};
+    auditorList.forEach((a, i) => {
+      obj[a.id || ('A' + i)] = a;
+    });
+    firebaseDb.ref('auditors').set(obj);
+  } catch(e) { console.warn('Firebase save auditors failed:', e); }
+}
+
+function firebaseSaveSchedule() {
+  if (!firebaseDb) return;
+  try {
+    const obj = {};
+    scheduleData.forEach(s => {
+      obj[s.id] = s;
+    });
+    firebaseDb.ref('schedule').set(obj);
+  } catch(e) { console.warn('Firebase save schedule failed:', e); }
+}
+
+function firebaseSaveCustomStations() {
+  if (!firebaseDb) return;
+  try {
+    const obj = {};
+    customStations.forEach((cs, i) => {
+      obj[cs.station.replace(/[.#$/\[\]]/g, '_')] = cs;
+    });
+    firebaseDb.ref('customStations').set(obj);
+  } catch(e) { console.warn('Firebase save custom stations failed:', e); }
+}
+
+function uploadAllToFirebase() {
+  if (!firebaseDb) { showToast('Firebase가 연결되지 않았습니다.', 'error'); return; }
+  showLoading('Firebase에 업로드 중...');
+  try {
+    firebaseSaveAllData();
+    firebaseSaveAuditors();
+    firebaseSaveSchedule();
+    firebaseSaveCustomStations();
+    showToast('모든 데이터가 Firebase에 업로드되었습니다.', 'success');
+  } catch(e) {
+    showToast('업로드 실패: ' + e.message, 'error');
+  }
+  hideLoading();
+}
+
+function downloadFromFirebase() {
+  if (!firebaseDb) { showToast('Firebase가 연결되지 않았습니다.', 'error'); return; }
+  showLoading('Firebase에서 다운로드 중...');
+  firebaseDb.ref('/').once('value').then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      if (data.assessments) {
+        allData = Object.values(data.assessments);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+      }
+      if (data.auditors) {
+        auditorList = Object.values(data.auditors);
+        localStorage.setItem(AUDITOR_STORAGE_KEY, JSON.stringify(auditorList));
+      }
+      if (data.schedule) {
+        scheduleData = Object.values(data.schedule);
+        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
+      }
+      if (data.customStations) {
+        customStations = Object.values(data.customStations);
+        localStorage.setItem(CUSTOM_STATIONS_KEY, JSON.stringify(customStations));
+        mergeCustomStations();
+      }
+      showToast('Firebase에서 데이터를 불러왔습니다.', 'success');
+      refreshCurrentView();
+    } else {
+      showToast('Firebase에 저장된 데이터가 없습니다.', 'warning');
+    }
+    hideLoading();
+  }).catch(e => {
+    showToast('다운로드 실패: ' + e.message, 'error');
+    hideLoading();
+  });
+}
+
 // Google Sheets Integration
 async function syncToSheets(data) {
   if (!GAS_URL) { showToast('Google Sheets URL이 설정되지 않았습니다.', 'warning'); return; }
@@ -5009,6 +5250,7 @@ function init() {
   loadSchedule();
   populateStationDropdown();
   switchTab(0);
+  initFirebase();
 }
 
 document.addEventListener('DOMContentLoaded', init);
