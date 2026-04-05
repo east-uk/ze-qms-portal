@@ -470,7 +470,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v1.0</span>
+      <span style="margin-left:8px;">v8.5</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -719,22 +719,32 @@ select.apple-input {
 
   <!-- Tab 3: Statistics -->
   <div id="tab3" class="tab-content hidden fade-in">
-    <div class="flex items-end justify-between mb-6">
-      <div>
-        <h2 class="section-title">통계</h2>
-        <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
-      </div>
-      <select id="statsYear" class="apple-input" style="width:auto;font-size:14px;" onchange="renderStatsDashboard()">
-      </select>
+    <div class="mb-6">
+      <h2 class="section-title">통계</h2>
+      <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
+      <div id="statsYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <select id="statsYear" class="hidden"><option></option></select>
       <script>
       (function() {
         const y = new Date().getFullYear();
+        const container = document.getElementById('statsYearSegment');
         const sel = document.getElementById('statsYear');
         for (let i = y - 2; i <= y; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
           sel.appendChild(opt);
+          const btn = document.createElement('button');
+          btn.textContent = i + '년';
+          btn.dataset.year = i;
+          btn.style.cssText = 'border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;' + (i === y ? 'background:#D20015;color:#fff;' : 'background:transparent;color:#565A5B;');
+          btn.onclick = function() {
+            sel.value = i;
+            container.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = '#565A5B'; });
+            this.style.background = '#D20015'; this.style.color = '#fff';
+            renderStatsDashboard();
+          };
+          container.appendChild(btn);
         }
       })();
       </script>
@@ -770,22 +780,32 @@ select.apple-input {
 
   <!-- Tab 4: Analysis -->
   <div id="tab4" class="tab-content hidden fade-in">
-    <div class="flex items-end justify-between mb-6">
-      <div>
-        <h2 class="section-title">분석</h2>
-        <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
-      </div>
-      <select id="analysisYear" class="apple-input" style="width:auto;font-size:14px;" onchange="renderAnalysis()">
-      </select>
+    <div class="mb-6">
+      <h2 class="section-title">분석</h2>
+      <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
+      <div id="analysisYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
+      <select id="analysisYear" class="hidden"><option></option></select>
       <script>
       (function() {
         const y = new Date().getFullYear();
+        const container = document.getElementById('analysisYearSegment');
         const sel = document.getElementById('analysisYear');
         for (let i = y - 2; i <= y; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
           sel.appendChild(opt);
+          const btn = document.createElement('button');
+          btn.textContent = i + '년';
+          btn.dataset.year = i;
+          btn.style.cssText = 'border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;' + (i === y ? 'background:#D20015;color:#fff;' : 'background:transparent;color:#565A5B;');
+          btn.onclick = function() {
+            sel.value = i;
+            container.querySelectorAll('button').forEach(b => { b.style.background = 'transparent'; b.style.color = '#565A5B'; });
+            this.style.background = '#D20015'; this.style.color = '#fff';
+            renderAnalysis();
+          };
+          container.appendChild(btn);
         }
       })();
       </script>
@@ -949,7 +969,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v1.0 &middot; 2026
+  안전기획팀 &middot; v8.5 &middot; 2026
 </footer>
 
 <script>
