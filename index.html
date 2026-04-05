@@ -2118,8 +2118,21 @@ function saveAssessment() {
   }
   saveAllData();
   unsavedChanges = false;
+
+  // 심사 일정 데이터에도 동기화
+  const schedItem = scheduleData.find(s => s.year == year && s.station === station);
+  if (schedItem) {
+    if (auditor) schedItem.auditors = auditor;
+    if (auditDateStart) schedItem.dateStart = auditDateStart;
+    if (auditDateEnd) schedItem.dateEnd = auditDateEnd;
+    if (auditDateStart) {
+      const newMonth = parseInt(auditDateStart.split('-')[1]);
+      if (newMonth >= 1 && newMonth <= 12) schedItem.month = newMonth;
+    }
+    saveSchedule();
+  }
+
   showToast('저장되었습니다.', 'success');
-  // 저장 후 점검표 유형 선택 화면으로 돌아감 (다른 유형 작성 가능)
   inputShowTypes();
   renderInputPendingStations();
 }
@@ -2613,8 +2626,22 @@ function saveGroupCommon(gIdx) {
   });
 
   saveAllData();
+
+  // 심사 일정 데이터에도 동기화
+  const schedItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+  if (schedItem) {
+    schedItem.auditors = auditor;
+    schedItem.dateStart = dateStart;
+    schedItem.dateEnd = dateEnd;
+    if (dateStart) {
+      const newMonth = parseInt(dateStart.split('-')[1]);
+      if (newMonth >= 1 && newMonth <= 12) schedItem.month = newMonth;
+    }
+    saveSchedule();
+  }
+
   showToast(`${group.station} 공통 심사 정보 ${updated}건 일괄 업데이트 완료`, 'success');
-  viewSearch(); // 화면 새로고침
+  viewSearch();
 }
 
 function startGroupTypeEdit(gIdx, type) {
