@@ -470,7 +470,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v8.5</span>
+      <span style="margin-left:8px;">v8.7</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -969,7 +969,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v8.5 &middot; 2026
+  안전기획팀 &middot; v8.7 &middot; 2026
 </footer>
 
 <script>
@@ -5590,9 +5590,9 @@ function renderHome() {
       const avg = stationRecords.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stationRecords.length;
       const dateDisplay = stationRecords[0]?.auditDateStart || stationRecords[0]?.auditDate || '-';
       const types = stationRecords.map(d => getTypeLabel(d.type)).join(', ');
-      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);">`;
+      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);document.getElementById('viewStationSearch').value='${station}';viewSearch()">`;
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
-      recentHtml += `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
+      recentHtml += `<div style="display:flex;align-items:center;gap:6px;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span><svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
       recentHtml += `</div>`;
     });
   }
