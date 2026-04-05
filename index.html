@@ -470,7 +470,7 @@ select.apple-input {
     </div>
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v8.7</span>
+      <span style="margin-left:8px;">v8.8</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
     </div>
   </div>
@@ -969,7 +969,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v8.7 &middot; 2026
+  안전기획팀 &middot; v8.8 &middot; 2026
 </footer>
 
 <script>
@@ -5579,8 +5579,15 @@ function renderHome() {
     </div>
   `;
 
-  // Recent audits (last 3 completed stations)
-  const recentStations = [...completedStations].slice(-3).reverse();
+  // Recent audits — 심사일 기준 최신순 정렬
+  const stationDates = {};
+  yearData.forEach(d => {
+    const date = d.auditDateStart || d.auditDate || '';
+    if (!stationDates[d.station] || date > stationDates[d.station]) stationDates[d.station] = date;
+  });
+  const recentStations = [...completedStations]
+    .sort((a, b) => (stationDates[b] || '').localeCompare(stationDates[a] || ''))
+    .slice(0, 3);
   let recentHtml = '';
   if (recentStations.length === 0) {
     recentHtml = '<div style="color:#9EA2A1;font-size:14px;text-align:center;padding:20px;">완료된 심사가 없습니다.</div>';
