@@ -319,7 +319,36 @@ select.apple-input {
 @media (max-width: 768px) {
   .desktop-tabs { display: none; }
   .mobile-tabs { display: flex; }
-  .section-title { font-size: 24px; }
+  .section-title { font-size: 22px !important; }
+
+  /* Mobile table optimization */
+  .apple-table { font-size: 12px; }
+  .apple-table thead th { font-size: 10px; padding: 8px 6px; white-space: nowrap; }
+  .apple-table tbody td { padding: 8px 6px; }
+  .apple-table .badge-pill { font-size: 10px; padding: 1px 6px; }
+
+  /* Prevent text from going vertical */
+  .apple-table td, .apple-table th {
+    word-break: keep-all;
+    min-width: 0;
+  }
+
+  /* Score view group table - make compact */
+  .score-view-table th, .score-view-table td { padding: 6px 4px; }
+
+  /* Reduce card padding slightly */
+  main { padding-left: 10px !important; padding-right: 10px !important; }
+
+  /* Fix badge overflow */
+  .badge-pill { white-space: nowrap; }
+
+  /* Fix button text wrapping */
+  .pill-btn { white-space: nowrap; font-size: 12px !important; }
+
+  /* Compact mobile stats tables */
+  .compact-mobile th { font-size: 10px !important; padding: 6px 4px !important; letter-spacing: 0; }
+  .compact-mobile td { font-size: 11px !important; padding: 6px 4px !important; }
+  .compact-mobile .badge-pill { font-size: 10px !important; padding: 1px 5px !important; }
 }
 @media (min-width: 769px) {
   .desktop-tabs { display: flex; }
@@ -387,6 +416,36 @@ select.apple-input {
 .schedule-completed { border-left: 3px solid #22C55E; }
 .schedule-in-progress { border-left: 3px solid #F59E0B; }
 .schedule-upcoming { border-left: 3px solid #9EA2A1; }
+
+/* Analysis Modal */
+.analysis-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9990;
+  overflow-y: auto;
+  padding: 20px;
+  -webkit-overflow-scrolling: touch;
+}
+.analysis-modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
+.analysis-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  margin: 40px auto 80px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.analysis-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(192,206,209,0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.analysis-modal-body { padding: 20px; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col" style="background:#f5f5f7;">
@@ -489,7 +548,7 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="inputYear" class="apple-input">
+            <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
               <option value="2027">2027</option>
@@ -502,6 +561,7 @@ select.apple-input {
         </div>
         <button onclick="inputSearch()" class="pill-btn pill-btn-primary">조회</button>
       </div>
+      <div id="inputPendingStations" class="mt-6"></div>
     </div>
 
     <!-- Phase 2: Audit Info -->
@@ -593,7 +653,7 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="viewYear" class="apple-input">
+            <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()">
               <option value="2025">2025</option>
               <option value="2026" selected>2026</option>
             </select>
@@ -639,6 +699,7 @@ select.apple-input {
         </div>
         <button onclick="viewSearch()" class="pill-btn pill-btn-primary">조회</button>
       </div>
+      <div id="viewRecentStations" class="mt-6"></div>
     </div>
 
     <!-- Phase 2: Results -->
@@ -855,7 +916,7 @@ select.apple-input {
 </main>
 
 <!-- Mobile Bottom Tab Bar - Glass -->
-<nav class="mobile-tabs fixed bottom-0 left-0 right-0 glass-bottom z-50 md:hidden flex justify-around" style="height:56px;padding:4px 0 8px;">
+<nav class="mobile-tabs fixed bottom-0 left-0 right-0 glass-bottom z-50 md:hidden flex justify-around" style="height:auto;min-height:56px;padding:4px 0 calc(8px + env(safe-area-inset-bottom));">
   <button onclick="switchTab(0)" class="mobile-tab flex flex-col items-center justify-center py-1 px-1 min-w-0 flex-1" data-tab="0" style="background:none;border:none;cursor:pointer;min-height:44px;">
     <svg class="w-5 h-5" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
     <span style="font-size:10px;margin-top:2px;color:#D20015;font-weight:600;letter-spacing:-0.224px;">홈</span>
@@ -1334,6 +1395,7 @@ let allData = [];
 let currentScores = {};
 let currentChecklist = null;
 let chartInstances = {};
+function getChartHeight() { return window.innerWidth < 768 ? 220 : 350; }
 const STORAGE_KEY = 'eastar_maturity_data';
 let GAS_URL = '';
 let viewEntries = [];
@@ -1707,7 +1769,7 @@ function switchTab(idx) {
   document.getElementById('inputBottomBar').classList.toggle('hidden', idx !== 1 || !currentChecklist);
   // Render tab-specific content
   if (idx === 0) renderHome();
-  if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); }
+  if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); renderViewRecentStations(); }
   if (idx === 3) renderStatsDashboard();
   if (idx === 4) renderAnalysis();
   if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); }
@@ -2059,6 +2121,7 @@ function saveAssessment() {
   showToast('저장되었습니다.', 'success');
   // 저장 후 점검표 유형 선택 화면으로 돌아감 (다른 유형 작성 가능)
   inputShowTypes();
+  renderInputPendingStations();
 }
 
 // ============================================================================
@@ -2216,6 +2279,83 @@ function renderScoreViewTable() {
     return a.station.localeCompare(b.station, 'ko');
   });
 
+  const isMobile = window.innerWidth < 768;
+
+  // Mobile: card-style per station (no table)
+  if (isMobile) {
+    let mhtml = '';
+    groups.forEach((group, gIdx) => {
+      const rowId = `viewGroup_${gIdx}`;
+      const anyRecord = Object.values(group.types).find(e => e.record)?.record;
+      const completedTypes = Object.values(group.types).filter(e => e.record);
+
+      function typeBadge(type) {
+        const entry = group.types[type];
+        if (!entry || !entry.record) return '<span style="color:#C0CED1;">-</span>';
+        const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
+        return `<span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span>`;
+      }
+
+      const statusResult = completedTypes.length > 0
+        ? (completedTypes.length === Object.values(group.types).length
+          ? {style:'background:rgba(34,197,94,0.15);color:#22C55E', label:'완료'}
+          : {style:`background:rgba(245,158,11,0.15);color:#F59E0B`, label:`${completedTypes.length}/${Object.values(group.types).length}`})
+        : {style:'background:rgba(158,162,161,0.15);color:#9EA2A1', label:'심사예정'};
+
+      let dateDisplay = '-';
+      if (anyRecord) {
+        dateDisplay = anyRecord.auditDateStart
+          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
+            ? anyRecord.auditDateStart.substring(5) + '~' + anyRecord.auditDateEnd.substring(5)
+            : anyRecord.auditDateStart.substring(5))
+          : (anyRecord.auditDate || '-');
+      }
+
+      mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1'};" onclick="toggleViewDetail('${rowId}')">`;
+      // Header: station + badge
+      mhtml += `<div class="flex justify-between items-center" style="margin-bottom:8px;">`;
+      mhtml += `<div><span style="font-weight:600;font-size:15px;color:#303A3C;">${group.station}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${group.region}</span></div>`;
+      mhtml += `<span class="badge-pill" style="${statusResult.style};font-size:11px;">${statusResult.label}</span>`;
+      mhtml += `</div>`;
+      // Scores with mini progress bars
+      mhtml += `<div class="flex justify-between" style="gap:8px;">`;
+      ['branch', 'pax', 'ramp'].forEach(type => {
+        const entry = group.types[type];
+        const label = type === 'branch' ? '지점' : type === 'pax' ? '여객' : '램프';
+        if (entry && entry.record) {
+          const avg = calculateScores(entry.record.scores, getChecklist(type)).overallAverage;
+          const barW = (avg / 4 * 100).toFixed(0);
+          const barColor = avg < 2.5 ? '#D20015' : avg < 3.0 ? '#F59E0B' : '#22C55E';
+          mhtml += `<div style="flex:1;text-align:center;">`;
+          mhtml += `<div style="font-size:16px;font-weight:600;color:#303A3C;">${avg.toFixed(2)}</div>`;
+          mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"><div style="height:3px;width:${barW}%;background:${barColor};border-radius:2px;"></div></div>`;
+          mhtml += `<div style="font-size:10px;color:#9EA2A1;">${label}</div>`;
+          mhtml += `</div>`;
+        } else {
+          mhtml += `<div style="flex:1;text-align:center;">`;
+          mhtml += `<div style="font-size:16px;color:#C0CED1;">-</div>`;
+          mhtml += `<div style="height:3px;background:#f0f0f0;border-radius:2px;margin:3px 0;"></div>`;
+          mhtml += `<div style="font-size:10px;color:#C0CED1;">${label}</div>`;
+          mhtml += `</div>`;
+        }
+      });
+      mhtml += `</div>`;
+      // Footer: date + auditor
+      if (anyRecord) {
+        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${(anyRecord.auditor || '-')}</div>`;
+      }
+      mhtml += `</div>`;
+
+      // Detail (hidden, same as before)
+      mhtml += `<div id="${rowId}" class="hidden" style="margin-bottom:8px;">`;
+      mhtml += `<div id="viewGroupDetail_${gIdx}" style="padding:4px;">`;
+      mhtml += renderGroupReadOnlyDetail(gIdx, group);
+      mhtml += `</div></div>`;
+    });
+    container.innerHTML = mhtml;
+    return;
+  }
+
   let html = '<div class="overflow-x-auto">';
   html += '<table class="apple-table">';
   html += '<thead><tr>';
@@ -2297,10 +2437,10 @@ function renderGroupReadOnlyDetail(gIdx, group) {
         : anyRecord.auditDateStart)
       : (anyRecord.auditDate || '-');
     html += `<div class="apple-card" style="padding:14px;margin-bottom:12px;">`;
-    html += `<div class="flex justify-between items-center">`;
-    html += `<div><span style="font-size:12px;color:#9EA2A1;">심사원</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${anyRecord.auditor || '-'}</div></div>`;
-    html += `<div><span style="font-size:12px;color:#9EA2A1;">심사일</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${dateDisplay}</div></div>`;
-    html += `<button onclick="event.stopPropagation();startGroupEditCommon(${gIdx})" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;font-size:13px;">공통 정보 수정</button>`;
+    html += `<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">`;
+    html += `<div class="flex gap-4"><div><span style="font-size:12px;color:#9EA2A1;">심사원</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${anyRecord.auditor || '-'}</div></div>`;
+    html += `<div><span style="font-size:12px;color:#9EA2A1;">심사일</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${dateDisplay}</div></div></div>`;
+    html += `<button onclick="event.stopPropagation();startGroupEditCommon(${gIdx})" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;font-size:13px;flex-shrink:0;">공통 정보 수정</button>`;
     html += `</div></div>`;
   }
 
@@ -2336,7 +2476,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
       // 하단 고정: 전체 평균 + 버튼
       html += `<div style="margin-top:auto;padding-top:10px;border-top:1px solid rgba(192,206,209,0.3);">`;
       html += `<div class="flex justify-between items-center">`;
-      html += `<div><span style="font-size:11px;color:#9EA2A1;">전체 평균</span><span style="font-size:16px;font-weight:600;margin-left:6px;" class="badge-pill" style="${avgBadgeStyle(result.overallAverage)}">${result.overallAverage.toFixed(2)}</span></div>`;
+      html += `<div><span style="font-size:11px;color:#9EA2A1;">전체 평균</span><span style="font-size:15px;font-weight:600;margin-left:4px;" class="badge-pill" style="${avgBadgeStyle(result.overallAverage)}">${result.overallAverage.toFixed(2)}</span></div>`;
       html += `<div class="flex gap-1">`;
       html += `<button onclick="event.stopPropagation();startGroupTypeEdit(${gIdx},'${type}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">수정</button>`;
       html += `<button onclick="event.stopPropagation();deleteGroupType(${gIdx},'${type}')" style="background:none;border:none;color:#565A5B;font-size:12px;cursor:pointer;">삭제</button>`;
@@ -2849,7 +2989,7 @@ function renderStatsDashboard() {
   `;
 
   // Regional summary
-  let regHtml = '<table class="apple-table">';
+  let regHtml = '<table class="apple-table compact-mobile">';
   regHtml += '<thead><tr><th style="text-align:left;">지역</th><th style="text-align:center;">지점 평균</th><th style="text-align:center;">여객 평균</th><th style="text-align:center;">램프 평균</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   for (const [region] of Object.entries(REGIONS)) {
     const regionData = yearData.filter(d => d.region === region);
@@ -2879,7 +3019,7 @@ function renderStatsDashboard() {
     station, avg: v.sum / v.count, count: v.count, region: v.region
   })).sort((a, b) => b.avg - a.avg);
 
-  let rankHtml = '<table class="apple-table"><thead><tr><th style="text-align:center;width:48px;">순위</th><th style="text-align:left;">지점</th><th style="text-align:left;">지역</th><th style="text-align:center;">심사 건수</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
+  let rankHtml = '<table class="apple-table compact-mobile"><thead><tr><th style="text-align:center;width:48px;">순위</th><th style="text-align:left;">지점</th><th style="text-align:left;">지역</th><th style="text-align:center;">심사 건수</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   ranked.forEach((r, i) => {
     const rankBadge = i < 3
       ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:980px;background:#D20015;color:#fff;font-size:11px;font-weight:600;">${i+1}</span>`
@@ -3047,7 +3187,7 @@ function renderStatsDashboard() {
   document.getElementById('stationWeakPatterns').innerHTML = patternHtml;
 
   // Auditor activity stats
-  let audHtml = '<table class="apple-table"><thead><tr>';
+  let audHtml = '<table class="apple-table compact-mobile"><thead><tr>';
   audHtml += '<th style="text-align:left;">심사원</th>';
   audHtml += '<th style="text-align:left;">팀</th>';
   audHtml += '<th style="text-align:left;">권한그룹</th>';
@@ -3064,16 +3204,12 @@ function renderStatsDashboard() {
   auditorsSorted.forEach(a => {
     const count = getAuditorActivityCount(a.name, year);
     const ts = getTrainingStatus(a.trainingExpiry);
-    const barWidth = Math.min(count * 20, 100);
     audHtml += '<tr>';
     audHtml += `<td style="font-weight:600;">${a.name}</td>`;
     audHtml += `<td style="font-size:13px;color:#565A5B;">${a.team}</td>`;
     audHtml += `<td style="font-size:13px;">${a.role}</td>`;
     audHtml += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
-    audHtml += `<td style="text-align:center;"><div style="display:flex;align-items:center;gap:8px;justify-content:center;">`;
-    audHtml += `<div style="width:60px;background:#f5f5f7;border-radius:4px;height:6px;"><div style="height:6px;border-radius:4px;width:${barWidth}%;background:${count > 0 ? '#D20015' : '#C0CED1'};"></div></div>`;
-    audHtml += `<span style="font-size:14px;font-weight:600;">${count}건</span>`;
-    audHtml += `</div></td></tr>`;
+    audHtml += `<td style="text-align:center;font-weight:600;font-size:15px;color:${count > 0 ? '#D20015' : '#9EA2A1'};">${count}건</td></tr>`;
   });
 
   if (auditorList.length === 0) {
@@ -3114,7 +3250,7 @@ function renderStatsDashboard() {
   years.forEach(y => allData.filter(d => d.year == y).forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
-  threeYearHtml += '<table class="apple-table"><thead><tr>';
+  threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
   threeYearHtml += '<th style="text-align:left;">지점</th>';
   years.forEach((y, i) => {
     threeYearHtml += `<th style="text-align:center;">${y}년</th>`;
@@ -3155,7 +3291,7 @@ function renderStatsDashboard() {
   threeYearHtml += '</tbody></table></div>';
 
   // 3개년 추이 차트
-  threeYearHtml += '<div style="margin-top:16px;height:300px;"><canvas id="threeYearChart"></canvas></div>';
+  threeYearHtml += `<div style="margin-top:16px;height:${getChartHeight()}px;"><canvas id="threeYearChart"></canvas></div>`;
 
   document.getElementById('threeYearComparison').innerHTML = threeYearHtml;
 
@@ -3552,7 +3688,7 @@ function renderAnalysis() {
   if (comparisons.length === 0) {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">비교 가능한 데이터가 없습니다.</div>`;
   } else {
-    html += `<div class="overflow-x-auto"><table class="apple-table"><thead><tr><th style="text-align:left;">지점</th><th style="text-align:center;">${year-2}년</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화 (작년→올해)</th></tr></thead><tbody>`;
+    html += `<div class="overflow-x-auto"><table class="apple-table compact-mobile"><thead><tr><th style="text-align:left;">지점</th><th style="text-align:center;">${year-2}년</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화 (작년→올해)</th></tr></thead><tbody>`;
     comparisons.forEach(c => {
       html += `<tr><td style="font-weight:600;">${c.station}</td>`;
       // 재작년
@@ -3584,7 +3720,7 @@ function renderAnalysis() {
       html += `</tr>`;
     });
     html += `</tbody></table></div>`;
-    html += `<div style="margin-top:16px;"><div style="height:300px;"><canvas id="trendChart"></canvas></div></div>`;
+    html += `<div style="margin-top:16px;"><div style="height:${getChartHeight()}px;"><canvas id="trendChart"></canvas></div></div>`;
   }
   html += `</div>`;
 
@@ -3592,10 +3728,10 @@ function renderAnalysis() {
   html += `<div id="analysisDetail2" class="hidden apple-card p-6 mb-6 fade-in">`;
   html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:4px;">리스크 매트릭스</h3>`;
   html += `<p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">평균 점수가 낮고, 2점 이하 빈도가 높은 항목 = 고위험</p>`;
-  html += `<div style="height:350px;margin-bottom:16px;"><canvas id="riskChart"></canvas></div>`;
+  html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="riskChart"></canvas></div>`;
   if (highRiskItems.length > 0) {
     html += `<h4 style="font-size:14px;font-weight:600;color:#D20015;margin-bottom:8px;">고위험 항목 목록</h4>`;
-    html += `<table class="apple-table"><thead><tr><th>항목</th><th style="text-align:center;">평균</th><th style="text-align:center;">2점이하 빈도</th></tr></thead><tbody>`;
+    html += `<table class="apple-table compact-mobile"><thead><tr><th>항목</th><th style="text-align:center;">평균</th><th style="text-align:center;">2점이하 빈도</th></tr></thead><tbody>`;
     highRiskItems.forEach(r => {
       html += `<tr><td style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 40)}${r.text.length > 40 ? '...' : ''}</td>`;
       html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td>`;
@@ -3610,10 +3746,10 @@ function renderAnalysis() {
   // Detail 3: Type Comparison
   html += `<div id="analysisDetail3" class="hidden apple-card p-6 mb-6 fade-in">`;
   html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">구분별 비교 분석</h3>`;
-  html += `<div style="height:350px;margin-bottom:16px;"><canvas id="typeCompChart"></canvas></div>`;
+  html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="typeCompChart"></canvas></div>`;
   // Gap analysis table
   html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:8px;">지점-외주 격차 분석</h4>`;
-  html += `<table class="apple-table"><thead><tr><th>지점</th><th style="text-align:center;">지점 점수</th><th style="text-align:center;">여객 점수</th><th style="text-align:center;">램프 점수</th><th style="text-align:center;">격차</th></tr></thead><tbody>`;
+  html += `<table class="apple-table compact-mobile"><thead><tr><th>지점</th><th style="text-align:center;">지점 점수</th><th style="text-align:center;">여객 점수</th><th style="text-align:center;">램프 점수</th><th style="text-align:center;">격차</th></tr></thead><tbody>`;
   const stationGroups = {};
   yearData.forEach(d => {
     if (!stationGroups[d.station]) stationGroups[d.station] = {};
@@ -3643,7 +3779,7 @@ function renderAnalysis() {
   if (recurringWeak.length === 0) {
     html += `<div style="color:#22C55E;text-align:center;padding:20px;">반복 미흡 항목이 없습니다.</div>`;
   } else {
-    html += `<table class="apple-table"><thead><tr><th>항목</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화</th><th style="text-align:center;">판정</th></tr></thead><tbody>`;
+    html += `<table class="apple-table compact-mobile"><thead><tr><th>항목</th><th style="text-align:center;">${year-1}년</th><th style="text-align:center;">${year}년</th><th style="text-align:center;">변화</th><th style="text-align:center;">판정</th></tr></thead><tbody>`;
     recurringWeak.forEach(r => {
       const deltaColor = r.delta > 0.01 ? '#22C55E' : r.delta < -0.01 ? '#D20015' : '#9EA2A1';
       const verdict = r.delta > 0.01 ? '소폭 개선' : r.delta < -0.01 ? '악화' : '정체';
@@ -3695,7 +3831,7 @@ function renderAnalysis() {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">지점 데이터가 없습니다.</div>`;
   } else {
     const heatmapCats = Object.keys(heatmapData[0].categories);
-    html += `<div class="overflow-x-auto"><table class="apple-table" style="font-size:13px;"><thead><tr>`;
+    html += `<div class="overflow-x-auto"><table class="apple-table compact-mobile" style="font-size:13px;"><thead><tr>`;
     html += `<th style="text-align:left;min-width:80px;">지점</th>`;
     heatmapCats.forEach(cat => {
       const shortCat = cat.replace(/^\d+\.\s*/, '').substring(0, 8);
@@ -3742,7 +3878,7 @@ function renderAnalysis() {
   if (consistencyData.length === 0) {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">데이터가 없습니다.</div>`;
   } else {
-    html += `<div class="overflow-x-auto"><table class="apple-table"><thead><tr>`;
+    html += `<div class="overflow-x-auto"><table class="apple-table compact-mobile"><thead><tr>`;
     html += `<th style="text-align:left;">지점</th><th style="text-align:center;">평균</th><th style="text-align:center;">표준편차</th><th style="text-align:center;">최소</th><th style="text-align:center;">최대</th><th style="text-align:center;">일관성 등급</th>`;
     html += `</tr></thead><tbody>`;
     consistencyData.forEach(c => {
@@ -3767,9 +3903,9 @@ function renderAnalysis() {
   html += `<div id="analysisDetail8" class="hidden apple-card p-6 mb-6 fade-in">`;
   html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:4px;">개선 우선순위 매트릭스</h3>`;
   html += `<p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">X축: 현재 평균 점수 (낮을수록 긴급), Y축: 최대 배점 (높을수록 영향력 큼)</p>`;
-  html += `<div style="height:350px;margin-bottom:16px;"><canvas id="priorityChart"></canvas></div>`;
+  html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="priorityChart"></canvas></div>`;
   html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:8px;">우선순위 목록 (영향도 × 격차)</h4>`;
-  html += `<table class="apple-table"><thead><tr><th style="text-align:left;">카테고리</th><th style="text-align:center;">평균</th><th style="text-align:center;">최대배점</th><th style="text-align:center;">격차</th><th style="text-align:center;">우선순위 점수</th></tr></thead><tbody>`;
+  html += `<table class="apple-table compact-mobile"><thead><tr><th style="text-align:left;">카테고리</th><th style="text-align:center;">평균</th><th style="text-align:center;">최대배점</th><th style="text-align:center;">격차</th><th style="text-align:center;">우선순위 점수</th></tr></thead><tbody>`;
   priorityItems.forEach(p => {
     const urgentColor = p.avg < 3.0 ? '#D20015' : '#303A3C';
     html += `<tr>`;
@@ -3791,9 +3927,9 @@ function renderAnalysis() {
   if (regionEntries.length === 0) {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">지역별 데이터가 없습니다.</div>`;
   } else {
-    html += `<div style="height:350px;margin-bottom:16px;"><canvas id="regionalRadarChart"></canvas></div>`;
+    html += `<div style="height:${getChartHeight()}px;margin-bottom:16px;"><canvas id="regionalRadarChart"></canvas></div>`;
     html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:8px;">지역별 취약 카테고리</h4>`;
-    html += `<table class="apple-table"><thead><tr><th style="text-align:left;">지역</th><th style="text-align:left;">취약 카테고리</th><th style="text-align:center;">점수</th><th style="text-align:center;">전체 평균</th></tr></thead><tbody>`;
+    html += `<table class="apple-table compact-mobile"><thead><tr><th style="text-align:left;">지역</th><th style="text-align:left;">취약 카테고리</th><th style="text-align:center;">점수</th><th style="text-align:center;">전체 평균</th></tr></thead><tbody>`;
     regionEntries.forEach(([region, cats]) => {
       const entries = Object.entries(cats);
       if (entries.length === 0) return;
@@ -3817,35 +3953,39 @@ function renderAnalysis() {
 }
 
 function toggleAnalysisDetail(id) {
-  const el = document.getElementById(id);
-  const wasHidden = el.classList.contains('hidden');
-
-  // 다른 상세 섹션 모두 닫기
+  // Close all other details
   ['analysisDetail1','analysisDetail2','analysisDetail3','analysisDetail4','analysisDetail5','analysisDetail6','analysisDetail7','analysisDetail8','analysisDetail9'].forEach(detailId => {
     if (detailId !== id) document.getElementById(detailId)?.classList.add('hidden');
   });
 
-  // 선택한 섹션 토글
+  const el = document.getElementById(id);
+  const wasHidden = el.classList.contains('hidden');
   el.classList.toggle('hidden');
 
   if (wasHidden) {
+    // Add a close button at the top if not already there
+    if (!el.querySelector('.detail-close-btn')) {
+      const closeBtn = document.createElement('div');
+      closeBtn.className = 'detail-close-btn';
+      closeBtn.innerHTML = `<button onclick="document.getElementById('${id}').classList.add('hidden');window.scrollTo({top:document.getElementById('analysisContainer').offsetTop-60,behavior:'smooth'})" class="pill-btn pill-btn-outline" style="font-size:12px;padding:4px 14px;margin-bottom:12px;">&#10005; 닫기</button>`;
+      el.insertBefore(closeBtn, el.firstChild);
+    }
+
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Render charts on first open
+
     const data = window._analysisData;
     if (!data) return;
-
-    if (id === 'analysisDetail1' && data.comparisons.length > 0) {
-      renderTrendChart(data);
-    } else if (id === 'analysisDetail2') {
-      renderRiskChart(data);
-    } else if (id === 'analysisDetail3') {
-      renderTypeCompChart(data);
-    } else if (id === 'analysisDetail8') {
-      renderPriorityChart(data);
-    } else if (id === 'analysisDetail9') {
-      renderRegionalRadarChart(data);
-    }
+    if (id === 'analysisDetail1' && data.comparisons.length > 0) renderTrendChart(data);
+    else if (id === 'analysisDetail2') renderRiskChart(data);
+    else if (id === 'analysisDetail3') renderTypeCompChart(data);
+    else if (id === 'analysisDetail8') renderPriorityChart(data);
+    else if (id === 'analysisDetail9') renderRegionalRadarChart(data);
   }
+}
+
+function closeAnalysisModal() {
+  document.getElementById('analysisModalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
 }
 
 function renderTrendChart(data) {
@@ -4126,85 +4266,87 @@ function renderSchedule() {
   </div>`;
   html += '</div>';
 
-  // Monthly calendar grid
-  html += '<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">';
-  for (let m = 1; m <= 12; m++) {
-    const items = monthMap[m];
-    const isCurrentMonth = m === currentMonth;
-    const ringStyle = isCurrentMonth ? 'box-shadow:0 0 0 2px #D20015;' : '';
+  // === HORIZONTAL TIMELINE ===
+  html += '<div class="apple-card p-6 mb-6">';
+  html += '<div id="timelineContainer" style="overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:10px 0;">';
+  html += '<div style="display:flex;align-items:flex-start;min-width:max-content;padding:0 20px;">';
 
-    // Determine month status based on contained items (priority: overdue > incomplete > in_progress > completed > upcoming)
+  for (let m = 1; m <= 12; m++) {
+    const items = monthMap[m] || [];
+    const isCurrentMonth = m === currentMonth;
+    const isPast = m < currentMonth;
+
+    // Month status
     let monthStatus = 'upcoming';
     if (items.length > 0) {
       const hasOverdue = items.some(i => i.status === 'overdue');
       const hasIncomplete = items.some(i => i.status === 'incomplete');
-      const hasInProgress = items.some(i => i.status === 'in_progress');
       const allCompleted = items.every(i => i.status === 'completed');
+      const hasInProgress = items.some(i => i.status === 'in_progress');
       if (hasOverdue) monthStatus = 'overdue';
       else if (hasIncomplete) monthStatus = 'incomplete';
-      else if (allCompleted) monthStatus = 'completed';
+      else if (allCompleted && items.length > 0) monthStatus = 'completed';
       else if (hasInProgress) monthStatus = 'in_progress';
     }
 
-    const scheduleClass = { completed: 'schedule-completed', in_progress: 'schedule-in-progress', upcoming: 'schedule-upcoming', incomplete: 'schedule-in-progress', overdue: 'schedule-completed' };
+    const dotColor = monthStatus === 'completed' ? '#22C55E' : monthStatus === 'in_progress' ? '#F59E0B' : monthStatus === 'overdue' ? '#D20015' : '#C0CED1';
+    const lineColor = isPast || monthStatus === 'completed' ? '#22C55E' : '#E5E7EB';
 
-    html += `<div class="apple-card ${scheduleClass[monthStatus]}" style="padding:16px;${ringStyle}">`;
-    html += `<div class="flex items-center justify-between" style="margin-bottom:10px;">`;
-    html += `<span style="font-size:20px;font-weight:600;color:#303A3C;letter-spacing:-0.28px;">${m}월</span>`;
+    // Each month column
+    html += `<div id="timelineMonth${m}" style="display:flex;flex-direction:column;align-items:center;min-width:${isCurrentMonth ? '90' : '70'}px;cursor:pointer;" onclick="scrollToMonthDetail(${m})">`;
+    // Dot
+    html += `<div style="width:${isCurrentMonth ? '16' : '10'}px;height:${isCurrentMonth ? '16' : '10'}px;border-radius:50%;background:${isCurrentMonth ? '#D20015' : dotColor};${isCurrentMonth ? 'box-shadow:0 0 0 4px rgba(210,0,21,0.15);' : ''}flex-shrink:0;"></div>`;
+    // Month label
+    html += `<div style="font-size:${isCurrentMonth ? '14' : '12'}px;font-weight:${isCurrentMonth ? '700' : '400'};color:${isCurrentMonth ? '#D20015' : '#303A3C'};margin-top:6px;">${m}월</div>`;
+    // Station count or names
     if (items.length > 0) {
-      const mLabel = getScheduleStatusLabels()[monthStatus] || monthStatus;
-      html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(monthStatus)}">${mLabel}</span>`;
-    }
-    html += `</div>`;
-
-    if (items.length === 0) {
-      html += '<p style="font-size:13px;color:#9EA2A1;">예정 없음</p>';
+      const stationNames = items.map(i => (i.displayName || i.station).substring(0, 4)).join('\u00b7');
+      html += `<div style="font-size:9px;color:#9EA2A1;margin-top:2px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${stationNames}</div>`;
+      html += `<span class="badge-pill" style="${getScheduleStatusBadgeStyle(monthStatus)};font-size:8px;padding:0 4px;margin-top:2px;">${items.length}건</span>`;
     } else {
-      items.forEach(item => {
-        const itemStatusDot = item.status === 'completed' ? '#22C55E' : (item.status === 'in_progress' ? '#F59E0B' : '#9EA2A1');
-        html += `<div onclick="showScheduleStation('${item.id}')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin:2px -8px;border-radius:8px;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background='rgba(210,0,21,0.04)'" onmouseout="this.style.background='transparent'">`;
-        html += `<span style="width:6px;height:6px;border-radius:50%;background:${itemStatusDot};flex-shrink:0;"></span>`;
-        const itemCycle = item.auditCycle || (STATION_AUDIT_CYCLES[item.station] ? STATION_AUDIT_CYCLES[item.station].cycle : null);
-        const itemCycleBadge = itemCycle && CYCLE_LABELS[itemCycle] ? `<span class="badge-pill" style="${CYCLE_LABELS[itemCycle].style};font-size:9px;padding:1px 6px;margin-left:4px;">${CYCLE_LABELS[itemCycle].label}</span>` : '';
-        html += `<div style="flex:1;min-width:0;">`;
-        html += `<div style="font-size:14px;color:#303A3C;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.displayName || item.station}${itemCycleBadge}</div>`;
-        if (item.auditors) {
-          html += `<div style="font-size:11px;color:#9EA2A1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.auditors}</div>`;
-        }
-        html += `</div>`;
-        html += `<svg style="width:14px;height:14px;color:#C0CED1;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
-        html += `</div>`;
-      });
+      html += `<div style="font-size:9px;color:#C0CED1;margin-top:2px;">-</div>`;
     }
     html += `</div>`;
-  }
-  html += '</div>';
 
-  // List view table
-  html += '<div class="apple-card p-6">';
+    // Horizontal connecting line
+    if (m < 12) {
+      html += `<div style="flex-shrink:0;width:20px;height:2px;background:${lineColor};margin-top:${isCurrentMonth ? '7' : '4'}px;align-self:flex-start;"></div>`;
+    }
+  }
+
+  html += '</div></div></div>';
+
+  // === SCHEDULE LIST TABLE ===
+  html += '<div class="apple-card p-6 mb-6">';
   html += '<h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">심사 일정 목록</h3>';
-  html += '<div class="overflow-x-auto">';
-  html += '<table class="apple-table"><thead><tr><th style="text-align:center;">월</th><th style="text-align:left;">대상</th><th style="text-align:left;">심사원</th><th style="text-align:center;">심사 기간</th><th style="text-align:center;">상태</th></tr></thead><tbody>';
+  html += '<div class="overflow-x-auto"><table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:center;">월</th>';
+  html += '<th style="text-align:left;">대상</th>';
+  html += '<th style="text-align:left;">심사원</th>';
+  html += '<th style="text-align:center;">심사 기간</th>';
+  html += '<th style="text-align:center;">상태</th>';
+  html += '</tr></thead><tbody>';
 
   for (let m = 1; m <= 12; m++) {
-    const items = monthMap[m];
+    const items = monthMap[m] || [];
     if (items.length === 0) {
-      html += `<tr><td style="text-align:center;font-weight:600;">${m}월</td><td style="color:#9EA2A1;" colspan="3">예정 없음</td><td style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle('upcoming')}">예정</span></td></tr>`;
+      html += `<tr><td data-label="월" style="text-align:center;font-weight:600;">${m}월</td><td data-label="대상" style="color:#9EA2A1;">예정 없음</td><td data-label="심사원">-</td><td data-label="심사 기간" style="text-align:center;">-</td><td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle('upcoming')}">예정</span></td></tr>`;
     } else {
       items.forEach((item, i) => {
-        html += '<tr>';
-        if (i === 0) html += `<td style="text-align:center;font-weight:600;" rowspan="${items.length}">${m}월</td>`;
-        html += `<td><a href="javascript:void(0)" onclick="showScheduleStation('${item.id}')" style="color:#303A3C;text-decoration:none;font-weight:500;" onmouseover="this.style.color='#D20015'" onmouseout="this.style.color='#303A3C'">${item.displayName || item.station}</a></td>`;
-        html += `<td style="font-size:13px;color:#565A5B;">${item.auditors || '-'}</td>`;
-        const dateStr = item.dateStart ? (item.dateEnd && item.dateEnd !== item.dateStart ? `${item.dateStart} ~ ${item.dateEnd}` : item.dateStart) : '-';
-        html += `<td style="text-align:center;font-size:13px;color:#565A5B;">${dateStr}</td>`;
-        html += `<td style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(item.status)}">${calcScheduleStatus(item).label}</span></td>`;
+        const statusResult = calcScheduleStatus(item);
+        const dateStr = item.dateStart ? (item.dateEnd && item.dateEnd !== item.dateStart ? item.dateStart.substring(5) + ' ~ ' + item.dateEnd.substring(5) : item.dateStart.substring(5)) : '-';
+        html += '<tr style="cursor:pointer;" onclick="showScheduleStation(\'' + item.id + '\')">';
+        if (i === 0) html += `<td data-label="월" style="text-align:center;font-weight:600;" rowspan="${items.length}">${m}월</td>`;
+        html += `<td data-label="대상" style="font-weight:500;">${item.displayName || item.station}</td>`;
+        html += `<td data-label="심사원" style="font-size:12px;color:#565A5B;">${item.auditors || '-'}</td>`;
+        html += `<td data-label="심사 기간" style="text-align:center;font-size:12px;">${dateStr}</td>`;
+        html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(statusResult.status)}">${statusResult.label}</span></td>`;
         html += '</tr>';
       });
     }
   }
-  html += '</tbody></table>';
-  html += '</div></div>';
+
+  html += '</tbody></table></div></div>';
 
   // "올해 심사 없음" section
   const scheduledStations = new Set(scheduleData.filter(s => s.year === 2026).map(s => s.station));
@@ -4229,7 +4371,7 @@ function renderSchedule() {
     html += '<svg class="w-5 h-5" style="color:#9EA2A1;transition:transform 0.2s;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>';
     html += '</div>';
     html += '<div id="noAuditSection" class="hidden">';
-    html += '<table class="apple-table"><thead><tr>';
+    html += '<table class="apple-table compact-mobile"><thead><tr>';
     html += '<th style="text-align:left;">지점</th><th style="text-align:left;">지역</th>';
     html += '<th style="text-align:center;">심사 주기</th><th style="text-align:center;">마지막 심사</th>';
     html += '<th style="text-align:center;">다음 예정</th><th style="text-align:center;">관리</th>';
@@ -4250,6 +4392,30 @@ function renderSchedule() {
   }
 
   document.getElementById('scheduleContainer').innerHTML = html;
+
+  // Auto-scroll timeline to current month
+  setTimeout(() => {
+    const timelineEl = document.getElementById('timelineMonth' + (new Date().getMonth() + 1));
+    const timelineContainer = document.getElementById('timelineContainer');
+    if (timelineEl && timelineContainer) {
+      timelineContainer.scrollLeft = timelineEl.offsetLeft - timelineContainer.offsetWidth / 2 + timelineEl.offsetWidth / 2;
+    }
+  }, 100);
+}
+
+function scrollToMonthDetail(month) {
+  // Scroll the list table to show the month's row
+  const rows = document.querySelectorAll('.apple-table tbody tr');
+  for (const row of rows) {
+    const monthCell = row.querySelector('td[data-label="\uc6d4"]');
+    if (monthCell && monthCell.textContent.trim() === month + '\uc6d4') {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Brief highlight
+      row.style.background = 'rgba(210,0,21,0.08)';
+      setTimeout(() => { row.style.background = ''; }, 1500);
+      break;
+    }
+  }
 }
 
 function showScheduleStation(scheduleId) {
@@ -4860,7 +5026,7 @@ function renderAuditorList() {
   if (!container) return;
   const currentYear = new Date().getFullYear();
 
-  let html = '<table class="apple-table"><thead><tr>';
+  let html = '<table class="apple-table compact-mobile"><thead><tr>';
   html += '<th style="text-align:left;">성명</th>';
   html += '<th style="text-align:left;">팀</th>';
   html += '<th style="text-align:left;">권한그룹</th>';
@@ -5436,6 +5602,121 @@ function renderHome() {
   document.getElementById('homeTrainingAlerts').innerHTML = alertHtml;
 }
 
+// ============================================================================
+// STATION LIST TABLES (Input Tab & View Tab)
+// ============================================================================
+function renderInputPendingStations() {
+  const container = document.getElementById('inputPendingStations');
+  if (!container) return;
+  const year = parseInt(document.getElementById('inputYear').value);
+
+  // Get schedule data sorted by date, filter to stations without all 3 checklists
+  const pendingStations = [];
+  scheduleData.filter(s => s.year === year).forEach(s => {
+    const completedTypes = ['branch', 'pax', 'ramp'].filter(type => {
+      return allData.some(d => d.year == year && d.station === s.station && d.type === type);
+    });
+    if (completedTypes.length < 3) {
+      pendingStations.push({
+        station: s.station,
+        displayName: s.displayName || s.station,
+        month: s.month,
+        dateStart: s.dateStart,
+        auditors: s.auditors,
+        completed: completedTypes.length,
+        status: calcScheduleStatus(s)
+      });
+    }
+  });
+
+  // Sort by month/date (earliest first = most urgent)
+  pendingStations.sort((a, b) => {
+    if (a.month !== b.month) return a.month - b.month;
+    return (a.dateStart || '').localeCompare(b.dateStart || '');
+  });
+
+  if (pendingStations.length === 0) {
+    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">모든 지점의 점검표가 입력 완료되었습니다.</div></div>';
+    return;
+  }
+
+  let html = '<div class="apple-card" style="padding:14px;">';
+  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">점검표 미입력 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + pendingStations.length + '건)</span></h3>';
+  html += '<table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:left;">지점</th>';
+  html += '<th style="text-align:center;">심사월</th>';
+  html += '<th style="text-align:center;">진행</th>';
+  html += '<th style="text-align:center;">상태</th>';
+  html += '</tr></thead><tbody>';
+
+  pendingStations.forEach(s => {
+    html += `<tr style="cursor:pointer;" onclick="document.getElementById('inputStation').value='${s.station}';inputSearch()">`;
+    html += `<td data-label="지점" style="font-weight:600;">${s.displayName}</td>`;
+    html += `<td data-label="심사월" style="text-align:center;font-size:12px;">${s.month}월</td>`;
+    html += `<td data-label="진행" style="text-align:center;"><span class="badge-pill" style="background:${s.completed > 0 ? 'rgba(245,158,11,0.15);color:#F59E0B' : 'rgba(158,162,161,0.15);color:#9EA2A1'}">${s.completed}/3</span></td>`;
+    html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(s.status.status)};font-size:10px;">${s.status.label}</span></td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function renderViewRecentStations() {
+  const container = document.getElementById('viewRecentStations');
+  if (!container) return;
+  const year = parseInt(document.getElementById('viewYear').value);
+
+  // Get all stations with data for this year, grouped by station
+  const stationMap = {};
+  allData.filter(d => d.year == year).forEach(d => {
+    if (!stationMap[d.station]) {
+      stationMap[d.station] = {
+        station: d.station,
+        region: d.region,
+        types: {},
+        latestDate: ''
+      };
+    }
+    stationMap[d.station].types[d.type] = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+    // Track latest audit date
+    const date = d.auditDateStart || d.auditDate || '';
+    if (date > stationMap[d.station].latestDate) stationMap[d.station].latestDate = date;
+  });
+
+  // Sort by latest date descending (most recent first)
+  const stations = Object.values(stationMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
+
+  if (stations.length === 0) {
+    container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">' + year + '년 입력된 점검표가 없습니다.</div></div>';
+    return;
+  }
+
+  let html = '<div class="apple-card" style="padding:14px;">';
+  html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 심사 완료 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + stations.length + '개 지점)</span></h3>';
+  html += '<table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:left;">지점</th>';
+  html += '<th style="text-align:center;">지점</th>';
+  html += '<th style="text-align:center;">여객</th>';
+  html += '<th style="text-align:center;">램프</th>';
+  html += '<th style="text-align:center;">심사일</th>';
+  html += '</tr></thead><tbody>';
+
+  stations.forEach(s => {
+    const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
+    html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
+    html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
+    html += `<td data-label="지점 점수" style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+    html += `<td data-label="여객 점수" style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+    html += `<td data-label="램프 점수" style="text-align:center;">${s.types.ramp ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.ramp) + '">' + s.types.ramp.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
+    html += `<td data-label="심사일" style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
 function init() {
   loadCustomStations();
   loadAllData();
@@ -5444,9 +5725,30 @@ function init() {
   populateStationDropdown();
   switchTab(0);
   initFirebase();
+  renderInputPendingStations();
+
+  // FAB scroll to top
+  window.addEventListener('scroll', () => {
+    const fab = document.getElementById('fabScrollTop');
+    if (fab) fab.style.display = window.scrollY > 300 ? 'block' : 'none';
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
+<!-- FAB: Scroll to Top -->
+<button id="fabScrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:80px;right:16px;z-index:999;width:44px;height:44px;border-radius:50%;background:#D20015;color:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);cursor:pointer;font-size:18px;line-height:44px;text-align:center;transition:opacity 0.2s;">&#8593;</button>
+
+<!-- Analysis Modal Overlay -->
+<div id="analysisModalOverlay" class="analysis-modal-overlay" onclick="if(event.target===this)closeAnalysisModal()">
+  <div class="analysis-modal">
+    <div class="analysis-modal-header">
+      <h3 id="analysisModalTitle" style="font-size:17px;font-weight:600;color:#303A3C;"></h3>
+      <button onclick="closeAnalysisModal()" style="background:none;border:none;font-size:24px;color:#9EA2A1;cursor:pointer;padding:0 4px;">&times;</button>
+    </div>
+    <div class="analysis-modal-body" id="analysisModalBody"></div>
+  </div>
+</div>
+
 </body>
 </html>
