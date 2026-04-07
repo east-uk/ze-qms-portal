@@ -592,19 +592,40 @@ select.apple-input {
 <!-- APP WRAPPER (hidden until login) -->
 <div id="appWrapper" style="display:none;">
 
-<!-- Header - Glass Navigation -->
-<header class="glass-nav text-white sticky top-0 z-50" style="height:52px;display:flex;flex-direction:column;justify-content:center;">
-  <div class="max-w-7xl mx-auto px-4 w-full flex items-center justify-between" style="height:52px;">
+<!-- Header - Glass Navigation (모바일 2줄 / 데스크톱 1줄) -->
+<header class="glass-nav text-white sticky top-0 z-50">
+  <!-- 데스크톱 헤더 (md 이상) -->
+  <div class="hidden md:flex max-w-7xl mx-auto px-4 w-full items-center justify-between" style="height:52px;">
     <div class="flex items-center gap-2.5" style="cursor:pointer;" onclick="goToHome()">
       <svg class="w-6 h-6" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
       <h1 style="font-size:15px;font-weight:600;letter-spacing:-0.224px;line-height:1.14;color:#ffffff;">이스타항공 품질관리시스템 포털</h1>
     </div>
-    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;display:flex;align-items:center;gap:8px;">
+    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);display:flex;align-items:center;gap:8px;">
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span>v14</span>
-      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태 확인 중"></span>
+      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
+    </div>
+  </div>
+  <!-- 모바일 헤더 (md 미만, 2줄) -->
+  <div class="md:hidden px-4 py-2">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2" style="cursor:pointer;" onclick="goToHome()">
+        <svg class="w-5 h-5" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
+        <span style="font-size:14px;font-weight:600;color:#fff;letter-spacing:-0.3px;">이스타항공 품질관리시스템 포털</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:rgba(255,255,255,0.5);">v14</span>
+        <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
+      </div>
+    </div>
+    <div class="flex items-center justify-between" style="margin-top:4px;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);">
+        <span id="headerUserNameMobile" style="color:rgba(255,255,255,0.85);font-weight:500;"></span>
+        <span style="margin-left:4px;color:#D20015;font-weight:600;">안전기획팀</span>
+      </div>
+      <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.6);border-radius:980px;padding:2px 10px;font-size:10px;cursor:pointer;">로그아웃</button>
     </div>
   </div>
 </header>
@@ -2590,9 +2611,11 @@ async function doLogout() {
 function onLoginSuccess() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appWrapper').style.display = '';
-  // 헤더에 사용자 이름 표시
+  // 헤더에 사용자 이름 표시 (데스크톱 + 모바일)
   const nameEl = document.getElementById('headerUserName');
   if (nameEl) nameEl.textContent = currentUser.name || currentUser.empNo;
+  const nameElM = document.getElementById('headerUserNameMobile');
+  if (nameElM) nameElM.textContent = currentUser.name || currentUser.empNo;
   // 역할별 UI 적용
   applyRolePermissions(currentUser.role);
   // 앱 데이터 로드 (최초 1회)
@@ -2724,12 +2747,12 @@ async function deleteUser(uid, empNo) {
 }
 
 function updateSyncStatus() {
-  // Update a small indicator if it exists
-  const indicator = document.getElementById('syncIndicator');
-  if (indicator) {
-    indicator.style.background = firebaseConnected ? '#22C55E' : '#D20015';
-    indicator.title = firebaseConnected ? '실시간 동기화 연결됨' : '오프라인 (로컬 저장)';
-  }
+  const color = firebaseConnected ? '#22C55E' : '#D20015';
+  const title = firebaseConnected ? '실시간 동기화 연결됨' : '오프라인 (로컬 저장)';
+  ['syncIndicator', 'syncIndicatorMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.background = color; el.title = title; }
+  });
 }
 
 function loadCustomStations() {
