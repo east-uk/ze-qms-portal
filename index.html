@@ -620,7 +620,7 @@ select.apple-input {
         <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
       </div>
     </div>
-    <div class="flex items-center justify-between" style="margin-top:4px;">
+    <div class="flex items-center justify-end gap-3" style="margin-top:4px;">
       <div style="font-size:11px;color:rgba(255,255,255,0.6);">
         <span id="headerUserNameMobile" style="color:rgba(255,255,255,0.85);font-weight:500;"></span>
         <span style="margin-left:4px;color:#D20015;font-weight:600;">안전기획팀</span>
@@ -2664,22 +2664,30 @@ async function renderUserManagement() {
   try {
     const snap = await firebaseDb.ref('users').once('value');
     const users = snap.val() || {};
-    let html = '<table class="apple-table"><thead><tr><th>사번</th><th>이름</th><th>역할</th><th>등록일</th><th>관리</th></tr></thead><tbody>';
-    for (const [uid, u] of Object.entries(users)) {
+    let html = '';
+    const userEntries = Object.entries(users);
+    // 카드형 사용자 목록 (모바일 친화)
+    html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+    for (const [uid, u] of userEntries) {
       const isSelf = uid === currentUser.uid;
-      html += `<tr>`;
-      html += `<td>${u.empNo || '-'}</td>`;
-      html += `<td style="font-weight:${isSelf?'600':'400'};">${u.name || '-'}${isSelf?' (나)':''}</td>`;
-      html += `<td><select onchange="changeUserRole('${uid}',this.value)" class="apple-input" style="padding:4px 8px;font-size:12px;" ${isSelf?'disabled':''}>`;
+      const roleLabel = u.role==='admin'?'관리자':u.role==='auditor'?'심사원':'뷰어';
+      html += `<div style="background:#f9fafb;border-radius:12px;padding:14px;border:1px solid rgba(192,206,209,0.3);">`;
+      html += `<div class="flex items-center justify-between" style="margin-bottom:8px;">`;
+      html += `<div><span style="font-size:15px;font-weight:${isSelf?'700':'600'};color:#303A3C;">${u.name || '-'}${isSelf?' <span style="font-size:11px;color:#9EA2A1;">(나)</span>':''}</span>`;
+      html += `<div style="font-size:12px;color:#9EA2A1;margin-top:2px;">${u.empNo || '-'} · ${u.createdAt || '-'}</div></div>`;
+      if (!isSelf) html += `<button onclick="deleteUser('${uid}','${u.empNo}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;flex-shrink:0;">삭제</button>`;
+      html += `</div>`;
+      html += `<div class="flex items-center gap-2">`;
+      html += `<span style="font-size:12px;color:#565A5B;">역할:</span>`;
+      html += `<select onchange="changeUserRole('${uid}',this.value)" class="apple-input" style="padding:4px 10px;font-size:12px;flex:1;max-width:140px;" ${isSelf?'disabled':''}>`;
       ['admin','auditor','viewer'].forEach(r => {
         html += `<option value="${r}" ${u.role===r?'selected':''}>${r==='admin'?'관리자':r==='auditor'?'심사원':'뷰어'}</option>`;
       });
-      html += `</select></td>`;
-      html += `<td style="font-size:12px;">${u.createdAt || '-'}</td>`;
-      html += `<td>${isSelf?'-':`<button onclick="deleteUser('${uid}','${u.empNo}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">삭제</button>`}</td>`;
-      html += `</tr>`;
+      html += `</select></div>`;
+      html += `</div>`;
     }
-    html += '</tbody></table>';
+    html += '</div>';
+    html += `<div style="font-size:12px;color:#9EA2A1;margin-top:8px;">총 ${userEntries.length}명</div>`;
     // 사용자 추가 폼
     html += `<div class="apple-card" style="padding:16px;margin-top:16px;">`;
     html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">새 사용자 추가</h4>`;
