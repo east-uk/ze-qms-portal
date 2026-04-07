@@ -6692,7 +6692,31 @@ function showScheduleStation(scheduleId) {
   const gridCols = types.length <= 3 ? types.length : Math.min(types.length, 4);
 
   if (stationData.length > 0 || isDivisionSchedule) {
-    html += `<div class="grid gap-4 mb-5" style="grid-template-columns:repeat(${gridCols},1fr);">`;
+    // 전체 평균 계산
+    const gradeAvgs = [];
+    types.forEach(t => {
+      const record = stationData.find(d => d.type === t.key);
+      if (record && t.scoring !== 'binary') {
+        const result = calculateScores(record.scores, getChecklist(t.key));
+        if (result.overallAverage > 0) gradeAvgs.push(result.overallAverage);
+      }
+    });
+    const totalAvg = gradeAvgs.length > 0 ? gradeAvgs.reduce((a, b) => a + b, 0) / gradeAvgs.length : null;
+    const totalGridCols = gridCols + 1;
+
+    html += `<div class="grid gap-4 mb-5" style="grid-template-columns:repeat(${totalGridCols},1fr);">`;
+    // 전체 평균 카드
+    html += `<div style="background:rgba(210,0,21,0.06);border:1px solid rgba(210,0,21,0.15);border-radius:12px;padding:16px;text-align:center;">`;
+    html += `<div style="font-size:11px;color:#D20015;margin-bottom:4px;word-break:keep-all;font-weight:500;">전체 평균</div>`;
+    if (totalAvg != null) {
+      html += `<div style="font-size:24px;font-weight:700;color:#303A3C;letter-spacing:-0.28px;">${totalAvg.toFixed(2)}</div>`;
+      html += `<div style="font-size:11px;color:#9EA2A1;">달성률 ${(totalAvg / 4 * 100).toFixed(1)}%</div>`;
+    } else {
+      html += `<div style="font-size:24px;font-weight:600;color:#C0CED1;">-</div>`;
+      html += `<div style="font-size:11px;color:#C0CED1;">미실시</div>`;
+    }
+    html += `</div>`;
+
     types.forEach(t => {
       const record = stationData.find(d => d.type === t.key);
       if (record) {
@@ -8014,6 +8038,7 @@ function renderViewRecentStations() {
     html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 심사 완료 지점 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + branchStations.length + '개 지점)</span></h3>';
     html += '<table class="apple-table compact-mobile"><thead><tr>';
     html += '<th style="text-align:left;">지점</th>';
+    html += '<th style="text-align:center;">전체</th>';
     html += '<th style="text-align:center;">지점</th>';
     html += '<th style="text-align:center;">여객</th>';
     html += '<th style="text-align:center;">램프</th>';
@@ -8021,8 +8046,11 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     branchStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
+      const vals = [s.types.branch, s.types.pax, s.types.ramp].filter(v => v != null);
+      const totalAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
       html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewStationSearch').value='${s.station}';viewSearch()">`;
       html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
+      html += `<td style="text-align:center;">${totalAvg != null ? '<span class="badge-pill" style="' + avgBadgeStyle(totalAvg) + ';font-weight:700;">' + totalAvg.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.pax ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.pax) + '">' + s.types.pax.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.ramp ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.ramp) + '">' + s.types.ramp.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
