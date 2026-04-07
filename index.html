@@ -8042,56 +8042,83 @@ function removeAuditorTag(containerId, name) {
 // ============================================================================
 // FIREBASE REAL-TIME SYNC
 // ============================================================================
+// Firebase 첫 수신 플래그 — 첫 연결 시 Firebase 데이터를 무조건 우선 (로컬 캐시보다 신뢰)
+let _fbFirstSync = { assessments: false, auditors: false, schedule: false, customStations: false };
+
 function setupFirebaseListeners() {
   if (!firebaseDb) return;
 
-  // Listen for allData changes
+  // Listen for allData changes — Firebase 우선
   firebaseDb.ref('assessments').on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-      // 편집 중(unsavedChanges)이면 원격 데이터로 덮어쓰지 않음
-      if (unsavedChanges) return;
-      // Firebase 키 복원: _dot_ → .
-      const newData = Object.values(data).map(d => ({
-        ...d,
-        scores: d.scores ? decodeScoresFromFirebase(d.scores) : {}
-      }));
-      if (JSON.stringify(newData) !== JSON.stringify(allData)) {
-        allData = newData;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
-        refreshCurrentView();
-      }
+    const isFirst = !_fbFirstSync.assessments;
+    _fbFirstSync.assessments = true;
+
+    if (!data) {
+      // Firebase에 데이터 없음 → 로컬 데이터가 있으면 업로드
+      if (isFirst && allData.length > 0) firebaseSaveAllData();
+      return;
+    }
+
+    // 편집 중이면 원격 데이터 무시 (첫 동기화 제외)
+    if (!isFirst && unsavedChanges) return;
+
+    const newData = Object.values(data).map(d => ({
+      ...d,
+      scores: d.scores ? decodeScoresFromFirebase(d.scores) : {},
+      remarks: d.remarks ? decodeScoresFromFirebase(d.remarks) : {}
+    })).map(normalizeRecord);
+
+    // 첫 수신이거나 데이터가 다르면 → Firebase 우선 적용
+    if (isFirst || JSON.stringify(newData) !== JSON.stringify(allData)) {
+      allData = newData;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+      if (!isFirst) refreshCurrentView();
     }
   });
 
-  // Listen for auditors changes
+  // Listen for auditors changes — Firebase 우선
   firebaseDb.ref('auditors').on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-      const newData = Object.values(data);
-      if (JSON.stringify(newData) !== JSON.stringify(auditorList)) {
-        auditorList = newData;
-        localStorage.setItem(AUDITOR_STORAGE_KEY, JSON.stringify(auditorList));
-      }
+    const isFirst = !_fbFirstSync.auditors;
+    _fbFirstSync.auditors = true;
+
+    if (!data) {
+      if (isFirst && auditorList.length > 0) firebaseSaveAuditors();
+      return;
+    }
+
+    const newData = Object.values(data);
+    if (isFirst || JSON.stringify(newData) !== JSON.stringify(auditorList)) {
+      auditorList = newData;
+      localStorage.setItem(AUDITOR_STORAGE_KEY, JSON.stringify(auditorList));
     }
   });
 
-  // Listen for schedule changes
+  // Listen for schedule changes — Firebase 우선
   firebaseDb.ref('schedule').on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-      const newData = Object.values(data);
-      if (JSON.stringify(newData) !== JSON.stringify(scheduleData)) {
-        scheduleData = newData;
-        localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
-        if (activeTab === 5) renderSchedule();
-      }
+    const isFirst = !_fbFirstSync.schedule;
+    _fbFirstSync.schedule = true;
+
+    if (!data) {
+      if (isFirst && scheduleData.length > 0) firebaseSaveSchedule();
+      return;
+    }
+
+    const newData = Object.values(data);
+    if (isFirst || JSON.stringify(newData) !== JSON.stringify(scheduleData)) {
+      scheduleData = newData;
+      localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
+      if (activeTab === 5) renderSchedule();
     }
   });
 
-  // Listen for custom stations
+  // Listen for custom stations — Firebase 우선
   firebaseDb.ref('customStations').on('value', (snapshot) => {
     const data = snapshot.val();
+    _fbFirstSync.customStations = true;
+
     if (data) {
       customStations = Object.values(data);
       localStorage.setItem(CUSTOM_STATIONS_KEY, JSON.stringify(customStations));
