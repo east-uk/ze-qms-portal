@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>이스타항공 품질관리시스템 포털 v13</title>
+<title>이스타항공 품질관리시스템 포털</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 tailwind.config = {
@@ -504,6 +505,79 @@ select.apple-input {
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- LOGIN SCREEN -->
+<!-- ============================================================ -->
+<div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#f5f5f7;display:flex;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:380px;padding:24px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <svg style="width:48px;height:48px;margin:0 auto 16px;" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
+      <h1 style="font-size:22px;font-weight:700;color:#303A3C;letter-spacing:-0.4px;">품질관리시스템 포털</h1>
+      <p style="font-size:13px;color:#9EA2A1;margin-top:4px;">이스타항공 안전보안실</p>
+    </div>
+    <!-- 로그인 폼 -->
+    <div id="loginForm" class="apple-card" style="padding:24px;">
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
+        <input id="loginEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리 입력" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
+        <input id="loginPassword" type="password" placeholder="비밀번호 입력" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button onclick="doLogin()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">로그인</button>
+      <div id="loginError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+      <div style="text-align:center;margin-top:16px;">
+        <button onclick="showPasswordChange()" style="background:none;border:none;color:#9EA2A1;font-size:12px;cursor:pointer;text-decoration:underline;">비밀번호 변경</button>
+      </div>
+    </div>
+    <!-- 최초 관리자 등록 폼 (users 비어있을 때) -->
+    <div id="adminSetupForm" class="apple-card" style="padding:24px;display:none;">
+      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:4px;">초기 관리자 등록</h3>
+      <p style="font-size:12px;color:#9EA2A1;margin-bottom:16px;">첫 번째 사용자가 관리자로 등록됩니다.</p>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
+        <input id="setupEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리" class="apple-input">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">이름</label>
+        <input id="setupName" type="text" placeholder="이름 입력" class="apple-input">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
+        <input id="setupPassword" type="password" placeholder="비밀번호 6자리 이상" class="apple-input">
+      </div>
+      <button onclick="doAdminSetup()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">관리자 등록</button>
+      <div id="setupError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+    </div>
+    <!-- 비밀번호 변경 폼 -->
+    <div id="pwChangeForm" class="apple-card" style="padding:24px;display:none;">
+      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">비밀번호 변경</h3>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
+        <input id="pwChangeEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리" class="apple-input">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">현재 비밀번호</label>
+        <input id="pwChangeOld" type="password" placeholder="현재 비밀번호" class="apple-input">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">새 비밀번호</label>
+        <input id="pwChangeNew" type="password" placeholder="새 비밀번호 6자리 이상" class="apple-input">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="showLoginForm()" class="pill-btn pill-btn-outline" style="flex:1;padding:12px;">취소</button>
+        <button onclick="doPasswordChange()" class="pill-btn pill-btn-primary" style="flex:1;padding:12px;">변경</button>
+      </div>
+      <div id="pwChangeError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+      <div id="pwChangeSuccess" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(34,197,94,0.1);color:#22C55E;font-size:13px;text-align:center;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP WRAPPER (hidden until login) -->
+<div id="appWrapper" style="display:none;">
+
 <!-- Header - Glass Navigation -->
 <header class="glass-nav text-white sticky top-0 z-50" style="height:52px;display:flex;flex-direction:column;justify-content:center;">
   <div class="max-w-7xl mx-auto px-4 w-full flex items-center justify-between" style="height:52px;">
@@ -511,10 +585,12 @@ select.apple-input {
       <svg class="w-6 h-6" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
       <h1 style="font-size:15px;font-weight:600;letter-spacing:-0.224px;line-height:1.14;color:#ffffff;">이스타항공 품질관리시스템 포털</h1>
     </div>
-    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;">
+    <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);text-align:right;display:flex;align-items:center;gap:8px;">
+      <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
-      <span style="margin-left:8px;">v13</span>
-      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;margin-left:6px;vertical-align:middle;" title="동기화 상태 확인 중"></span>
+      <span>v14</span>
+      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태 확인 중"></span>
+      <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
   </div>
 </header>
@@ -528,7 +604,7 @@ select.apple-input {
     <button onclick="switchTab(3)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="3" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">통계</button>
     <button onclick="switchTab(4)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="4" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">분석</button>
     <button onclick="switchTab(5)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="5" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">심사 일정</button>
-    <button onclick="switchTab(6)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="6" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">데이터 관리</button>
+    <button onclick="switchTab(6)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="6" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">관리</button>
   </div>
 </nav>
 
@@ -601,11 +677,8 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()">
-              <option value="2025">2025</option>
-              <option value="2026" selected>2026</option>
-              <option value="2027">2027</option>
-            </select>
+            <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()"></select>
+            <script>(function(){const s=document.getElementById('inputYear'),y=new Date().getFullYear();for(let i=y-2;i<=y+1;i++){const o=document.createElement('option');o.value=i;o.textContent=i;if(i===y)o.selected=true;s.appendChild(o);}})()</script>
           </div>
           <div id="stationSelectArea">
             <label class="apple-label">지점</label>
@@ -732,11 +805,8 @@ select.apple-input {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
           <div>
             <label class="apple-label">연도</label>
-            <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()">
-              <option value="2025">2025</option>
-              <option value="2026" selected>2026</option>
-              <option value="2027">2027</option>
-            </select>
+            <select id="viewYear" class="apple-input" onchange="renderViewRecentStations()"></select>
+            <script>(function(){const s=document.getElementById('viewYear'),y=new Date().getFullYear();for(let i=y-2;i<=y+1;i++){const o=document.createElement('option');o.value=i;o.textContent=i;if(i===y)o.selected=true;s.appendChild(o);}})()</script>
           </div>
           <div id="viewRegionArea">
             <label class="apple-label">지역</label>
@@ -829,7 +899,7 @@ select.apple-input {
         const y = new Date().getFullYear();
         const container = document.getElementById('statsYearSegment');
         const sel = document.getElementById('statsYear');
-        for (let i = y - 2; i <= y; i++) {
+        for (let i = y - 2; i <= y + 1; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
@@ -897,7 +967,7 @@ select.apple-input {
         const y = new Date().getFullYear();
         const container = document.getElementById('analysisYearSegment');
         const sel = document.getElementById('analysisYear');
-        for (let i = y - 2; i <= y; i++) {
+        for (let i = y - 2; i <= y + 1; i++) {
           const opt = document.createElement('option');
           opt.value = i; opt.textContent = i;
           if (i === y) opt.selected = true;
@@ -929,8 +999,14 @@ select.apple-input {
   <!-- Tab 6: Data Management -->
   <div id="tab6" class="tab-content hidden fade-in">
     <div class="mb-6">
-      <h2 class="section-title">데이터 관리</h2>
-      <p class="section-subtitle mt-1">내보내기, 동기화, 백업 관리</p>
+      <h2 class="section-title">관리</h2>
+      <p class="section-subtitle mt-1">사용자, 내보내기, 동기화, 백업 관리</p>
+    </div>
+
+    <!-- 사용자 관리 (admin만 표시) -->
+    <div class="apple-card p-6 mb-5">
+      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">사용자 관리</h3>
+      <div id="userManagementArea"></div>
     </div>
 
     <div class="apple-card p-6 mb-5">
@@ -963,23 +1039,6 @@ select.apple-input {
     </div>
 
     <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">Google Sheets 연동</h3>
-      <div class="flex gap-3 items-end flex-wrap mb-4">
-        <div class="flex-1 min-w-[200px]">
-          <label class="apple-label">GAS Web App URL</label>
-          <input id="gasUrl" type="url" placeholder="https://script.google.com/macros/s/..." class="apple-input" style="font-size:14px;" onchange="saveGasUrl()">
-        </div>
-        <button onclick="testSheetsConnection()" class="pill-btn pill-btn-outline">연동 테스트</button>
-        <button onclick="syncToSheetsAll()" class="pill-btn pill-btn-primary">데이터 동기화</button>
-      </div>
-      <div class="flex items-center gap-2" style="font-size:14px;color:#565A5B;">
-        <span>상태:</span>
-        <span id="sheetsStatus" class="badge-pill" style="background:#f5f5f7;color:#9EA2A1;">연결 안됨</span>
-      </div>
-      <p style="font-size:12px;color:#9EA2A1;margin-top:8px;">Google Sheets 연동을 위해 별도 설정이 필요합니다.</p>
-    </div>
-
-    <div class="apple-card p-6 mb-5">
       <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">백업</h3>
       <div class="flex gap-3 flex-wrap">
         <button onclick="exportJSON()" class="pill-btn pill-btn-outline" style="border-color:#303A3C;color:#303A3C;">JSON 내보내기</button>
@@ -998,7 +1057,13 @@ select.apple-input {
     <div class="apple-card p-6 mb-5">
       <div class="flex items-center justify-between mb-4">
         <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;">심사원 관리</h3>
-        <button onclick="showAddAuditorForm()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:6px 16px;">+ 심사원 등록</button>
+        <div class="flex gap-2">
+          <label class="pill-btn pill-btn-outline cursor-pointer" style="font-size:13px;padding:6px 16px;border-color:#303A3C;color:#303A3C;">
+            엑셀 업로드
+            <input type="file" accept=".xls,.xlsx" onchange="importAuditorExcel(event)" class="hidden">
+          </label>
+          <button onclick="showAddAuditorForm()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:6px 16px;">+ 심사원 등록</button>
+        </div>
       </div>
       <!-- Add/Edit form (hidden) -->
       <div id="auditorFormArea" class="hidden apple-card-elevated p-5 mb-4">
@@ -1077,7 +1142,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v13 &middot; 2026
+  안전기획팀 &middot; v14 &middot; 2026
 </footer>
 
 <script>
@@ -1094,7 +1159,6 @@ const CONFIG = {
     auditors: 'eastar_auditors',
     schedule: 'eastar_schedule_data',
     customStations: 'eastar_custom_stations',
-    gasUrl: 'eastar_gas_url',
   },
   scoreThresholds: [
     { max: 2.0, label: '개선 필요', color: '#D20015', bg: 'rgba(210,0,21,0.15)' },
@@ -1940,107 +2004,107 @@ const CHECKLIST_QA_CATERING = {
 const CHECKLIST_SAFETY_DIVISION = {
   "1. SMS 일반사항": {
     items: [
-      {id:"1)",text:"1) 안전이란? (안전에 대한 개념)"},
-      {id:"2)",text:"2) 안전문화(Safety Culture)란?"}
+      {id:"1.1)",text:"1) 안전이란? (안전에 대한 개념)"},
+      {id:"1.2)",text:"2) 안전문화(Safety Culture)란?"}
     ]
   },
   "2. 안전정책과 목적": {
     items: [
-      {id:"1)",text:"1) 최고경영관리자(CEO)가 서명한 안전정책 포스터를 비치하고 있는가?"},
-      {id:"2)",text:"2) 조직 전체의 안전에 관한 업무분장, 책임과 권한이 잘 정의되어 있는가?"},
-      {id:"3)",text:"3) 구성원들이 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?"},
-      {id:"4)",text:"4) 안전 관리자, 담당자는 적절한 안전관리 지식, 기량 경험을 갖고 있는가?"},
-      {id:"5)",text:"5) 회사 안전목표체계(안전성과목표 및 지표)에 대해 숙지하고 있는가?"},
-      {id:"6)",text:"6) 해당 본부/팀 안전성과 지표를 숙지하고 있는가?"},
-      {id:"7)",text:"7) 년간 SMS 추진계획을 수립하였는가?"},
-      {id:"8)",text:"8) 년간 SMS 추진계획이 이행되고 있는가?"}
+      {id:"2.1)",text:"1) 최고경영관리자(CEO)가 서명한 안전정책 포스터를 비치하고 있는가?"},
+      {id:"2.2)",text:"2) 조직 전체의 안전에 관한 업무분장, 책임과 권한이 잘 정의되어 있는가?"},
+      {id:"2.3)",text:"3) 구성원들이 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?"},
+      {id:"2.4)",text:"4) 안전 관리자, 담당자는 적절한 안전관리 지식, 기량 경험을 갖고 있는가?"},
+      {id:"2.5)",text:"5) 회사 안전목표체계(안전성과목표 및 지표)에 대해 숙지하고 있는가?"},
+      {id:"2.6)",text:"6) 해당 본부/팀 안전성과 지표를 숙지하고 있는가?"},
+      {id:"2.7)",text:"7) 년간 SMS 추진계획을 수립하였는가?"},
+      {id:"2.8)",text:"8) 년간 SMS 추진계획이 이행되고 있는가?"}
     ]
   },
   "3. 위험 관리": {
     items: [
-      {id:"1)",text:"1) 위해요인 식별 방법에 대한 절차가 있는가?"},
-      {id:"2)",text:"2) 안전활동과정에서 위해요인과 위험을 식별, 평가하고 있는가?"},
-      {id:"3)",text:"3) 근본적인 원인과 잠재 위험요소를 확인하기 위한 조사가 이루어지는가?"},
-      {id:"4)",text:"4) 조사를 통해 식별된 위해요인이 적절히 처리되고 전체에 전파되는가?"},
-      {id:"5)",text:"5) 식별된 위해요인과 관련된 위험을 평가하는 프로세스가 있는가?"},
-      {id:"6)",text:"6) 조직이 수용할 수 있는 위험수준 평가기준이 있는가?"},
-      {id:"7)",text:"7) 위험은 실용적으로 허용가능한 수준(ALARP)으로 관리되고 있는가?"},
-      {id:"8)",text:"8) 평가 및 분석에 의해 적절한 위험 경감 및 예방조치가 수행되는가?"}
+      {id:"3.1)",text:"1) 위해요인 식별 방법에 대한 절차가 있는가?"},
+      {id:"3.2)",text:"2) 안전활동과정에서 위해요인과 위험을 식별, 평가하고 있는가?"},
+      {id:"3.3)",text:"3) 근본적인 원인과 잠재 위험요소를 확인하기 위한 조사가 이루어지는가?"},
+      {id:"3.4)",text:"4) 조사를 통해 식별된 위해요인이 적절히 처리되고 전체에 전파되는가?"},
+      {id:"3.5)",text:"5) 식별된 위해요인과 관련된 위험을 평가하는 프로세스가 있는가?"},
+      {id:"3.6)",text:"6) 조직이 수용할 수 있는 위험수준 평가기준이 있는가?"},
+      {id:"3.7)",text:"7) 위험은 실용적으로 허용가능한 수준(ALARP)으로 관리되고 있는가?"},
+      {id:"3.8)",text:"8) 평가 및 분석에 의해 적절한 위험 경감 및 예방조치가 수행되는가?"}
     ]
   },
   "4. 안전 보증": {
     items: [
-      {id:"1)",text:"1) 안전성과지표가 설정되고 공표되며 모니터링과 분석이 되고 있는가?"},
-      {id:"2)",text:"2) 안전문화 진단을 위한 조사 등이 이루어지고 있는가?"},
-      {id:"3)",text:"3) 변화관리로 식별된 위해요인과 위험경감조치에 관한 기록이 있는가?"},
-      {id:"4)",text:"4) 기준 성과목표보다 낮은 결과의 원인을 감지, 조사하고 조치를 취하는가?"}
+      {id:"4.1)",text:"1) 안전성과지표가 설정되고 공표되며 모니터링과 분석이 되고 있는가?"},
+      {id:"4.2)",text:"2) 안전문화 진단을 위한 조사 등이 이루어지고 있는가?"},
+      {id:"4.3)",text:"3) 변화관리로 식별된 위해요인과 위험경감조치에 관한 기록이 있는가?"},
+      {id:"4.4)",text:"4) 기준 성과목표보다 낮은 결과의 원인을 감지, 조사하고 조치를 취하는가?"}
     ]
   },
   "5. 안전 증진": {
     items: [
-      {id:"1)",text:"1) 모든 직원들이 SMS 와 관련한 역할, 책임을 교육받고 숙지되어 있는가?"},
-      {id:"2)",text:"2) 안전관리리스템(SMS) 교육 계획은 수립되어 있는가?"},
-      {id:"3)",text:"3) SMS 교관은 적합한 자격을 갖추고 있는가?"},
-      {id:"4)",text:"4) 정기적인 안전관리시스템(SMS) 교육 훈련이 진행되고 있는가?"},
-      {id:"5)",text:"5) 관리계층에 대한 안전 교육은 이루어지고 있는가?"},
-      {id:"6)",text:"6) 안전 소통이 장려되고 조직의 안전문화를 향상시키고 있는가?"},
-      {id:"7)",text:"7) 안전정보 및 지시가 정확히 전파되고, 효과가 모니터링 되고 있는가?"},
-      {id:"8)",text:"8) 안전정보 및 지시에 대한 서명 기록이 유지되고 있는가?"},
-      {id:"9)",text:"9) 보고체계에 대한 보고자 보호 및 비처벌 정책을 명확히 공표하고 있는가?"},
-      {id:"10)",text:"10) 팀/지점 내 종사자에게 보고자 보호 및 비처벌 정책이 인식되어 있는가?"}
+      {id:"5.1)",text:"1) 모든 직원들이 SMS 와 관련한 역할, 책임을 교육받고 숙지되어 있는가?"},
+      {id:"5.2)",text:"2) 안전관리리스템(SMS) 교육 계획은 수립되어 있는가?"},
+      {id:"5.3)",text:"3) SMS 교관은 적합한 자격을 갖추고 있는가?"},
+      {id:"5.4)",text:"4) 정기적인 안전관리시스템(SMS) 교육 훈련이 진행되고 있는가?"},
+      {id:"5.5)",text:"5) 관리계층에 대한 안전 교육은 이루어지고 있는가?"},
+      {id:"5.6)",text:"6) 안전 소통이 장려되고 조직의 안전문화를 향상시키고 있는가?"},
+      {id:"5.7)",text:"7) 안전정보 및 지시가 정확히 전파되고, 효과가 모니터링 되고 있는가?"},
+      {id:"5.8)",text:"8) 안전정보 및 지시에 대한 서명 기록이 유지되고 있는가?"},
+      {id:"5.9)",text:"9) 보고체계에 대한 보고자 보호 및 비처벌 정책을 명확히 공표하고 있는가?"},
+      {id:"5.10)",text:"10) 팀/지점 내 종사자에게 보고자 보호 및 비처벌 정책이 인식되어 있는가?"}
     ]
   },
   "6. 운항안전": {
     items: [
-      {id:"1)",text:"1) 각 임무에 대한 지침, 기준 및 절차가 수립되어 있는가?"},
-      {id:"2)",text:"2) 항공기에 비치된  소화기 점검 및 관리상태가 양호한가?"},
-      {id:"3)",text:"3) 관련규정을 비치하고 있으며, 최신판을 유지하고 있는가?"},
-      {id:"4)",text:"4) 비행 전/후 브리핑을 철저히 수행하는가?"},
-      {id:"5)",text:"5) 항공기 피랍 또는 통신두절 시, 행동요령을 숙지하고 있는가?"}
+      {id:"6.1)",text:"1) 각 임무에 대한 지침, 기준 및 절차가 수립되어 있는가?"},
+      {id:"6.2)",text:"2) 항공기에 비치된  소화기 점검 및 관리상태가 양호한가?"},
+      {id:"6.3)",text:"3) 관련규정을 비치하고 있으며, 최신판을 유지하고 있는가?"},
+      {id:"6.4)",text:"4) 비행 전/후 브리핑을 철저히 수행하는가?"},
+      {id:"6.5)",text:"5) 항공기 피랍 또는 통신두절 시, 행동요령을 숙지하고 있는가?"}
     ]
   },
   "7. 종합통제 안전": {
     items: [
-      {id:"1)",text:"1) 비정상운항상황대비 비상연락망은 최신으로 유지되고 있는가?"},
-      {id:"2)",text:"2) 항공정보통신망은 정상적으로 운영되고 있는가?"},
-      {id:"3)",text:"3) 항공정보 및 기상은 적시에 접수하여 전파하고 있는가?"},
-      {id:"4)",text:"4) 항공기 이/착륙장소에 대한 정보를 적시에 접수하여 전파하고 있는가?"},
-      {id:"5)",text:"5) 항공기 이륙허용중량을 준수하고 있는가?"},
-      {id:"6)",text:"6) 사고 발생 시 초동 조치 요령을 숙지하고 있는가?"}
+      {id:"7.1)",text:"1) 비정상운항상황대비 비상연락망은 최신으로 유지되고 있는가?"},
+      {id:"7.2)",text:"2) 항공정보통신망은 정상적으로 운영되고 있는가?"},
+      {id:"7.3)",text:"3) 항공정보 및 기상은 적시에 접수하여 전파하고 있는가?"},
+      {id:"7.4)",text:"4) 항공기 이/착륙장소에 대한 정보를 적시에 접수하여 전파하고 있는가?"},
+      {id:"7.5)",text:"5) 항공기 이륙허용중량을 준수하고 있는가?"},
+      {id:"7.6)",text:"6) 사고 발생 시 초동 조치 요령을 숙지하고 있는가?"}
     ]
   },
   "8. 정비 안전": {
     items: [
-      {id:"1)",text:"1) 정비규정, 기술자료 등이 완전하고 명확하며 최신내용으로 개정되었는가?"},
-      {id:"2)",text:"2) AD/SB 등 기술회보는 최신 내용까지 수신되고 검토되었는가?"},
-      {id:"3)",text:"3) 주기적으로 기술회보 및 정비매뉴얼 개정판의 발행을 확인하고 있는가?"},
-      {id:"4)",text:"4) 개정판 도착 후 정해진 기간 내에 개정을 하고 있는가?"},
-      {id:"5)",text:"5) 보유 기술매뉴얼 자체점검을 규칙대로 실시하고 현황을 유지하고 있는가?"},
-      {id:"6)",text:"6) 항공기별 정비 이력부 등의 관리는 절차에 맞게 운용되고 있는가?"},
-      {id:"7)",text:"7) 항공기 정비 시, 안전 절차가 있으며 이를 준수하고 있는가?"},
-      {id:"8)",text:"8) 인화성 및 폭발성 물질의 격리는 정상적으로 이루어지고 있는가?"},
-      {id:"9)",text:"9) 항공기 Towing 시 지정된 경로와 속도를 유지하는가?"},
-      {id:"10)",text:"10) 항공기 이동, 시동 및 착륙지점에 이물질 제거는 이루어지는가?"}
+      {id:"8.1)",text:"1) 정비규정, 기술자료 등이 완전하고 명확하며 최신내용으로 개정되었는가?"},
+      {id:"8.2)",text:"2) AD/SB 등 기술회보는 최신 내용까지 수신되고 검토되었는가?"},
+      {id:"8.3)",text:"3) 주기적으로 기술회보 및 정비매뉴얼 개정판의 발행을 확인하고 있는가?"},
+      {id:"8.4)",text:"4) 개정판 도착 후 정해진 기간 내에 개정을 하고 있는가?"},
+      {id:"8.5)",text:"5) 보유 기술매뉴얼 자체점검을 규칙대로 실시하고 현황을 유지하고 있는가?"},
+      {id:"8.6)",text:"6) 항공기별 정비 이력부 등의 관리는 절차에 맞게 운용되고 있는가?"},
+      {id:"8.7)",text:"7) 항공기 정비 시, 안전 절차가 있으며 이를 준수하고 있는가?"},
+      {id:"8.8)",text:"8) 인화성 및 폭발성 물질의 격리는 정상적으로 이루어지고 있는가?"},
+      {id:"8.9)",text:"9) 항공기 Towing 시 지정된 경로와 속도를 유지하는가?"},
+      {id:"8.10)",text:"10) 항공기 이동, 시동 및 착륙지점에 이물질 제거는 이루어지는가?"}
     ]
   },
   "9. 객실 안전": {
     items: [
-      {id:"1)",text:"1) 객실승무원 업무 교범의 최신판을 유지하고 있는가?"},
-      {id:"2)",text:"2) 객실승무원의 자격을 유지하기 위한 교육을 이수하였는가?"},
-      {id:"3)",text:"3) 비행 전후 브리핑을 실시하는가?"},
-      {id:"4)",text:"4) 객실승무원 최소 탑승 인원을 유지하는가?"},
-      {id:"5)",text:"5) 항공기 내 비인가자 출입 시(청소/케이터링/정비사등) 출입증 확인하는가?"},
-      {id:"6)",text:"6) 항공기 door의 arming/disarming 절차를 준수하는가?"},
-      {id:"7)",text:"7) Passenger Safety Demonstration 을 절차에 맞게 시연하는가?"},
-      {id:"8)",text:"8) 항공기 이륙 전 객실과 Galley의 최종 점검을 실시하는가?"},
-      {id:"9)",text:"9) 항공기 지상 이동 간 Jump seat착석시 좌석벨트, 어깨 끈을 착용하는가?"},
-      {id:"10)",text:"10) 비행 중요단계 규정을 준수하는가?"},
-      {id:"11)",text:"11) 비행 중 사용하지 않는 유동물질을 확실히 고정하는가?"},
-      {id:"12)",text:"12) 운항 중 조종실 출입절차를 숙지하고 이행하는가?"},
-      {id:"13)",text:"13) 터뷸런스 시 즉각적인 방송을 실시하고 객실 안전 점검을 실시하는가?"},
-      {id:"14)",text:"14) 운항승무원과의 표준 신호 체계를 숙지하고 있는가?"},
-      {id:"15)",text:"15) 비상 시 대응절차를 숙지하고 있는가?"},
-      {id:"16)",text:"16) 승객 하기 후 Left Behind Item Check 를 실시하는가?"}
+      {id:"9.1)",text:"1) 객실승무원 업무 교범의 최신판을 유지하고 있는가?"},
+      {id:"9.2)",text:"2) 객실승무원의 자격을 유지하기 위한 교육을 이수하였는가?"},
+      {id:"9.3)",text:"3) 비행 전후 브리핑을 실시하는가?"},
+      {id:"9.4)",text:"4) 객실승무원 최소 탑승 인원을 유지하는가?"},
+      {id:"9.5)",text:"5) 항공기 내 비인가자 출입 시(청소/케이터링/정비사등) 출입증 확인하는가?"},
+      {id:"9.6)",text:"6) 항공기 door의 arming/disarming 절차를 준수하는가?"},
+      {id:"9.7)",text:"7) Passenger Safety Demonstration 을 절차에 맞게 시연하는가?"},
+      {id:"9.8)",text:"8) 항공기 이륙 전 객실과 Galley의 최종 점검을 실시하는가?"},
+      {id:"9.9)",text:"9) 항공기 지상 이동 간 Jump seat착석시 좌석벨트, 어깨 끈을 착용하는가?"},
+      {id:"9.10)",text:"10) 비행 중요단계 규정을 준수하는가?"},
+      {id:"9.11)",text:"11) 비행 중 사용하지 않는 유동물질을 확실히 고정하는가?"},
+      {id:"9.12)",text:"12) 운항 중 조종실 출입절차를 숙지하고 이행하는가?"},
+      {id:"9.13)",text:"13) 터뷸런스 시 즉각적인 방송을 실시하고 객실 안전 점검을 실시하는가?"},
+      {id:"9.14)",text:"14) 운항승무원과의 표준 신호 체계를 숙지하고 있는가?"},
+      {id:"9.15)",text:"15) 비상 시 대응절차를 숙지하고 있는가?"},
+      {id:"9.16)",text:"16) 승객 하기 후 Left Behind Item Check 를 실시하는가?"}
     ]
   }
 };
@@ -2048,50 +2112,50 @@ const CHECKLIST_SAFETY_DIVISION = {
 const CHECKLIST_SAFETY_BRANCH = {
   "1. SMS 일반사항": {
     items: [
-      {id:"1)",text:"1) 안전이란? (안전에 대한 개념)",verification:"- 인터뷰",manual:"- SMS 1.8"},
-      {id:"2)",text:"2) 안전문화(Safty Culture)란?",verification:"",manual:"- SMS 1.8"}
+      {id:"1.1)",text:"1) 안전이란? (안전에 대한 개념)",verification:"- 인터뷰",manual:"- SMS 1.8"},
+      {id:"1.2)",text:"2) 안전문화(Safty Culture)란?",verification:"",manual:"- SMS 1.8"}
     ]
   },
   "2. 안전정책과 목적": {
     items: [
-      {id:"1)",text:"1) 최고경영관리자(CEO)가 서명한 안전정책 포스터를 비치하고 있는가?",verification:"- 지점 사무실 내 비치 여부 확인",manual:"- SMS 2.1"},
-      {id:"2)",text:"2) 조직 전체의 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 2.3.3"},
-      {id:"3)",text:"3) 구성원들이 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?",verification:"",manual:"- SMS 2.3.3"},
-      {id:"4)",text:"4) 안전 관리자, 담당자는 적절한 안전관리 지식, 기량 경험을 갖고 있는가?",verification:"- 안전관리시스템(SMS) 교육 이수 현황 확인\n- 인터뷰",manual:"- SMS 2.3.3.4, 2.3.3.6"},
-      {id:"5)",text:"5) 국가 및 회사 안전목표체계에 대해 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 4.3"},
-      {id:"6)",text:"6) 부문별 지표에 대해 이해하고 안전성과 지표를 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 4.3.2"},
-      {id:"7)",text:"7) 지점 자체 회의 및 조업사 월례회의를 통하여 안전관리를 실시하고 있는가?",verification:"- 회의 증빙자료 확인(회의록, 안건 내용, 참석자, 서명 등)",manual:""}
+      {id:"2.1)",text:"1) 최고경영관리자(CEO)가 서명한 안전정책 포스터를 비치하고 있는가?",verification:"- 지점 사무실 내 비치 여부 확인",manual:"- SMS 2.1"},
+      {id:"2.2)",text:"2) 조직 전체의 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 2.3.3"},
+      {id:"2.3)",text:"3) 구성원들이 안전에 관한 업무분장, 책임과 권한을 잘 숙지하고 있는가?",verification:"",manual:"- SMS 2.3.3"},
+      {id:"2.4)",text:"4) 안전 관리자, 담당자는 적절한 안전관리 지식, 기량 경험을 갖고 있는가?",verification:"- 안전관리시스템(SMS) 교육 이수 현황 확인\n- 인터뷰",manual:"- SMS 2.3.3.4, 2.3.3.6"},
+      {id:"2.5)",text:"5) 국가 및 회사 안전목표체계에 대해 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 4.3"},
+      {id:"2.6)",text:"6) 부문별 지표에 대해 이해하고 안전성과 지표를 숙지하고 있는가?",verification:"- 인터뷰",manual:"- SMS 4.3.2"},
+      {id:"2.7)",text:"7) 지점 자체 회의 및 조업사 월례회의를 통하여 안전관리를 실시하고 있는가?",verification:"- 회의 증빙자료 확인(회의록, 안건 내용, 참석자, 서명 등)",manual:""}
     ]
   },
   "3. 위험 관리": {
     items: [
-      {id:"1)",text:"1) 선제적/사후적 방법으로 위해요인을 식별하는 활동이 있는가?",verification:"",manual:"- SMS 3.2"},
-      {id:"2)",text:"2) 위해요인에 대해 위험평가를 실시하고 있는가?",verification:"- 위험 평가 기록지, 통합안전관리시스템(ESMS) 내 위험 평가 기록 등 확인",manual:"- SMS 3.2, 3.4"},
-      {id:"3)",text:"3) 위험평가 시 경감조치가 필요하다고 평가된 위해요인에 대해 위험 경감조치를 실시하고 있는가?",verification:"",manual:"- SMS 3.4"},
-      {id:"4)",text:"4) 위험요인 발견 시, 안전보고(의무/자율보고)를 실시하고 있는가?",verification:"- 통합안전관리시스템(ESMS), 안전 보고서 양식 내 기록 확인",manual:"- SMS 3.6"},
-      {id:"5)",text:"5) 자율보고를 통하여 위해요인 식별 및 경감조치를 수행하고 있는가?",verification:"",manual:"- SMS 3.6"},
-      {id:"6)",text:"6) 지점 내 종사자에게 보고자 보호 및 비 처벌 정책이 인식되어 있는가?",verification:"- 인터뷰",manual:"- SMS 3.6.3"}
+      {id:"3.1)",text:"1) 선제적/사후적 방법으로 위해요인을 식별하는 활동이 있는가?",verification:"",manual:"- SMS 3.2"},
+      {id:"3.2)",text:"2) 위해요인에 대해 위험평가를 실시하고 있는가?",verification:"- 위험 평가 기록지, 통합안전관리시스템(ESMS) 내 위험 평가 기록 등 확인",manual:"- SMS 3.2, 3.4"},
+      {id:"3.3)",text:"3) 위험평가 시 경감조치가 필요하다고 평가된 위해요인에 대해 위험 경감조치를 실시하고 있는가?",verification:"",manual:"- SMS 3.4"},
+      {id:"3.4)",text:"4) 위험요인 발견 시, 안전보고(의무/자율보고)를 실시하고 있는가?",verification:"- 통합안전관리시스템(ESMS), 안전 보고서 양식 내 기록 확인",manual:"- SMS 3.6"},
+      {id:"3.5)",text:"5) 자율보고를 통하여 위해요인 식별 및 경감조치를 수행하고 있는가?",verification:"",manual:"- SMS 3.6"},
+      {id:"3.6)",text:"6) 지점 내 종사자에게 보고자 보호 및 비 처벌 정책이 인식되어 있는가?",verification:"- 인터뷰",manual:"- SMS 3.6.3"}
     ]
   },
   "4. 안전 보증": {
     items: [
-      {id:"1)",text:"1) 지점 안전 점검표를 바탕으로 주간 안전 점검을 실시하고 있는가?",verification:"- 지점 안전 점검표 기록 확인",manual:""},
-      {id:"2)",text:"2) Ground Handling Service Quality Check List(Surveillance Check List)를 바탕으로 외부 협력업체 안전관리를 하고 있는가?",verification:"- CHK List 확인",manual:""},
-      {id:"3)",text:"3) 점검결과 안전위해요소 발견 시 구두 개선권고 또는 자체 시정조치요구서를 발행한 실적이 있는가?",verification:"- 지점 안전 점검표, CHK List 등 기록 확인",manual:""},
-      {id:"4)",text:"4) 현장지시 및 시정조치요구서 발행 시 조치사항에 대해 모니터링을 실시하고 있는가?",verification:"",manual:"- SMS 4.1.1"},
-      {id:"5)",text:"5) 항공기 도입, 노선 증편, 절차 도입 등 관련 변화관리를 실시하고 있는가?",verification:"",manual:"- SMS 4.5"},
-      {id:"6)",text:"6) 변화관리 수행 후 관련 모니터링을 실시하고 있는가?",verification:"",manual:"- SMS 4.5"}
+      {id:"4.1)",text:"1) 지점 안전 점검표를 바탕으로 주간 안전 점검을 실시하고 있는가?",verification:"- 지점 안전 점검표 기록 확인",manual:""},
+      {id:"4.2)",text:"2) Ground Handling Service Quality Check List(Surveillance Check List)를 바탕으로 외부 협력업체 안전관리를 하고 있는가?",verification:"- CHK List 확인",manual:""},
+      {id:"4.3)",text:"3) 점검결과 안전위해요소 발견 시 구두 개선권고 또는 자체 시정조치요구서를 발행한 실적이 있는가?",verification:"- 지점 안전 점검표, CHK List 등 기록 확인",manual:""},
+      {id:"4.4)",text:"4) 현장지시 및 시정조치요구서 발행 시 조치사항에 대해 모니터링을 실시하고 있는가?",verification:"",manual:"- SMS 4.1.1"},
+      {id:"4.5)",text:"5) 항공기 도입, 노선 증편, 절차 도입 등 관련 변화관리를 실시하고 있는가?",verification:"",manual:"- SMS 4.5"},
+      {id:"4.6)",text:"6) 변화관리 수행 후 관련 모니터링을 실시하고 있는가?",verification:"",manual:"- SMS 4.5"}
     ]
   },
   "5. 안전 증진": {
     items: [
-      {id:"1)",text:"1) 모든 직원들이 SMS 와 관련한 역할, 책임을 교육받고 숙지되어 있는가?",verification:"- 교육 기록 확인\n- 인터뷰",manual:"- SMS 5.1.2.4, 5.1.2.5"},
-      {id:"2)",text:"2) SMS 교관이 안전관리시스템(SMS) 교육을 실시하고 있는가?",verification:"- 개인기록카드, 교육일지 등 확인",manual:"- SMS 5.1"},
-      {id:"3)",text:"3) SMS 교관은 적합한 자격을 갖추고 있는가?",verification:"- 교육 기록 확인\n- 인터뷰",manual:"- SMS 5.1.2.7"},
-      {id:"4)",text:"4) SMS 교관은 적합한 교육 자료를 바탕으로 교육을 진행하고 있는가?",verification:"",manual:"- SMS 5.1"},
-      {id:"5)",text:"5) 정기적인 안전관리시스템(SMS) 교육훈련이 진행되고 있는가?",verification:"- 교육기록 전산화 파일, 교육 계획 등 확인",manual:""},
-      {id:"6)",text:"6) 안전지시 및 정보를 전파하고, 이행 여부에 대해 모니터링을 실시하고 있는가?",verification:"- 브리핑일지 확인\n- 인터뷰",manual:"- SMS 5.2.2, 5.2.3"},
-      {id:"7)",text:"7) 안전지시 및 정보에 대한 서명 기록이 유지되고 있는가?",verification:"- 통합안전관리시스템(ESMS) 기록 확인",manual:"- SMS 5.2.2, 5.2.3"}
+      {id:"5.1)",text:"1) 모든 직원들이 SMS 와 관련한 역할, 책임을 교육받고 숙지되어 있는가?",verification:"- 교육 기록 확인\n- 인터뷰",manual:"- SMS 5.1.2.4, 5.1.2.5"},
+      {id:"5.2)",text:"2) SMS 교관이 안전관리시스템(SMS) 교육을 실시하고 있는가?",verification:"- 개인기록카드, 교육일지 등 확인",manual:"- SMS 5.1"},
+      {id:"5.3)",text:"3) SMS 교관은 적합한 자격을 갖추고 있는가?",verification:"- 교육 기록 확인\n- 인터뷰",manual:"- SMS 5.1.2.7"},
+      {id:"5.4)",text:"4) SMS 교관은 적합한 교육 자료를 바탕으로 교육을 진행하고 있는가?",verification:"",manual:"- SMS 5.1"},
+      {id:"5.5)",text:"5) 정기적인 안전관리시스템(SMS) 교육훈련이 진행되고 있는가?",verification:"- 교육기록 전산화 파일, 교육 계획 등 확인",manual:""},
+      {id:"5.6)",text:"6) 안전지시 및 정보를 전파하고, 이행 여부에 대해 모니터링을 실시하고 있는가?",verification:"- 브리핑일지 확인\n- 인터뷰",manual:"- SMS 5.2.2, 5.2.3"},
+      {id:"5.7)",text:"7) 안전지시 및 정보에 대한 서명 기록이 유지되고 있는가?",verification:"- 통합안전관리시스템(ESMS) 기록 확인",manual:"- SMS 5.2.2, 5.2.3"}
     ]
   }
 };
@@ -2173,6 +2237,19 @@ const CHECKLIST_REGISTRY = {
   fsds: { name:"비행안전문서시스템", checklist: CHECKLIST_FSDS, scoring:"binary", category:"division" }
 };
 
+// ============================================================================
+// 전역 타입 상수 (CHECKLIST_REGISTRY에서 자동 추출 — 하드코딩 방지)
+// ============================================================================
+const GRADE_BRANCH_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'branch' && r.scoring === 'grade').map(([k]) => k);
+const BINARY_BRANCH_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'branch' && r.scoring === 'binary').map(([k]) => k);
+const ALL_BRANCH_TYPES = [...GRADE_BRANCH_TYPES, ...BINARY_BRANCH_TYPES];
+const DIVISION_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'division').map(([k]) => k);
+const TYPES_WITH_COMPANY = ['pax', 'ramp'];
+const TYPE_SHORT_LABELS = { branch:'지점', pax:'여객', ramp:'램프', safety_branch:'안전감사' };
+
 let selectedAuditCategory = 'all'; // 'all', 'branch', or 'division'
 let selectedViewCategory = 'all'; // 'all', 'branch', or 'division'
 let selectedDivision = '';
@@ -2207,40 +2284,8 @@ const HANDLING_COMPANIES = {
   }
 };
 
-const AUDIT_SCHEDULE_2026 = [
-  {month:1,targets:["김해"],status:"completed",details:{
-    "김해":{note:"부산베이스 확인"}}},
-  {month:2,targets:["구마모토 (확인심사)"],status:"completed",details:{
-    "구마모토":{note:"확인 품질심사 (25년 결과 미흡)"}}},
-  {month:3,targets:["도쿄","마나도","다낭"],status:"completed",details:{
-    "도쿄":{auditors:"김재우, 강동욱",dateStart:"2026-03-03",dateEnd:"2026-03-05"},
-    "마나도":{auditors:"서혜주",dateStart:"2026-03-24",dateEnd:"2026-03-27"},
-    "다낭":{auditors:"장서희",dateStart:"2026-03-31",dateEnd:"2026-04-03",note:"화물 별도 실시"}}},
-  {month:4,targets:["알마티 (리모트)","운송본부"],status:"in_progress",details:{
-    "알마티":{auditors:"장서희",note:"리모트 심사, 25.04.07 취항 (신규취항)"},
-    "운송본부":{note:"5월에서 4월로 변경"}}},
-  {month:5,targets:["종합통제실","객실본부","케이터링운영파트"],status:"upcoming",details:{
-    "종합통제실":{note:"8월에서 5월로 변경"},
-    "객실본부":{note:"7월에서 5월로 변경"},
-    "케이터링운영파트":{note:"9월에서 5월로 변경"}}},
-  {month:6,targets:["연길","후쿠오카","김포"],status:"upcoming",details:{
-    "연길":{note:"26.06 운항 개시, 24.06 취항"},
-    "후쿠오카":{note:"4월에서 6월로 변경"},
-    "김포":{note:"7월에서 6월로 변경"}}},
-  {month:7,targets:["청주","정비본부","인천"],status:"upcoming",details:{
-    "청주":{note:"8월에서 7월로 변경"},
-    "정비본부":{note:"10월에서 7월로 변경"}}},
-  {month:8,targets:["정저우","제주","옌타이"],status:"upcoming",details:{
-    "정저우":{note:"26.04 운항 개시, 5월에서 8월로 변경"},
-    "옌타이":{note:"25.09.19 취항 (신규취항)"}}},
-  {month:9,targets:["송산/타오위안","나트랑"],status:"upcoming",details:{
-    "송산/타오위안":{note:"외주협력업체 변경(2월), 6월에서 9월로 변경"}}},
-  {month:10,targets:["안전보안실","오사카"],status:"upcoming",details:{
-    "오사카":{note:"5월에서 10월로 변경"}}},
-  {month:11,targets:["운항본부","가고시마"],status:"upcoming",details:{
-    "가고시마":{note:"26.01~03,10~12 운항, 25.11.21 취항 (신규취항)"}}},
-  {month:12,targets:[],status:"upcoming"}
-];
+// v14.0.0: 빈 배열 — 모든 심사 일정은 사용자 입력 + Firebase로 관리
+const AUDIT_SCHEDULE_2026 = [];
 
 const STATION_AUDIT_CYCLES = {
   // 국내 지점 (매년 1회)
@@ -2278,16 +2323,8 @@ const CYCLE_LABELS = {
 };
 
 // Auditor data
-const PRELOADED_AUDITORS = [
-  {id:"A001",name:"황수민",empNo:"2230802",team:"공항서비스팀",division:"운송",role:"품질심사원(Auditor)",appointDate:"2023-08-25",initialTraining:"2023-08-17",refreshTraining:"2025-08-13",trainingExpiry:"2027-08-12"},
-  {id:"A002",name:"윤혜빈",empNo:"6230903",team:"공항서비스팀",division:"운송",role:"부문 별 품질담당자",appointDate:"2024-04-15",initialTraining:"2024-04-18",refreshTraining:"2026-03-20",trainingExpiry:"2028-03-19"},
-  {id:"A003",name:"허명훈",empNo:"8151003",team:"공항서비스팀",division:"운송",role:"품질심사원(Auditor)",appointDate:"2023-08-25",initialTraining:"2023-08-17",refreshTraining:"2025-08-13",trainingExpiry:"2027-08-12"},
-  {id:"A004",name:"김재우",empNo:"2130803",team:"안전기획팀",division:"안전보안",role:"품질심사원(Auditor)",appointDate:"2022-10-20",initialTraining:"2022-04-22",refreshTraining:"2026-03-20",trainingExpiry:"2028-03-19"},
-  {id:"A005",name:"서혜주",empNo:"2230901",team:"안전기획팀",division:"안전보안",role:"품질심사원(Auditor)",appointDate:"2023-09-21",initialTraining:"2023-09-21",refreshTraining:"2026-03-20",trainingExpiry:"2028-03-19"},
-  {id:"A006",name:"장서희",empNo:"2240705",team:"안전기획팀",division:"안전보안",role:"품질심사원(Auditor)",appointDate:"2024-10-21",initialTraining:"2024-10-11",refreshTraining:"2026-03-20",trainingExpiry:"2028-03-19"},
-  {id:"A007",name:"강동욱",empNo:"6240501",team:"안전기획팀",division:"안전보안",role:"부문 별 품질담당자",appointDate:"2026-02-09",initialTraining:"2026-03-04",refreshTraining:"2026-03-20",trainingExpiry:"2028-03-19"},
-  {id:"A008",name:"최윤진",empNo:"8160118",team:"안전기획팀",division:"안전보안",role:"품질심사원(Auditor)",appointDate:"2023-04-01",initialTraining:"2023-04-18",refreshTraining:"2026-03-20",trainingExpiry:"2028-03-19"}
-];
+// v14.0.0: 빈 배열 — 모든 심사원 데이터는 사용자 입력 + Firebase로 관리
+const PRELOADED_AUDITORS = [];
 
 const AUDITOR_STORAGE_KEY = 'eastar_auditors';
 let auditorList = [];
@@ -2323,81 +2360,8 @@ function getTrainingStatus(expiryDate) {
   return { label: '유효', style: 'background:rgba(34,197,94,0.15);color:#22C55E' };
 }
 
-// Pre-loaded data
-const PRELOADED_DATA = [
-  // 2026 지점
-  {year:2026,station:"김해",type:"branch",region:"국내",auditor:"",auditDate:"2026-01",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":4,"1.5":3,"1.6":3,"1.7":3,"2.1":2,"2.2":4,"3.1":2,"3.2":4,"3.3":3,"3.4":2,"3.5":3,"3.6":3,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":2}},
-  {year:2026,station:"도쿄",type:"branch",region:"일본",auditor:"",auditDate:"2026-03",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":2,"1.5":1,"1.6":4,"1.7":4,"2.1":2,"2.2":4,"3.1":3,"3.2":4,"3.3":3,"3.4":3,"3.5":3,"3.6":3,"4.1":2,"4.2":4,"4.3":4,"4.4":2,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  {year:2026,station:"구마모토",type:"branch",region:"일본",auditor:"",auditDate:"2026-02",
-    scores:{"1.1":3,"1.2":2,"1.3":2,"1.4":2,"1.5":1,"1.6":2,"1.7":2,"2.1":2,"2.2":2,"3.1":2,"3.2":2,"3.3":2,"3.4":2,"3.5":3,"3.6":2,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  // 2026 여객
-  {year:2026,station:"김해",type:"pax",company:"FAS",region:"국내",auditDate:"2026-01",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":2,"1.5":3,"1.6":2,"2.1":2,"3.1":3,"3.2":1,"3.3":3,"3.4":3,"3.5":3,"3.6":1,"4.1":2,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":2,"4.7":4,"4.8":4,"5.1":4,"5.2":4,"5.3":4,"5.4":2,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":2.5,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2026,station:"도쿄",type:"pax",company:"FMG",region:"일본",auditDate:"2026-03",
-    scores:{"1.1":2,"1.2":2,"1.3":3,"1.4":2,"1.5":2,"1.6":2,"2.1":3,"3.1":2,"3.2":2,"3.3":3,"3.4":2,"3.5":3,"3.6":3,"4.1":2,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":2,"4.8":4,"5.1":2,"5.2":4,"5.3":4,"5.4":4,"5.5":2,"5.6":4,"5.7":4,"5.8":2,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":2,"7.5":4,"7.6":4}},
-  {year:2026,station:"구마모토",type:"pax",company:"SAS",region:"일본",auditDate:"2026-02",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":2,"1.5":2,"1.6":2,"2.1":2,"3.1":2,"3.2":3,"3.3":1,"3.4":1,"3.5":1,"3.6":1,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":2,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":2,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  // 2026 램프
-  {year:2026,station:"김해",type:"ramp",company:"SHARP",region:"국내",auditDate:"2026-01",
-    scores:{"1.1":3,"1.2":4,"1.3":4,"1.4":1,"1.5":2,"1.6":4,"2.1":3,"3.1":4,"3.2":3,"3.3":4,"3.4":3,"3.5":2,"3.6":4,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2026,station:"도쿄",type:"ramp",company:"FMG",region:"일본",auditDate:"2026-03",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":3,"1.5":2,"1.6":2,"2.1":3,"3.1":2,"3.2":1,"3.3":4,"3.4":4,"3.5":3,"3.6":3,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2026,station:"구마모토",type:"ramp",company:"SAS",region:"일본",auditDate:"2026-02",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":2,"1.5":2,"1.6":2,"2.1":2,"3.1":2,"3.2":3,"3.3":1,"3.4":1,"3.5":1,"3.6":1,"4.1":2,"4.2":1,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":2,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  // 2025 지점
-  {year:2025,station:"제주",type:"branch",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":3,"1.4":2,"1.5":3,"1.6":3,"1.7":4,"2.1":4,"2.2":4,"3.1":3,"3.2":3,"3.3":3,"3.4":1,"3.5":3,"3.6":3,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  {year:2025,station:"인천",type:"branch",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":4,"1.4":3,"1.5":1,"1.6":4,"1.7":2,"2.1":4,"2.2":3,"3.1":3,"3.2":3,"3.3":2,"3.4":2,"3.5":3,"3.6":3,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":2}},
-  {year:2025,station:"청주",type:"branch",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":3,"1.5":3,"1.6":3,"1.7":3,"2.1":3,"2.2":3,"3.1":3,"3.2":3,"3.3":3,"3.4":3,"3.5":3,"3.6":3,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  {year:2025,station:"치토세",type:"branch",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":2,"1.3":3,"1.4":1,"1.5":3,"1.6":3,"1.7":3,"2.1":1,"2.2":1,"3.1":1,"3.2":4,"3.3":2,"3.4":1,"3.5":2.5,"3.6":2,"4.1":4,"4.2":2,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  {year:2025,station:"오키나와",type:"branch",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":2,"1.3":3,"1.4":2,"1.5":3,"1.6":4,"1.7":4,"2.1":3,"2.2":1,"3.1":1,"3.2":1,"3.3":2,"3.4":1,"3.5":3,"3.6":2,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  {year:2025,station:"구마모토",type:"branch",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":2,"1.3":2,"1.4":2,"1.5":1,"1.6":1,"1.7":2,"2.1":2,"2.2":2,"3.1":2,"3.2":1,"3.3":3,"3.4":1,"3.5":2.5,"3.6":2,"4.1":2,"4.2":2,"4.3":2,"4.4":2,"4.5":2,"4.6":2,"4.7":4,"4.8":2}},
-  {year:2025,station:"치앙마이",type:"branch",region:"동남아/중앙아시아",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":1,"1.5":1,"1.6":4,"1.7":3,"2.1":2,"2.2":3,"3.1":3,"3.2":2,"3.3":3,"3.4":3,"3.5":3,"3.6":3,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4}},
-  {year:2025,station:"푸꾸옥",type:"branch",region:"동남아/중앙아시아",auditDate:"2025",
-    scores:{"1.1":3,"1.2":2,"1.3":2,"1.4":1,"1.5":1,"1.6":4,"1.7":1,"2.1":1,"2.2":1,"3.1":1,"3.2":2,"3.3":2,"3.4":1,"3.5":1,"3.6":2,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":2,"4.6":4,"4.7":4,"4.8":4}},
-  // 2025 여객협력사
-  {year:2025,station:"제주",type:"pax",company:"FAS",region:"국내",auditDate:"2025",
-    scores:{"1.1":4,"1.2":4,"1.3":3,"1.4":2,"1.5":4,"1.6":3,"2.1":4,"3.1":4,"3.2":2,"3.3":2,"3.4":3,"3.5":1,"3.6":1,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"인천",type:"pax",company:"FAS",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":3,"1.4":2,"1.5":3,"1.6":3,"2.1":4,"3.1":3,"3.2":2,"3.3":2,"3.4":2,"3.5":3,"3.6":2,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":2,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":2,"5.7":2,"5.8":2,"5.9":4,"5.10":2,"5.11":2,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"청주",type:"pax",company:"FAS",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":3,"1.5":3,"1.6":3,"2.1":3,"3.1":3,"3.2":2,"3.3":2,"3.4":2,"3.5":2,"3.6":1,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"치토세",type:"pax",company:"SPJ",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":3,"1.4":2,"1.5":4,"1.6":3,"2.1":1,"3.1":3,"3.2":2,"3.3":2,"3.4":2,"3.5":1,"3.6":2,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":2,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"오키나와",type:"pax",company:"SPJ",region:"일본",auditDate:"2025",
-    scores:{"1.1":2,"1.2":2,"1.3":2,"1.4":2,"1.5":2,"1.6":2,"2.1":2,"3.1":2,"3.2":3,"3.3":1,"3.4":1,"3.5":1,"3.6":1,"4.1":4,"4.2":2,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":4,"5.3":4,"5.4":2,"5.5":2,"5.6":4,"5.7":4,"5.8":2,"5.9":4,"5.10":2,"5.11":2,"5.12":2,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"구마모토",type:"pax",company:"SAS",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":2,"1.5":2,"1.6":2,"2.1":2,"3.1":2,"3.2":3,"3.3":1,"3.4":1,"3.5":1,"3.6":1,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":2,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"치앙마이",type:"pax",company:"BAGS",region:"동남아/중앙아시아",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":3,"1.4":4,"1.5":3,"1.6":3,"2.1":4,"3.1":4,"3.2":4,"3.3":3,"3.4":3,"3.5":4,"3.6":4,"4.1":4,"4.2":4,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":4,"7.5":4,"7.6":4}},
-  {year:2025,station:"푸꾸옥",type:"pax",company:"ACV",region:"동남아/중앙아시아",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":4,"1.4":1,"1.5":4,"1.6":3,"2.1":4,"3.1":2,"3.2":2,"3.3":2,"3.4":2,"3.5":1,"3.6":4,"4.1":2,"4.2":2,"4.3":4,"4.4":4,"4.5":4,"4.6":4,"4.7":4,"4.8":4,"5.1":4,"5.2":2,"5.3":2,"5.4":2,"5.5":2,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"6.1":4,"6.2":4,"6.3":4,"6.4":4,"6.5":4,"6.6":4,"6.7":4,"6.8":4,"6.9":4,"6.10":4,"6.11":4,"6.12":4,"7.1":4,"7.2":4,"7.3":4,"7.4":2,"7.5":4,"7.6":2}},
-  // 2025 램프협력사
-  {year:2025,station:"제주",type:"ramp",company:"ATS",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":4,"1.4":2,"1.5":3,"1.6":3,"2.1":3,"3.1":4,"3.2":4,"3.3":4,"3.4":4,"3.5":3,"3.6":2,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"인천",type:"ramp",company:"SHARP",region:"국내",auditDate:"2025",
-    scores:{"1.1":2,"1.2":3,"1.3":3,"1.4":1,"1.5":4,"1.6":4,"2.1":3,"3.1":3,"3.2":4,"3.3":4,"3.4":3,"3.5":3,"3.6":4,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"청주",type:"ramp",company:"SHARP",region:"국내",auditDate:"2025",
-    scores:{"1.1":3,"1.2":3,"1.3":3,"1.4":3,"1.5":3,"1.6":3,"2.1":3,"3.1":3,"3.2":4,"3.3":4,"3.4":4,"3.5":3,"3.6":3,"4.1":3,"4.2":3,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"치토세",type:"ramp",company:"SPJ",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":4,"1.4":2,"1.5":4,"1.6":3,"2.1":4,"3.1":1,"3.2":2,"3.3":2,"3.4":2,"3.5":1,"3.6":4,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"오키나와",type:"ramp",company:"SPJ",region:"일본",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":4,"1.4":2,"1.5":4,"1.6":3,"2.1":4,"3.1":2,"3.2":2,"3.3":2,"3.4":2,"3.5":1,"3.6":4,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"구마모토",type:"ramp",company:"SAS",region:"일본",auditDate:"2025",
-    scores:{"1.1":2,"1.2":2,"1.3":2,"1.4":2,"1.5":2,"1.6":2,"2.1":2,"3.1":2,"3.2":3,"3.3":1,"3.4":1,"3.5":1,"3.6":1,"4.1":2,"4.2":1,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"치앙마이",type:"ramp",company:"BAGS",region:"동남아/중앙아시아",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":4,"1.4":4,"1.5":3,"1.6":3,"2.1":4,"3.1":3,"3.2":4,"3.3":3,"3.4":2,"3.5":2,"3.6":3,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}},
-  {year:2025,station:"푸꾸옥",type:"ramp",company:"ACV",region:"동남아/중앙아시아",auditDate:"2025",
-    scores:{"1.1":3,"1.2":4,"1.3":4,"1.4":4,"1.5":3,"1.6":3,"2.1":4,"3.1":3,"3.2":4,"3.3":3,"3.4":2,"3.5":2,"3.6":3,"4.1":4,"4.2":4,"5.1":4,"5.2":4,"5.3":4,"5.4":4,"5.5":4,"5.6":4,"5.7":4,"5.8":4,"5.9":4,"5.10":4,"5.11":4,"5.12":4,"5.13":4,"5.14":4,"5.15":4,"5.16":4,"5.17":4,"5.18":4,"5.19":4,"5.20":4,"5.21":4,"5.22":4,"5.23":4,"5.24":4,"5.25":4,"5.26":4,"5.27":4,"5.28":4,"5.29":4,"5.30":4}}
-];
+// Pre-loaded data (v14.0.0: 빈 배열 — 모든 데이터는 사용자 입력 + Firebase 동기화로 관리)
+const PRELOADED_DATA = [];
 
 // ============================================================================
 // STATE
@@ -2408,7 +2372,6 @@ let currentChecklist = null;
 let chartInstances = {};
 function getChartHeight() { return window.innerWidth < 768 ? 220 : 350; }
 const STORAGE_KEY = 'eastar_maturity_data';
-let GAS_URL = '';
 let viewEntries = [];
 let editingScores = {};
 let editingRemarks = {};
@@ -2443,7 +2406,13 @@ let customStations = [];
 // Firebase
 let firebaseApp = null;
 let firebaseDb = null;
+let firebaseAuth = null;
 let firebaseConnected = false;
+let currentUser = null;  // { uid, empNo, name, role }
+const AUTH_DOMAIN = '@eastar.local';
+
+function empNoToEmail(empNo) { return empNo + AUTH_DOMAIN; }
+function emailToEmpNo(email) { return email ? email.replace(AUTH_DOMAIN, '') : ''; }
 
 function initFirebase() {
   try {
@@ -2459,22 +2428,285 @@ function initFirebase() {
     };
     firebaseApp = firebase.initializeApp(firebaseConfig);
     firebaseDb = firebase.database();
-    // firebaseConnected는 실제 연결 확인 후 true로 설정
+    firebaseAuth = firebase.auth();
 
-    // Listen for connection state
+    // 연결 상태 모니터링
     firebase.database().ref('.info/connected').on('value', (snap) => {
       firebaseConnected = snap.val() === true;
       updateSyncStatus();
     });
 
-    // Set up real-time listeners
-    setupFirebaseListeners();
+    // Auth 상태 변경 리스너
+    firebaseAuth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // 로그인 상태 — 사용자 역할 가져오기
+        const snap = await firebaseDb.ref('users/' + user.uid).once('value');
+        const userData = snap.val();
+        if (userData) {
+          currentUser = { uid: user.uid, empNo: emailToEmpNo(user.email), name: userData.name, role: userData.role };
+          onLoginSuccess();
+        } else {
+          // DB에 사용자 정보 없음 (비정상) → 로그아웃
+          await firebaseAuth.signOut();
+          showLoginScreen();
+        }
+      } else {
+        // 비로그인 → 로그인 화면
+        currentUser = null;
+        showLoginScreen();
+      }
+    });
 
+    setupFirebaseListeners();
     console.log('Firebase connected');
   } catch(e) {
     console.warn('Firebase init failed:', e);
     firebaseConnected = false;
+    showLoginScreen();
   }
+}
+
+// ============================================================================
+// AUTH: 로그인/로그아웃/역할 관리
+// ============================================================================
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appWrapper').style.display = 'none';
+  // users 노드 확인 → 비어있으면 관리자 등록 폼 표시
+  if (firebaseDb) {
+    firebaseDb.ref('users').once('value').then(snap => {
+      if (!snap.exists() || !snap.val()) {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('adminSetupForm').style.display = 'block';
+        document.getElementById('pwChangeForm').style.display = 'none';
+      } else {
+        showLoginForm();
+      }
+    }).catch(() => showLoginForm());
+  }
+}
+
+function showLoginForm() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('adminSetupForm').style.display = 'none';
+  document.getElementById('pwChangeForm').style.display = 'none';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+function showPasswordChange() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('adminSetupForm').style.display = 'none';
+  document.getElementById('pwChangeForm').style.display = 'block';
+  document.getElementById('pwChangeError').style.display = 'none';
+  document.getElementById('pwChangeSuccess').style.display = 'none';
+}
+
+async function doLogin() {
+  const empNo = document.getElementById('loginEmpNo').value.trim();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!pw) { errEl.textContent = '비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  try {
+    errEl.style.display = 'none';
+    await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), pw);
+    // onAuthStateChanged가 처리
+  } catch(e) {
+    console.warn('Login failed:', e.code);
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') errEl.textContent = '사번 또는 비밀번호가 올바르지 않습니다.';
+    else if (e.code === 'auth/wrong-password') errEl.textContent = '비밀번호가 올바르지 않습니다.';
+    else if (e.code === 'auth/too-many-requests') errEl.textContent = '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.';
+    else errEl.textContent = '로그인 실패: ' + (e.message || '알 수 없는 오류');
+    errEl.style.display = 'block';
+  }
+}
+
+async function doAdminSetup() {
+  const empNo = document.getElementById('setupEmpNo').value.trim();
+  const name = document.getElementById('setupName').value.trim();
+  const pw = document.getElementById('setupPassword').value;
+  const errEl = document.getElementById('setupError');
+  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!name) { errEl.textContent = '이름을 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!pw || pw.length < 6) { errEl.textContent = '비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
+  try {
+    errEl.style.display = 'none';
+    const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), pw);
+    await firebaseDb.ref('users/' + cred.user.uid).set({
+      empNo, name, role: 'admin', createdAt: new Date().toISOString().slice(0,10)
+    });
+    // onAuthStateChanged가 처리
+  } catch(e) {
+    errEl.textContent = '등록 실패: ' + (e.message || '알 수 없는 오류');
+    errEl.style.display = 'block';
+  }
+}
+
+async function doPasswordChange() {
+  const empNo = document.getElementById('pwChangeEmpNo').value.trim();
+  const oldPw = document.getElementById('pwChangeOld').value;
+  const newPw = document.getElementById('pwChangeNew').value;
+  const errEl = document.getElementById('pwChangeError');
+  const okEl = document.getElementById('pwChangeSuccess');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!oldPw) { errEl.textContent = '현재 비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!newPw || newPw.length < 6) { errEl.textContent = '새 비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
+  try {
+    const cred = await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), oldPw);
+    await cred.user.updatePassword(newPw);
+    await firebaseAuth.signOut();
+    okEl.textContent = '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.';
+    okEl.style.display = 'block';
+    setTimeout(() => showLoginForm(), 2000);
+  } catch(e) {
+    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') errEl.textContent = '현재 비밀번호가 올바르지 않습니다.';
+    else errEl.textContent = '변경 실패: ' + (e.message || '');
+    errEl.style.display = 'block';
+  }
+}
+
+async function doLogout() {
+  if (!confirm('로그아웃하시겠습니까?')) return;
+  try { await firebaseAuth.signOut(); } catch(e) { console.warn(e); }
+  currentUser = null;
+  showLoginScreen();
+}
+
+function onLoginSuccess() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appWrapper').style.display = '';
+  // 헤더에 사용자 이름 표시
+  const nameEl = document.getElementById('headerUserName');
+  if (nameEl) nameEl.textContent = currentUser.name || currentUser.empNo;
+  // 역할별 UI 적용
+  applyRolePermissions(currentUser.role);
+  // 앱 데이터 로드 (최초 1회)
+  if (allData.length === 0) {
+    loadCustomStations();
+    loadAllData();
+    loadAuditors();
+    loadSchedule();
+    populateStationDropdown();
+    populateViewStationDropdown();
+    renderInputPendingStations();
+  }
+  switchTab(0);
+}
+
+function hasRole(minRole) {
+  if (!currentUser) return false;
+  const hierarchy = { viewer: 0, auditor: 1, admin: 2 };
+  return (hierarchy[currentUser.role] || 0) >= (hierarchy[minRole] || 0);
+}
+
+function requireRole(minRole) {
+  if (!hasRole(minRole)) {
+    showToast('권한이 없습니다. (' + minRole + ' 이상 필요)', 'error');
+    return false;
+  }
+  return true;
+}
+
+function applyRolePermissions(role) {
+  // 탭 표시/숨김
+  const tabButtons = document.querySelectorAll('.desktop-tab');
+  tabButtons.forEach(btn => {
+    const tabIdx = parseInt(btn.dataset.tab);
+    if (role === 'viewer' && [1, 5, 6].includes(tabIdx)) btn.style.display = 'none';
+    else if (role === 'auditor' && tabIdx === 6) btn.style.display = 'none';
+    else btn.style.display = '';
+  });
+}
+
+// 관리 탭: 사용자 관리 섹션 렌더링
+async function renderUserManagement() {
+  const container = document.getElementById('userManagementArea');
+  if (!container) return;
+  if (!hasRole('admin')) { container.innerHTML = ''; return; }
+  try {
+    const snap = await firebaseDb.ref('users').once('value');
+    const users = snap.val() || {};
+    let html = '<table class="apple-table"><thead><tr><th>사번</th><th>이름</th><th>역할</th><th>등록일</th><th>관리</th></tr></thead><tbody>';
+    for (const [uid, u] of Object.entries(users)) {
+      const isSelf = uid === currentUser.uid;
+      html += `<tr>`;
+      html += `<td>${u.empNo || '-'}</td>`;
+      html += `<td style="font-weight:${isSelf?'600':'400'};">${u.name || '-'}${isSelf?' (나)':''}</td>`;
+      html += `<td><select onchange="changeUserRole('${uid}',this.value)" class="apple-input" style="padding:4px 8px;font-size:12px;" ${isSelf?'disabled':''}>`;
+      ['admin','auditor','viewer'].forEach(r => {
+        html += `<option value="${r}" ${u.role===r?'selected':''}>${r==='admin'?'관리자':r==='auditor'?'심사원':'뷰어'}</option>`;
+      });
+      html += `</select></td>`;
+      html += `<td style="font-size:12px;">${u.createdAt || '-'}</td>`;
+      html += `<td>${isSelf?'-':`<button onclick="deleteUser('${uid}','${u.empNo}')" style="background:none;border:none;color:#D20015;font-size:12px;cursor:pointer;">삭제</button>`}</td>`;
+      html += `</tr>`;
+    }
+    html += '</tbody></table>';
+    // 사용자 추가 폼
+    html += `<div class="apple-card" style="padding:16px;margin-top:16px;">`;
+    html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">새 사용자 추가</h4>`;
+    html += `<div class="grid grid-cols-1 md:grid-cols-4 gap-3">`;
+    html += `<div><label class="apple-label">사번</label><input id="newUserEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="7자리" class="apple-input"></div>`;
+    html += `<div><label class="apple-label">이름</label><input id="newUserName" type="text" placeholder="이름" class="apple-input"></div>`;
+    html += `<div><label class="apple-label">역할</label><select id="newUserRole" class="apple-input"><option value="auditor">심사원</option><option value="viewer">뷰어</option><option value="admin">관리자</option></select></div>`;
+    html += `<div style="display:flex;align-items:flex-end;"><button onclick="createNewUser()" class="pill-btn pill-btn-primary" style="width:100%;">추가</button></div>`;
+    html += `</div>`;
+    html += `<div id="newUserResult" style="margin-top:8px;font-size:13px;"></div>`;
+    html += `</div>`;
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<p style="color:#D20015;">사용자 목록 로드 실패</p>'; }
+}
+
+async function createNewUser() {
+  if (!requireRole('admin')) return;
+  const empNo = document.getElementById('newUserEmpNo').value.trim();
+  const name = document.getElementById('newUserName').value.trim();
+  const role = document.getElementById('newUserRole').value;
+  const resultEl = document.getElementById('newUserResult');
+  if (!empNo || empNo.length !== 7) { resultEl.innerHTML = '<span style="color:#D20015;">사번 7자리를 입력해주세요.</span>'; return; }
+  if (!name) { resultEl.innerHTML = '<span style="color:#D20015;">이름을 입력해주세요.</span>'; return; }
+  // 임시 비밀번호 생성
+  const tempPw = empNo.slice(-4) + '00';
+  const adminEmail = currentUser.empNo + AUTH_DOMAIN;
+  try {
+    resultEl.innerHTML = '<span style="color:#9EA2A1;">생성 중...</span>';
+    // 현재 admin 비밀번호를 재인증에 사용하기 어려우므로 다른 방법 사용
+    // createUser 후 자동 로그인되므로, 바로 admin으로 재로그인
+    const adminPwPrompt = prompt('계정 생성을 위해 관리자 비밀번호를 입력해주세요:');
+    if (!adminPwPrompt) { resultEl.innerHTML = ''; return; }
+    const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), tempPw);
+    await firebaseDb.ref('users/' + cred.user.uid).set({
+      empNo, name, role, createdAt: new Date().toISOString().slice(0,10)
+    });
+    // admin으로 재로그인
+    await firebaseAuth.signInWithEmailAndPassword(adminEmail, adminPwPrompt);
+    resultEl.innerHTML = `<span style="color:#22C55E;">✓ ${name}(${empNo}) 계정이 생성되었습니다.</span><br><span style="font-weight:600;">임시 비밀번호: ${tempPw}</span><br><span style="color:#9EA2A1;">사용자에게 전달 후 비밀번호 변경을 안내해주세요.</span>`;
+    document.getElementById('newUserEmpNo').value = '';
+    document.getElementById('newUserName').value = '';
+    renderUserManagement();
+  } catch(e) {
+    if (e.code === 'auth/email-already-in-use') resultEl.innerHTML = '<span style="color:#D20015;">이미 등록된 사번입니다.</span>';
+    else resultEl.innerHTML = `<span style="color:#D20015;">생성 실패: ${e.message || ''}</span>`;
+  }
+}
+
+async function changeUserRole(uid, newRole) {
+  if (!requireRole('admin')) return;
+  try {
+    await firebaseDb.ref('users/' + uid + '/role').set(newRole);
+    showToast('역할이 변경되었습니다.', 'success');
+  } catch(e) { showToast('역할 변경 실패', 'error'); }
+}
+
+async function deleteUser(uid, empNo) {
+  if (!requireRole('admin')) return;
+  if (!confirm(`${empNo} 사용자를 삭제하시겠습니까?\n(Firebase Auth 계정은 Console에서 별도 삭제 필요)`)) return;
+  try {
+    await firebaseDb.ref('users/' + uid).remove();
+    showToast('사용자가 삭제되었습니다.', 'success');
+    renderUserManagement();
+  } catch(e) { showToast('삭제 실패', 'error'); }
 }
 
 function updateSyncStatus() {
@@ -2808,45 +3040,81 @@ const SafeStorage = {
     }
   },
   remove(key) {
-    try { localStorage.removeItem(key); } catch(e) {}
+    try { localStorage.removeItem(key); } catch(e) { console.warn('Storage remove failed:', key, e); }
   },
 };
 
 // ============================================================================
 // DATA PERSISTENCE
 // ============================================================================
+// v14.1.0: 안전감사 점검표 ID 마이그레이션 (중복 ID → 유니크 ID)
+function migrateSafetyScoreIds(record) {
+  if (!['safety_branch', 'safety_division'].includes(record.type)) return record;
+  if (record._safetyIdMigrated) return record;
+  const checklist = getChecklist(record.type);
+  if (!checklist || !record.scores) return record;
+  // 기존 ID가 "1)", "2)" 형태인지 확인 (새 ID는 "1.1)", "2.1)" 형태)
+  const scoreKeys = Object.keys(record.scores);
+  const hasOldIds = scoreKeys.some(k => /^\d+\)$/.test(k));
+  if (!hasOldIds) { record._safetyIdMigrated = true; return record; }
+  const newScores = {};
+  const newRemarks = {};
+  for (const [catName, catData] of Object.entries(checklist)) {
+    for (const item of catData.items) {
+      // 새 ID "1.1)" → 기존 ID "1)" 추출
+      const oldId = item.id.split('.').pop();
+      if (record.scores[oldId] !== undefined) {
+        newScores[item.id] = record.scores[oldId];
+      }
+      if (record.remarks && record.remarks[oldId] !== undefined) {
+        newRemarks[item.id] = record.remarks[oldId];
+      }
+    }
+  }
+  record.scores = newScores;
+  record.remarks = newRemarks;
+  record._safetyIdMigrated = true;
+  return record;
+}
+
+// v14.0.0: 레코드 정규화 — CHECKLIST_REGISTRY 기반으로 auditCategory/scoringMethod 설정
+function normalizeRecord(d) {
+  const reg = CHECKLIST_REGISTRY[d.type];
+  if (reg) {
+    d.auditCategory = reg.category;
+    d.scoringMethod = reg.scoring;
+  } else {
+    if (!d.auditCategory) d.auditCategory = 'branch';
+    if (!d.scoringMethod) d.scoringMethod = 'grade';
+  }
+  if (!d.remarks) d.remarks = {};
+  d = migrateSafetyScoreIds(d);
+  return d;
+}
+
 function loadAllData() {
   try {
     const stored = SafeStorage.get(STORAGE_KEY, null);
     if (stored) {
       allData = stored;
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
     } else {
       allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
-      allData = allData.map(d => { if(!d.auditCategory){ const divTypes = ['safety_branch','safety_division','qa_flight_ops','qa_cabin','qa_ground_ops','qa_safety_security','qa_maint','qa_maintenance','qa_catering','fsds']; d.auditCategory = divTypes.includes(d.type) ? 'division' : 'branch'; d.scoringMethod = divTypes.includes(d.type) ? 'binary' : 'grade'; } if(!d.remarks)d.remarks={}; return d; });
-      saveAllData();
     }
+    allData = allData.map(normalizeRecord);
+    if (!stored) saveAllData();
+    // 마이그레이션된 데이터 저장
+    if (allData.some(d => d._safetyIdMigrated && !stored?._migrationSaved)) saveAllData();
   } catch (e) {
+    console.warn('Data load failed, using defaults:', e);
     allData = JSON.parse(JSON.stringify(PRELOADED_DATA));
+    allData = allData.map(normalizeRecord);
     saveAllData();
   }
-  // Load GAS URL
-  GAS_URL = localStorage.getItem('eastar_gas_url') || '';
-  const gasInput = document.getElementById('gasUrl');
-  if (gasInput) gasInput.value = GAS_URL;
 }
 
 function saveAllData() {
   SafeStorage.set(STORAGE_KEY, allData);
   firebaseSaveAllData();
-}
-
-function saveGasUrl() {
-  GAS_URL = document.getElementById('gasUrl').value.trim();
-  try {
-    localStorage.setItem('eastar_gas_url', GAS_URL);
-  } catch(e) { /* GAS URL 저장 실패는 무시 가능 */ }
-  showToast('GAS URL이 저장되었습니다.', 'success');
 }
 
 function findRecord(year, station, type, company) {
@@ -3489,6 +3757,7 @@ function updateTotalDisplay() {
 }
 
 function saveAssessment() {
+  if (!requireRole('auditor')) return;
   const year = selectedYear;
   const station = selectedStation;
   const type = selectedType;
@@ -3497,7 +3766,7 @@ function saveAssessment() {
   const auditDateStart = document.getElementById('inputDateStart').value;
   const auditDateEnd = document.getElementById('inputDateEnd').value;
   const auditDate = auditDateStart ? auditDateStart.slice(0, 7) : ''; // 통계용 년-월
-  const company = (type !== 'branch') ? (HANDLING_COMPANIES[type]?.[station] || '') : undefined;
+  const company = TYPES_WITH_COMPANY.includes(type) ? (HANDLING_COMPANIES[type]?.[station] || '') : undefined;
   const region = getRegionForStation(station);
 
   // 전체 항목 입력 여부 검증
@@ -3762,9 +4031,9 @@ function viewSearch() {
       for (const station of REGIONS[reg].stations) {
         if (selectedStationFilter && station !== selectedStationFilter) continue;
         if (searchText && !station.includes(searchText)) continue;
-        const typesToShow = type === '전체' ? ['branch', 'pax', 'ramp'] : [type];
+        const typesToShow = type === '전체' ? ALL_BRANCH_TYPES : [type];
         for (const t of typesToShow) {
-          const company = (t !== 'branch') ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
+          const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
           const record = findRecord(year, station, t, company || undefined);
           viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: 'branch' });
         }
@@ -3933,14 +4202,14 @@ function renderScoreViewTable() {
       const completedTypes = Object.values(group.types).filter(e => e.record);
       const status = makeStatusBadge(completedTypes, Object.values(group.types).length);
 
-      let dateDisplay = '-';
-      if (anyRecord) {
-        dateDisplay = anyRecord.auditDateStart
-          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-            ? anyRecord.auditDateStart.substring(5) + '~' + anyRecord.auditDateEnd.substring(5)
-            : anyRecord.auditDateStart.substring(5))
-          : (anyRecord.auditDate || '-');
-      }
+      // allData 우선, 없으면 scheduleData 보완
+      const mSchItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+      const mDs = (anyRecord?.auditDateStart) || (mSchItem?.dateStart) || '';
+      const mDe = (anyRecord?.auditDateEnd) || (mSchItem?.dateEnd) || '';
+      const dateDisplay = mDs
+        ? (mDe && mDe !== mDs ? mDs.substring(5) + '~' + mDe.substring(5) : mDs.substring(5))
+        : (anyRecord?.auditDate || '-');
+      const mAuditor = (anyRecord?.auditor) || (mSchItem?.auditors) || '-';
 
       const borderColor = completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1';
       mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${isDivision ? '#6366F1' : borderColor};" onclick="toggleViewDetail('${rowId}')">`;
@@ -3950,11 +4219,11 @@ function renderScoreViewTable() {
       mhtml += `</div>`;
       // 점수 미니 바
       mhtml += `<div class="flex justify-between" style="gap:8px;">`;
-      const typeKeys = isDivision ? Object.keys(group.types) : ['branch', 'pax', 'ramp'];
+      const typeKeys = isDivision ? Object.keys(group.types) : ALL_BRANCH_TYPES;
       typeKeys.forEach(type => {
         const entry = group.types[type];
         const reg = CHECKLIST_REGISTRY[type];
-        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (type === 'branch' ? '지점' : type === 'pax' ? '여객' : '램프');
+        const label = isDivision ? (reg ? reg.name.replace(/ 품질심사| 안전감사/g, '').substring(0, 6) : type) : (TYPE_SHORT_LABELS[type] || type);
         if (entry && entry.record) {
           const method = getScoringMethod(type);
           if (method === 'binary') {
@@ -3980,8 +4249,8 @@ function renderScoreViewTable() {
         }
       });
       mhtml += `</div>`;
-      if (anyRecord) {
-        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${(anyRecord.auditor || '-')}</div>`;
+      if (anyRecord || mSchItem) {
+        mhtml += `<div style="font-size:11px;color:#9EA2A1;margin-top:6px;border-top:1px solid rgba(192,206,209,0.2);padding-top:5px;">${dateDisplay} · ${mAuditor}</div>`;
       }
       mhtml += `</div>`;
       mhtml += `<div id="${rowId}" class="hidden" style="margin-bottom:8px;"><div id="viewGroupDetail_${gIdx}" style="padding:4px;">`;
@@ -4005,6 +4274,7 @@ function renderScoreViewTable() {
     html += '<th style="text-align:center;">지점</th>';
     html += '<th style="text-align:center;">여객</th>';
     html += '<th style="text-align:center;">램프</th>';
+    html += '<th style="text-align:center;">안전감사</th>';
     html += '<th style="text-align:center;">상태</th>';
     html += '</tr></thead><tbody>';
     branchGroups.forEach((group, i) => {
@@ -4015,25 +4285,26 @@ function renderScoreViewTable() {
       const totalTypes = Object.values(group.types).length;
       const status = makeStatusBadge(completedTypes, totalTypes);
 
-      let dateDisplay = '-', auditorDisplay = '-';
-      if (anyRecord) {
-        dateDisplay = anyRecord.auditDateStart
-          ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-            ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd : anyRecord.auditDateStart)
-          : (anyRecord.auditDate || '-');
-        auditorDisplay = anyRecord.auditor || '-';
-      }
+      // allData 우선, 없으면 scheduleData에서 보완
+      const schItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+      const auditorVal = (anyRecord?.auditor) || (schItem?.auditors) || '-';
+      const dsVal = (anyRecord?.auditDateStart) || (schItem?.dateStart) || '';
+      const deVal = (anyRecord?.auditDateEnd) || (schItem?.dateEnd) || '';
+      const dateDisplay = dsVal
+        ? (deVal && deVal !== dsVal ? dsVal + ' ~ ' + deVal : dsVal)
+        : (anyRecord?.auditDate || '-');
 
       html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
       html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
       html += `<td style="font-size:13px;">${dateDisplay}</td>`;
-      html += `<td style="font-size:13px;">${auditorDisplay}</td>`;
+      html += `<td style="font-size:13px;">${auditorVal}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['pax'], 'pax')}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['ramp'], 'ramp')}</td>`;
+      html += `<td style="text-align:center;">${makeTypeBadge(group.types['safety_branch'], 'safety_branch')}</td>`;
       html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','branch')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
-      html += `<tr id="${rowId}" class="hidden"><td colspan="7" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
+      html += `<tr id="${rowId}" class="hidden"><td colspan="8" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px 16px 8px 16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
     html += '</tbody></table></div>';
   }
@@ -4100,16 +4371,19 @@ function renderGroupReadOnlyDetail(gIdx, group) {
   const anyRecord = Object.values(group.types).find(e => e.record)?.record;
   let html = '';
 
-  // 공통 심사 정보
-  if (anyRecord) {
-    const dateDisplay = anyRecord.auditDateStart
-      ? (anyRecord.auditDateEnd && anyRecord.auditDateEnd !== anyRecord.auditDateStart
-        ? anyRecord.auditDateStart + ' ~ ' + anyRecord.auditDateEnd
-        : anyRecord.auditDateStart)
-      : (anyRecord.auditDate || '-');
-    html += `<div class="apple-card" style="padding:14px;margin-bottom:12px;">`;
+  // 공통 심사 정보 (allData 우선, 없으면 scheduleData에서 보완)
+  const schedItem = scheduleData.find(s => s.year == group.year && s.station === group.station);
+  const auditorDisplay = (anyRecord?.auditor) || (schedItem?.auditors) || '-';
+  const dateStartVal = (anyRecord?.auditDateStart) || (schedItem?.dateStart) || '';
+  const dateEndVal = (anyRecord?.auditDateEnd) || (schedItem?.dateEnd) || '';
+  const dateDisplay = dateStartVal
+    ? (dateEndVal && dateEndVal !== dateStartVal ? dateStartVal + ' ~ ' + dateEndVal : dateStartVal)
+    : (anyRecord?.auditDate || '-');
+
+  if (anyRecord || schedItem) {
+    html += `<div class="apple-card" style="padding:14px;margin-bottom:8px;">`;
     html += `<div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">`;
-    html += `<div class="flex gap-4"><div><span style="font-size:12px;color:#9EA2A1;">심사원</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${anyRecord.auditor || '-'}</div></div>`;
+    html += `<div class="flex gap-4"><div><span style="font-size:12px;color:#9EA2A1;">심사원</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${auditorDisplay}</div></div>`;
     html += `<div><span style="font-size:12px;color:#9EA2A1;">심사일</span><div style="font-size:14px;font-weight:600;color:#303A3C;">${dateDisplay}</div></div></div>`;
     html += `<button onclick="event.stopPropagation();startGroupEditCommon(${gIdx})" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;font-size:13px;flex-shrink:0;">공통 정보 수정</button>`;
     html += `</div></div>`;
@@ -4117,9 +4391,9 @@ function renderGroupReadOnlyDetail(gIdx, group) {
 
   // 구분별 점수 카드 (높이 정렬 + 클릭 시 상세보기)
   const isDivGroup = group.auditCategory === 'division' || !!DIVISIONS[group.station];
-  const typeKeys = isDivGroup ? Object.keys(group.types) : ['branch', 'pax', 'ramp'].filter(t => group.types[t]);
+  const typeKeys = Object.keys(group.types).filter(t => group.types[t]);
   const gridCols = Math.min(typeKeys.length, 4);
-  html += `<div class="grid grid-cols-1 md:grid-cols-${gridCols} gap-3" style="align-items:stretch;">`;
+  html += `<div class="grid grid-cols-1 md:grid-cols-${gridCols} gap-2" style="align-items:stretch;">`;
   typeKeys.forEach(type => {
     const entry = group.types[type];
     if (!entry) return;
@@ -4435,6 +4709,7 @@ function saveGroupTypeEdit(gIdx, type) {
 }
 
 function deleteGroupType(gIdx, type) {
+  if (!requireRole('admin')) return;
   const groups = getViewGroups();
   const group = groups[gIdx];
   if (!group) return;
@@ -4623,6 +4898,7 @@ function saveEdit(idx) {
 }
 
 function deleteRecord(idx) {
+  if (!requireRole('admin')) return;
   const entry = viewEntries[idx];
   if (!entry || !entry.record) return;
 
@@ -4743,6 +5019,7 @@ function renderStatsDashboard() {
   let intlAvg = 0, intlCount = 0;
 
   yearData.forEach(d => {
+    if (getScoringMethod(d.type) === 'binary') return; // 안전감사(binary) 제외
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
     const avg = result.overallAverage;
@@ -5411,7 +5688,7 @@ function renderAnalysis() {
 
   // 3. Type comparison
   const typeAvgs = {};
-  ['branch', 'pax', 'ramp'].forEach(type => {
+  GRADE_BRANCH_TYPES.forEach(type => {
     const typeData = yearData.filter(d => d.type === type);
     if (typeData.length > 0) {
       typeAvgs[type] = typeData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / typeData.length;
@@ -6335,8 +6612,8 @@ function getScheduleStatusBadgeStyle(status) {
 function getExpectedTypesForStation(station) {
   // 본부/실인 경우 해당 점검표 유형 반환
   if (DIVISIONS[station]) return DIVISIONS[station].checklists;
-  // 지점인 경우 기본 3종
-  return ['branch', 'pax', 'ramp'];
+  // 지점인 경우 기본 4종 (품질심사 3종 + 안전감사)
+  return ALL_BRANCH_TYPES;
 }
 
 function calcScheduleStatus(item) {
@@ -6402,7 +6679,9 @@ function renderSchedule() {
   currentScheduleId = null;
 
   const currentMonth = new Date().getMonth() + 1;
-  const scheduleYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+  if (typeof window._scheduleViewYear === 'undefined') window._scheduleViewYear = currentYear;
+  const scheduleYear = window._scheduleViewYear;
 
   // Group by month
   const monthMap = {};
@@ -6413,9 +6692,17 @@ function renderSchedule() {
   });
 
   let html = '';
-  html += '<div class="flex items-end justify-between mb-6">';
-  html += `<div><h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
-  html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p></div>';
+  // 연도 선택 세그먼트 컨트롤
+  html += '<div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-6 gap-3">';
+  html += '<div>';
+  html += `<h2 class="section-title">${scheduleYear}년 품질심사 일정</h2>`;
+  html += '<p class="section-subtitle mt-1">월별 심사 일정 및 진행 현황 &middot; 지점을 클릭하면 상세 정보를 확인할 수 있습니다</p>';
+  html += '<div class="flex gap-1 mt-3" style="background:#f5f5f7;border-radius:980px;padding:3px;display:inline-flex;">';
+  [currentYear - 2, currentYear - 1, currentYear, currentYear + 1].forEach(y => {
+    const isActive = y === scheduleYear;
+    html += `<button onclick="window._scheduleViewYear=${y};renderSchedule();" style="border:none;border-radius:980px;padding:6px 16px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:-0.224px;background:${isActive?'#D20015':'transparent'};color:${isActive?'#fff':'#565A5B'};">${y}년</button>`;
+  });
+  html += '</div></div>';
   html += '<button onclick="showAddScheduleForm()" class="pill-btn pill-btn-primary" style="flex-shrink:0;">+ 일정 추가</button>';
   html += '</div>';
 
@@ -6810,6 +7097,21 @@ function saveScheduleItem(scheduleId) {
   }
 
   saveSchedule();
+
+  // allData에도 역동기화 (심사원, 심사일)
+  const matched = allData.filter(d => d.year == item.year && d.station === item.station);
+  if (matched.length > 0) {
+    matched.forEach(record => {
+      if (item.auditors) record.auditor = item.auditors;
+      if (item.dateStart) {
+        record.auditDateStart = item.dateStart;
+        record.auditDate = item.dateStart.slice(0, 7);
+      }
+      if (item.dateEnd) record.auditDateEnd = item.dateEnd;
+    });
+    saveAllData();
+  }
+
   showToast('일정이 저장되었습니다.', 'success');
 
   // Stay on Phase 2, re-render
@@ -6857,6 +7159,15 @@ function saveNewSchedule() {
   const auditCycle = cycleSel ? cycleSel.value : 'yearly';
   const exceptionReason = document.getElementById('newScheduleExceptionReason')?.value || '';
 
+  // 같은 연도 같은 지점 중복 등록 방지
+  const duplicate = scheduleData.find(s => s.year === year && s.station === station);
+  if (duplicate) {
+    if (!confirm(`${station}은(는) ${year}년 ${duplicate.month}월에 이미 일정이 등록되어 있습니다.\n기존 일정을 덮어쓰시겠습니까?`)) return;
+    // 기존 일정 삭제 후 새로 등록
+    const dupIdx = scheduleData.findIndex(s => s.id === duplicate.id);
+    if (dupIdx >= 0) scheduleData.splice(dupIdx, 1);
+  }
+
   const newId = 'S' + String(Date.now()).slice(-8);
 
   scheduleData.push({
@@ -6867,7 +7178,7 @@ function saveNewSchedule() {
   });
 
   saveSchedule();
-  showToast(`${station} 심사 일정이 등록되었습니다.`, 'success');
+  showToast(`${station} ${year}년 심사 일정이 등록되었습니다.`, 'success');
   setSchedulePhase(1);
 }
 
@@ -6954,8 +7265,9 @@ function renderAddScheduleForm() {
   html += '<div class="mb-4">';
   html += '<label class="apple-label">연도</label>';
   html += '<select id="newScheduleYear" class="apple-input">';
-  [2025, 2026, 2027].forEach(y => {
-    html += '<option value="' + y + '"' + (y === 2026 ? ' selected' : '') + '>' + y + '년</option>';
+  const formYear = new Date().getFullYear();
+  [formYear - 2, formYear - 1, formYear, formYear + 1].forEach(y => {
+    html += '<option value="' + y + '"' + (y === formYear ? ' selected' : '') + '>' + y + '년</option>';
   });
   html += '</select>';
   html += '</div>';
@@ -6972,6 +7284,11 @@ function renderAddScheduleForm() {
     });
     html += '</optgroup>';
   }
+  html += '<optgroup label="실/본부">';
+  DIVISION_NAMES.forEach(div => {
+    html += '<option value="' + div + '">' + div + '</option>';
+  });
+  html += '</optgroup>';
   html += '<optgroup label="기타">';
   html += '<option value="__new__">+ 신규 지점 직접 입력</option>';
   html += '</optgroup>';
@@ -7073,6 +7390,8 @@ function renderAddScheduleForm() {
 // TAB 6: DATA MANAGEMENT
 // ============================================================================
 function renderDataManagement() {
+  // 사용자 관리 렌더링 (admin만)
+  renderUserManagement();
   // Populate export station dropdown
   const sel = document.getElementById('exportStation');
   const currentVal = sel.value;
@@ -7095,17 +7414,6 @@ function renderDataManagement() {
   // Auditor list
   renderAuditorList();
 
-  // GAS URL
-  document.getElementById('gasUrl').value = GAS_URL;
-  const statusEl = document.getElementById('sheetsStatus');
-  if (GAS_URL) {
-    statusEl.style.cssText = 'background:rgba(34,197,94,0.15);color:#22C55E;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
-    statusEl.textContent = 'URL 설정됨';
-  } else {
-    statusEl.style.cssText = 'background:#f5f5f7;color:#9EA2A1;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
-    statusEl.textContent = '연결 안됨';
-  }
-
   // Firebase status
   const fbBadge = document.getElementById('firebaseStatusBadge');
   if (fbBadge) {
@@ -7125,17 +7433,23 @@ function exportAllExcel() {
     try {
       const wb = XLSX.utils.book_new();
 
-      // Sheet 1: Summary
-      const summaryRows = [['지점', '구분', '협력사', '지역', '연도', '심사일', '심사원', '평균', '달성률(%)']];
+      // Sheet 1: Summary (grade → 평균/달성률, binary → 적합률)
+      const summaryRows = [['지점/부문', '구분', '협력사', '지역', '연도', '심사일', '심사원', '평균/적합률', '달성률(%)']];
       allData.forEach(d => {
-        const result = calculateScores(d.scores, getChecklist(d.type));
-        summaryRows.push([d.station, getTypeLabel(d.type), d.company || '', d.region, d.year, d.auditDate, d.auditor || '', result.overallAverage.toFixed(2), result.achievementRate.toFixed(1)]);
+        const method = getScoringMethod(d.type);
+        if (method === 'binary') {
+          const result = calculateBinaryScores(d.scores, getChecklist(d.type));
+          summaryRows.push([d.station || d.division, getTypeLabel(d.type), d.company || '', d.region || '실/본부', d.year, d.auditDate, d.auditor || '', result.complianceRate.toFixed(1) + '%', '-']);
+        } else {
+          const result = calculateScores(d.scores, getChecklist(d.type));
+          summaryRows.push([d.station, getTypeLabel(d.type), d.company || '', d.region, d.year, d.auditDate, d.auditor || '', result.overallAverage.toFixed(2), result.achievementRate.toFixed(1)]);
+        }
       });
       const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
       XLSX.utils.book_append_sheet(wb, ws1, '종합현황');
 
-      // Sheet per type
-      ['branch', 'pax', 'ramp'].forEach(type => {
+      // Sheet per type (grade 방식)
+      GRADE_BRANCH_TYPES.forEach(type => {
         const checklist = getChecklist(type);
         const items = [];
         for (const [, catData] of Object.entries(checklist)) {
@@ -7155,7 +7469,31 @@ function exportAllExcel() {
         XLSX.utils.book_append_sheet(wb, ws, getTypeLabel(type));
       });
 
-      XLSX.writeFile(wb, `이스타항공_성숙도점검_전체_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
+      // Sheet per type (binary 방식 — 안전감사)
+      BINARY_BRANCH_TYPES.concat(DIVISION_TYPES).forEach(type => {
+        const typeData = allData.filter(d => d.type === type);
+        if (typeData.length === 0) return;
+        const checklist = getChecklist(type);
+        const items = [];
+        for (const [, catData] of Object.entries(checklist)) {
+          for (const item of catData.items) items.push(item);
+        }
+        const header = ['지점/부문', '연도', '심사일', ...items.map(it => it.id), '적합률(%)'];
+        const rows = [header];
+        typeData.forEach(d => {
+          const result = calculateBinaryScores(d.scores, checklist);
+          const row = [d.station || d.division, d.year, d.auditDate, ...items.map(it => {
+            const s = d.scores[it.id];
+            return s !== undefined ? s : '';
+          }), result.complianceRate.toFixed(1)];
+          rows.push(row);
+        });
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const label = getTypeLabel(type);
+        XLSX.utils.book_append_sheet(wb, ws, label.substring(0, 31));
+      });
+
+      XLSX.writeFile(wb, `이스타항공_품질심사_전체_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.xlsx`);
       showToast('엑셀 파일이 다운로드되었습니다.', 'success');
     } catch (e) {
       showToast('엑셀 생성 중 오류가 발생했습니다.', 'error');
@@ -7218,6 +7556,7 @@ function exportJSON() {
 }
 
 function importJSON(event) {
+  if (!requireRole('admin')) return;
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -7231,7 +7570,7 @@ function importJSON(event) {
         return;
       }
       if (!confirm(`${imported.length}건의 데이터를 가져옵니다. 기존 데이터가 교체됩니다. 계속하시겠습니까?`)) return;
-      allData = imported;
+      allData = imported.map(normalizeRecord);
       saveAllData();
       showToast(`${imported.length}건의 데이터를 가져왔습니다.`, 'success');
     } catch (err) {
@@ -7243,6 +7582,7 @@ function importJSON(event) {
 }
 
 function resetAllData() {
+  if (!requireRole('admin')) return;
   if (!confirm('정말로 모든 데이터를 초기화하시겠습니까?\n(심사 데이터, 일정, 심사원 정보가 모두 삭제됩니다)')) return;
   if (!confirm('이 작업은 되돌릴 수 없습니다. 최종 확인합니다. 초기화하시겠습니까?')) return;
   // 심사 데이터 초기화
@@ -7372,6 +7712,89 @@ function deleteAuditor(idx) {
   saveAuditors();
   renderAuditorList();
   showToast('심사원이 삭제되었습니다.', 'info');
+}
+
+// 엑셀 심사원 데이터 업로드 (ESMS Auditor 관리 양식)
+function importAuditorExcel(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      // Excel serial number → YYYY-MM-DD 변환
+      function excelDate(v) {
+        if (!v || v === '') return '';
+        const n = parseFloat(v);
+        if (isNaN(n) || n < 1) return String(v);
+        const d = new Date((n - 25569) * 86400000);
+        return d.toISOString().slice(0, 10);
+      }
+
+      // 헤더 행 건너뛰기 (1행: 컬럼명, 2행: 하위 헤더)
+      let startRow = 2;
+      // 자동 감지: 첫 번째 데이터 행이 사번(숫자) 컬럼을 가진 행
+      for (let i = 0; i < Math.min(rows.length, 5); i++) {
+        if (rows[i] && rows[i][3] && /^\d{5,}$/.test(String(rows[i][3]).trim())) {
+          startRow = i;
+          break;
+        }
+      }
+
+      const imported = [];
+      let updated = 0, added = 0;
+      for (let i = startRow; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[2] || !r[3]) continue; // 이름, 사번 필수
+        const empNo = String(r[3]).trim();
+        const name = String(r[2]).trim();
+        if (!empNo || !name) continue;
+
+        const record = {
+          team: String(r[0] || '').trim(),
+          division: String(r[1] || '').trim(),
+          name,
+          empNo,
+          role: String(r[4] || '').trim(),
+          appointDate: excelDate(r[5]),
+          initialTraining: excelDate(r[6]),
+          refreshTraining: excelDate(r[7]),
+          trainingExpiry: excelDate(r[8])
+        };
+
+        // 기존 사번과 중복 확인 → 업데이트
+        const existIdx = auditorList.findIndex(a => a.empNo === empNo);
+        if (existIdx >= 0) {
+          record.id = auditorList[existIdx].id;
+          auditorList[existIdx] = record;
+          updated++;
+        } else {
+          record.id = 'A' + String(Date.now()).slice(-6) + String(i);
+          auditorList.push(record);
+          added++;
+        }
+        imported.push(record);
+      }
+
+      if (imported.length === 0) {
+        showToast('유효한 심사원 데이터가 없습니다. 엑셀 양식을 확인해주세요.', 'warning');
+        return;
+      }
+
+      saveAuditors();
+      renderAuditorList();
+      showToast(`심사원 ${imported.length}명 처리 완료 (신규 ${added}명, 업데이트 ${updated}명)`, 'success');
+    } catch(e) {
+      console.error('Auditor import error:', e);
+      showToast('엑셀 파일 읽기 실패. 양식을 확인해주세요.', 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
 }
 
 // ============================================================================
@@ -7526,15 +7949,14 @@ function firebaseSaveAllData() {
   if (!firebaseDb) return Promise.resolve();
   try {
     const assessmentObj = {};
-    allData.forEach((d, i) => {
-      let key = `${d.year}_${d.station}_${d.type}`;
-      if (d.company) key += `_${d.company}`;
-      key = key.replace(/[.#$/\[\]]/g, '_');
+    allData.forEach(d => {
+      const key = makeKey(d.year, d.station, d.type, d.company).replace(/[.#$/\[\]]/g, '_');
       const copy = { ...d, scores: encodeScoresForFirebase(d.scores || {}) };
+      if (d.remarks) copy.remarks = encodeScoresForFirebase(d.remarks);
       assessmentObj[key] = copy;
     });
     return firebaseDb.ref('assessments').set(assessmentObj);
-  } catch(e) { console.warn('Firebase save assessments failed:', e); showToast('심사 데이터 Firebase 저장 실패', 'error'); return Promise.reject(e); }
+  } catch(e) { console.error('Firebase save assessments failed:', e); showToast('심사 데이터 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
 function firebaseSaveAuditors() {
@@ -7622,68 +8044,6 @@ function downloadFromFirebase() {
     showToast('다운로드 실패: ' + e.message, 'error');
     hideLoading();
   });
-}
-
-// Google Sheets Integration
-async function syncToSheets(data) {
-  if (!GAS_URL) { showToast('Google Sheets URL이 설정되지 않았습니다.', 'warning'); return; }
-  try {
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'save', data }),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const result = await response.json();
-    if (result.success) showToast('Google Sheets에 저장되었습니다.', 'success');
-    else showToast('동기화 실패: ' + (result.error || '알 수 없는 오류'), 'error');
-  } catch (e) {
-    showToast('동기화 실패. 오프라인 저장됨.', 'error');
-    saveAllData();
-  }
-}
-
-async function loadFromSheets() {
-  if (!GAS_URL) return null;
-  try {
-    const response = await fetch(GAS_URL + '?action=getAll');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (e) { console.warn('Google Sheets 로드 실패:', e); return null; }
-}
-
-async function testSheetsConnection() {
-  GAS_URL = document.getElementById('gasUrl').value.trim();
-  if (!GAS_URL) { showToast('URL을 입력해주세요.', 'warning'); return; }
-  localStorage.setItem('eastar_gas_url', GAS_URL);
-  showLoading('연결 테스트 중...');
-  try {
-    const response = await fetch(GAS_URL + '?action=ping', { method: 'GET' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const result = await response.json();
-    const statusEl = document.getElementById('sheetsStatus');
-    if (result && !result.error) {
-      statusEl.style.cssText = 'background:rgba(34,197,94,0.15);color:#22C55E;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
-      statusEl.textContent = '연결됨';
-      showToast('Google Sheets 연결 성공!', 'success');
-    } else {
-      statusEl.style.cssText = 'background:rgba(210,0,21,0.15);color:#D20015;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
-      statusEl.textContent = '연결 실패';
-      showToast('연결 실패: ' + (result.error || ''), 'error');
-    }
-  } catch (e) {
-    const statusEl = document.getElementById('sheetsStatus');
-    statusEl.style.cssText = 'background:rgba(210,0,21,0.15);color:#D20015;display:inline-block;border-radius:980px;padding:2px 10px;font-size:12px;font-weight:600;';
-    statusEl.textContent = '연결 실패';
-    showToast('연결에 실패했습니다. URL을 확인해주세요.', 'error');
-  }
-  hideLoading();
-}
-
-async function syncToSheetsAll() {
-  if (!GAS_URL) { showToast('Google Sheets URL이 설정되지 않았습니다.', 'warning'); return; }
-  showLoading('데이터 동기화 중...');
-  await syncToSheets(allData);
-  hideLoading();
 }
 
 // ============================================================================
@@ -8100,15 +8460,8 @@ function renderViewRecentStations() {
 }
 
 function init() {
-  loadCustomStations();
-  loadAllData();
-  loadAuditors();
-  loadSchedule();
-  populateStationDropdown();
-  populateViewStationDropdown();
-  switchTab(0);
+  // Firebase 먼저 초기화 → Auth 상태에 따라 앱 로드 (onLoginSuccess에서 처리)
   initFirebase();
-  renderInputPendingStations();
 
   // FAB scroll to top
   window.addEventListener('scroll', () => {
@@ -8276,11 +8629,12 @@ Object.assign(window, {
   exportJSON, importJSON, resetAllData,
   showAddAuditorForm, hideAuditorForm, editAuditor,
   saveAuditorForm, deleteAuditor,
-  renderAuditorPicker, addAuditorTag, removeAuditorTag,
+  renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel,
   // Firebase
   uploadAllToFirebase, downloadFromFirebase,
-  // Network
-  syncToSheets, syncToSheetsAll, testSheetsConnection, saveGasUrl,
+  // Auth
+  doLogin, doLogout, doAdminSetup, doPasswordChange, showPasswordChange, showLoginForm,
+  createNewUser, changeUserRole, deleteUser, hasRole, requireRole,
   // Home
   renderHome, renderInputPendingStations, renderViewRecentStations,
   // UI
@@ -8312,6 +8666,8 @@ Object.assign(window, {
     <div class="analysis-modal-body" id="analysisModalBody"></div>
   </div>
 </div>
+
+</div><!-- /appWrapper -->
 
 </body>
 </html>
