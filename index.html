@@ -2425,6 +2425,18 @@ let scheduleData = [];
 let schedulePhase = 1;
 let currentScheduleId = null;
 
+function setSchedulePhase(phase, scheduleId) {
+  schedulePhase = phase;
+  if (phase === 1) currentScheduleId = null;
+  else if (scheduleId !== undefined) currentScheduleId = scheduleId;
+  renderSchedule();
+}
+
+function scheduleGoBack() {
+  if (schedulePhase === 3) { setSchedulePhase(1); return; }
+  if (schedulePhase === 2) { setSchedulePhase(1); return; }
+}
+
 const CUSTOM_STATIONS_KEY = 'eastar_custom_stations';
 let customStations = [];
 
@@ -2891,7 +2903,7 @@ function switchTab(idx) {
   if (idx === 2) { setViewPhase(1); populateViewStationDropdown(); renderViewRecentStations(); }
   if (idx === 3) renderStatsDashboard();
   if (idx === 4) renderAnalysis();
-  if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); }
+  if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); } // reset without history push (switchTab already records)
   if (idx === 6) renderDataManagement();
 }
 
@@ -6502,7 +6514,7 @@ function renderSchedule() {
       items.forEach((item, i) => {
         const statusResult = calcScheduleStatus(item);
         const dateStr = item.dateStart ? (item.dateEnd && item.dateEnd !== item.dateStart ? item.dateStart.substring(5) + ' ~ ' + item.dateEnd.substring(5) : item.dateStart.substring(5)) : '-';
-        html += '<tr style="cursor:pointer;" onclick="showScheduleStation(\'' + item.id + '\')">';
+        html += '<tr style="cursor:pointer;" onclick="setSchedulePhase(2,\'' + item.id + '\')">';
         if (i === 0) html += `<td data-label="월" style="text-align:center;font-weight:600;" rowspan="${items.length}">${m}월</td>`;
         html += `<td data-label="대상" style="font-weight:500;">${item.displayName || item.station}</td>`;
         html += `<td data-label="심사원" style="font-size:12px;color:#565A5B;">${item.auditors || '-'}</td>`;
@@ -6596,7 +6608,7 @@ function showScheduleStation(scheduleId) {
   let html = '';
   // Navigation bar
   html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">`;
-  html += `<button onclick="schedulePhase=1;currentScheduleId=null;renderSchedule();" class="pill-btn pill-btn-outline" style="padding:6px 16px;font-size:13px;display:flex;align-items:center;gap:4px;">`;
+  html += `<button onclick="scheduleGoBack();" class="pill-btn pill-btn-outline" style="padding:6px 16px;font-size:13px;display:flex;align-items:center;gap:4px;">`;
   html += `<svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>`;
   html += `뒤로</button>`;
   html += `<div>`;
@@ -6659,7 +6671,7 @@ function showScheduleStation(scheduleId) {
   // Save button
   html += '<div class="flex gap-3">';
   html += `<button onclick="saveScheduleItem('${scheduleId}')" class="pill-btn pill-btn-primary">저장</button>`;
-  html += `<button onclick="schedulePhase=1;currentScheduleId=null;renderSchedule();" class="pill-btn pill-btn-outline">취소</button>`;
+  html += `<button onclick="scheduleGoBack();" class="pill-btn pill-btn-outline">취소</button>`;
   html += `<button onclick="deleteScheduleItem('${scheduleId}')" class="pill-btn" style="background:#565A5B;color:#fff;">일정 삭제</button>`;
   html += '</div>';
   html += '</div>';
@@ -6781,8 +6793,7 @@ function saveScheduleItem(scheduleId) {
 }
 
 function showAddScheduleForm() {
-  schedulePhase = 3;
-  renderSchedule();
+  setSchedulePhase(3);
 }
 
 function saveNewSchedule() {
@@ -6833,8 +6844,7 @@ function saveNewSchedule() {
 
   saveSchedule();
   showToast(`${station} 심사 일정이 등록되었습니다.`, 'success');
-  schedulePhase = 1;
-  renderSchedule();
+  setSchedulePhase(1);
 }
 
 function deleteScheduleItem(scheduleId) {
@@ -6847,15 +6857,12 @@ function deleteScheduleItem(scheduleId) {
     scheduleData.splice(idx, 1);
     saveSchedule();
     showToast('일정이 삭제되었습니다.', 'info');
-    schedulePhase = 1;
-    currentScheduleId = null;
-    renderSchedule();
+    setSchedulePhase(1);
   }
 }
 
 function addExceptionAudit(station) {
-  schedulePhase = 3;
-  renderSchedule();
+  setSchedulePhase(3);
   // Pre-select station and set cycle to exception
   setTimeout(() => {
     const sel = document.getElementById('newScheduleStation');
@@ -6906,7 +6913,7 @@ function renderAddScheduleForm() {
 
   // Navigation bar
   html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">';
-  html += '<button onclick="schedulePhase=1;currentScheduleId=null;renderSchedule();" class="pill-btn pill-btn-outline" style="padding:6px 16px;font-size:13px;display:flex;align-items:center;gap:4px;">';
+  html += '<button onclick="scheduleGoBack();" class="pill-btn pill-btn-outline" style="padding:6px 16px;font-size:13px;display:flex;align-items:center;gap:4px;">';
   html += '<svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>';
   html += '뒤로</button>';
   html += '<div>';
@@ -7025,7 +7032,7 @@ function renderAddScheduleForm() {
   // Buttons
   html += '<div class="flex gap-3">';
   html += '<button onclick="saveNewSchedule()" class="pill-btn pill-btn-primary">저장</button>';
-  html += '<button onclick="schedulePhase=1;currentScheduleId=null;renderSchedule();" class="pill-btn pill-btn-outline">취소</button>';
+  html += '<button onclick="scheduleGoBack();" class="pill-btn pill-btn-outline">취소</button>';
   html += '</div>';
 
   html += '</div>';
@@ -8097,7 +8104,7 @@ function init() {
     let navigating = false;  // 히스토리 탐색 중 플래그 (무한루프 방지)
 
     function getState() {
-      return { tab: activeTab, inputPhase, viewPhase };
+      return { tab: activeTab, inputPhase, viewPhase, schedulePhase, currentScheduleId };
     }
 
     function restoreState(state) {
@@ -8105,6 +8112,9 @@ function init() {
       if (state.tab !== activeTab) switchTab(state.tab);
       if (state.tab === 1 && state.inputPhase !== inputPhase) setInputPhase(state.inputPhase);
       if (state.tab === 2 && state.viewPhase !== viewPhase) setViewPhase(state.viewPhase);
+      if (state.tab === 5 && (state.schedulePhase !== schedulePhase || state.currentScheduleId !== currentScheduleId)) {
+        setSchedulePhase(state.schedulePhase, state.currentScheduleId);
+      }
       navigating = false;
     }
 
@@ -8130,6 +8140,13 @@ function init() {
       origSetViewPhase(p);
     };
     window.setViewPhase = setViewPhase;
+
+    const origSetSchedulePhase = setSchedulePhase;
+    setSchedulePhase = function(p, sid) {
+      if (!navigating) { history.push(getState()); forward.length = 0; }
+      origSetSchedulePhase(p, sid);
+    };
+    window.setSchedulePhase = setSchedulePhase;
 
     function navBack() {
       if (history.length === 0) return false;
@@ -8222,7 +8239,7 @@ Object.assign(window, {
   // Analysis tab
   switchAnalysisSubTab, renderAnalysis, toggleAnalysisDetail, closeAnalysisModal,
   // Schedule tab
-  renderSchedule, showScheduleStation, saveScheduleItem,
+  renderSchedule, showScheduleStation, saveScheduleItem, setSchedulePhase, scheduleGoBack,
   showAddScheduleForm, saveNewSchedule, deleteScheduleItem,
   scrollToMonthDetail, addExceptionAudit, toggleExceptionReason,
   autoDetectCycle, toggleNewStationForm, renderAddScheduleForm,
