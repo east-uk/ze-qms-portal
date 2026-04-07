@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>이스타항공 품질관리시스템 포털</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -282,6 +286,16 @@ p, span, td, th, label, div {
   background: #ffffff;
   color: #303A3C;
 }
+/* Flatpickr Apple 스타일 오버라이드 */
+.flatpickr-calendar{border-radius:14px!important;box-shadow:0 4px 24px rgba(0,0,0,0.12)!important;border:none!important;font-family:-apple-system,BlinkMacSystemFont,sans-serif!important;}
+.flatpickr-months .flatpickr-month{height:40px!important;}
+.flatpickr-current-month{font-size:14px!important;font-weight:600!important;}
+.flatpickr-day.selected,.flatpickr-day.selected:hover{background:#D20015!important;border-color:#D20015!important;}
+.flatpickr-day.today{border-color:#D20015!important;color:#D20015!important;}
+.flatpickr-day.today.selected{color:#fff!important;}
+.flatpickr-day:hover{background:rgba(210,0,21,0.08)!important;}
+.flatpickr-months .flatpickr-prev-month:hover svg,.flatpickr-months .flatpickr-next-month:hover svg{fill:#D20015!important;}
+input[data-fp].flatpickr-input{cursor:pointer;}
 select.apple-input {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239EA2A1' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -716,11 +730,11 @@ select.apple-input {
           <div id="auditorPickerArea"></div>
           <div>
             <label class="apple-label">심사 시작일</label>
-            <input id="inputDateStart" type="date" class="apple-input">
+            <input id="inputDateStart" type="text" data-fp class="apple-input" placeholder="날짜 선택" onchange="linkDatePair('inputDateStart','inputDateEnd')">
           </div>
           <div>
             <label class="apple-label">심사 종료일</label>
-            <input id="inputDateEnd" type="date" class="apple-input">
+            <input id="inputDateEnd" type="text" data-fp class="apple-input" placeholder="날짜 선택">
           </div>
         </div>
         <input id="inputAuditor" type="hidden" value="">
@@ -1083,12 +1097,12 @@ select.apple-input {
               <option value="수석심사원(Lead Auditor)">수석심사원(Lead Auditor)</option>
             </select>
           </div>
-          <div><label class="apple-label">최근 임명일</label><input id="af_appointDate" type="date" class="apple-input"></div>
+          <div><label class="apple-label">최근 임명일</label><input id="af_appointDate" type="text" data-fp class="apple-input"></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div><label class="apple-label">초기교육</label><input id="af_initialTraining" type="date" class="apple-input"></div>
-          <div><label class="apple-label">보수교육</label><input id="af_refreshTraining" type="date" class="apple-input"></div>
-          <div><label class="apple-label">교육 유효기간</label><input id="af_trainingExpiry" type="date" class="apple-input"></div>
+          <div><label class="apple-label">초기교육</label><input id="af_initialTraining" type="text" data-fp class="apple-input"></div>
+          <div><label class="apple-label">보수교육</label><input id="af_refreshTraining" type="text" data-fp class="apple-input"></div>
+          <div><label class="apple-label">교육 유효기간</label><input id="af_trainingExpiry" type="text" data-fp class="apple-input"></div>
         </div>
         <input id="af_editId" type="hidden" value="">
         <div class="flex gap-3 justify-end">
@@ -2837,6 +2851,89 @@ function saveSchedule() {
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+// ============================================================================
+// FLATPICKR 글로벌 날짜 입력 관리
+// ============================================================================
+const _fpInstances = new Map();
+
+// 시작일/종료일 쌍 매핑 (id 패턴으로 자동 감지)
+const DATE_PAIR_PATTERNS = [
+  ['inputDateStart', 'inputDateEnd'],
+  ['newScheduleDateStart', 'newScheduleDateEnd'],
+  ['scheduleDateStart', 'scheduleDateEnd'],
+];
+
+function getEndIdForStart(startId) {
+  // 정적 쌍
+  for (const [s, e] of DATE_PAIR_PATTERNS) {
+    if (startId === s) return e;
+  }
+  // 동적 쌍: groupDateStart_0 → groupDateEnd_0, editDateStart_3 → editDateEnd_3
+  if (startId.startsWith('groupDateStart_')) return startId.replace('groupDateStart_', 'groupDateEnd_');
+  if (startId.startsWith('editDateStart_')) return startId.replace('editDateStart_', 'editDateEnd_');
+  return null;
+}
+
+function linkDatePair(startId, endId) {
+  const startVal = document.getElementById(startId)?.value;
+  if (!startVal) return;
+  const endFp = _fpInstances.get(endId);
+  if (endFp) {
+    endFp.set('minDate', startVal);
+    if (!endFp.input.value || endFp.input.value < startVal) endFp.setDate(startVal, true);
+  } else {
+    const endEl = document.getElementById(endId);
+    if (endEl) { endEl.min = startVal; if (!endEl.value || endEl.value < startVal) endEl.value = startVal; }
+  }
+}
+
+function initFlatpickr() {
+  document.querySelectorAll('input[data-fp]').forEach(el => {
+    if (el._flatpickr) return;
+    const endId = getEndIdForStart(el.id);
+    const isStart = !!endId;
+
+    const fp = flatpickr(el, {
+      locale: 'ko',
+      dateFormat: 'Y-m-d',
+      allowInput: true,
+      clickOpens: true,
+      disableMobile: true,
+      prevArrow: '‹',
+      nextArrow: '›',
+      onChange(selectedDates, dateStr) {
+        if (isStart && dateStr) {
+          linkDatePair(el.id, endId);
+        }
+      }
+    });
+    if (el.id) _fpInstances.set(el.id, fp);
+
+    // 종료일이면 시작일 값으로 minDate 초기 설정
+    if (!isStart && el.id) {
+      const startId = el.id.replace('End', 'Start');
+      const startEl = document.getElementById(startId);
+      if (startEl && startEl.value) fp.set('minDate', startEl.value);
+    }
+  });
+}
+
+function refreshFlatpickr() {
+  for (const [id, fp] of _fpInstances) {
+    if (!document.getElementById(id)) { fp.destroy(); _fpInstances.delete(id); }
+  }
+  initFlatpickr();
+}
+
+const _fpObserver = new MutationObserver(() => {
+  const uninitialized = document.querySelectorAll('input[data-fp]:not(.flatpickr-input)');
+  if (uninitialized.length > 0) refreshFlatpickr();
+});
+document.addEventListener('DOMContentLoaded', () => {
+  _fpObserver.observe(document.body, { childList: true, subtree: true });
+  initFlatpickr();
+});
+
 function showToast(message, type = 'info') {
   const colors = { success: '#22C55E', error: '#D20015', warning: '#F59E0B', info: '#303A3C' };
   const container = document.getElementById('toastContainer');
@@ -3594,6 +3691,11 @@ function renderChecklist() {
     html += `<span style="font-size:12px;color:#9EA2A1;font-weight:400;">${catData.maxPoints ? "최대 " + catData.maxPoints + "점" : catData.items.length + "항목"}</span>`;
     html += `</div>`;
     html += `<div class="flex items-center gap-3">`;
+    if (selectedType === 'safety_division' && /^[6-9]\./.test(catName)) {
+      html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
+      html += `<input type="checkbox" id="catNaAll_${catIdx}" onchange="toggleCategoryNA(${catIdx}, this.checked, 'input')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
+      html += `N/A 전체</label>`;
+    }
     html += `<span style="font-size:13px;font-weight:600;color:#D20015;" id="catScore_${catIdx}">${catData.maxPoints ? "0 / " + catData.maxPoints : "0 / " + catData.items.length}</span>`;
     html += `<svg class="arrow w-4 h-4 transform rotate-180" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>`;
     html += `</div></div>`;
@@ -3630,6 +3732,48 @@ function toggleAccordion(id, header) {
   header.classList.toggle('open');
 }
 
+
+// 카테고리 내 모든 항목을 N/A로 전체 체크/해제
+function toggleCategoryNA(catIdx, checked, mode) {
+  const scores = mode === 'input' ? currentScores : editingScores;
+  const checklist = mode === 'input' ? currentChecklist : getChecklist(editingType || selectedType);
+  if (!checklist) return;
+  const catEntries = Object.entries(checklist);
+  if (catIdx >= catEntries.length) return;
+  const [catName, catData] = catEntries[catIdx];
+
+  if (checked) {
+    // 전체 N/A
+    catData.items.forEach(item => { scores[item.id] = 'NA'; });
+  } else {
+    // N/A 해제 (값 삭제)
+    catData.items.forEach(item => { if (scores[item.id] === 'NA' || scores[item.id] === 'N/A') delete scores[item.id]; });
+  }
+  unsavedChanges = true;
+
+  // UI 업데이트: 해당 카테고리의 모든 버튼 스타일 갱신
+  const catEl = document.getElementById(`cat_${catIdx}`) || document.querySelector(`[data-edit-cat="${catIdx}"]`);
+  if (catEl) {
+    catEl.querySelectorAll('.checklist-item-row').forEach(row => {
+      row.querySelectorAll('.score-btn').forEach(b => {
+        b.classList.remove('selected');
+        b.style.background = '';
+        b.style.color = '';
+        b.style.borderColor = '';
+      });
+      if (checked) {
+        // N/A 버튼 활성화
+        const naBtn = row.querySelector('.na-btn');
+        if (naBtn) { naBtn.classList.add('selected'); naBtn.style.background = '#565A5B'; naBtn.style.color = '#fff'; naBtn.style.borderColor = '#565A5B'; }
+      }
+    });
+  }
+
+  if (mode === 'input') {
+    updateCategoryScore(catIdx);
+    updateTotalDisplay();
+  }
+}
 
 function setBinaryScore(itemId, value, btn, catIdx) {
   currentScores[itemId] = value;
@@ -4574,8 +4718,8 @@ function startGroupEditCommon(gIdx) {
   html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">공통 심사 정보 수정</h4>`;
   html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">`;
   html += `<div id="groupAuditorPicker_${gIdx}"></div>`;
-  html += `<div><label class="apple-label">심사 시작일</label><input id="groupDateStart_${gIdx}" type="date" value="${anyRecord.auditDateStart || anyRecord.auditDate || ''}" class="apple-input"></div>`;
-  html += `<div><label class="apple-label">심사 종료일</label><input id="groupDateEnd_${gIdx}" type="date" value="${anyRecord.auditDateEnd || ''}" class="apple-input"></div>`;
+  html += `<div><label class="apple-label">심사 시작일</label><input id="groupDateStart_${gIdx}" type="text" data-fp value="${anyRecord.auditDateStart || anyRecord.auditDate || ''}" class="apple-input" onchange="linkDatePair('groupDateStart_${gIdx}','groupDateEnd_${gIdx}')"></div>`;
+  html += `<div><label class="apple-label">심사 종료일</label><input id="groupDateEnd_${gIdx}" type="text" data-fp value="${anyRecord.auditDateEnd || ''}" class="apple-input" min="${anyRecord.auditDateStart || ''}"></div>`;
   html += `</div>`;
   html += `<div class="flex gap-3 justify-end">`;
   html += `<button onclick="event.stopPropagation();cancelGroupEdit(${gIdx})" class="pill-btn pill-btn-outline">취소</button>`;
@@ -4657,26 +4801,36 @@ function startGroupTypeEdit(gIdx, type) {
 
   const checklist = getChecklist(type);
   const isBinaryEdit = getScoringMethod(type) === 'binary';
+  window.editingType = type; // toggleCategoryNA에서 참조
+  let editCatIdx = 0;
   for (const [catName, catData] of Object.entries(checklist)) {
     html += `<div class="apple-card mb-3 overflow-hidden">`;
     if (isBinaryEdit) {
-      html += `<div class="px-5 py-3" style="background:#ffffff;"><div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span></div></div>`;
+      html += `<div class="px-5 py-3 flex items-center justify-between" style="background:#ffffff;">`;
+      html += `<div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span></div>`;
+      if (type === 'safety_division' && /^[6-9]\./.test(catName)) {
+        html += `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#9EA2A1;white-space:nowrap;" onclick="event.stopPropagation();">`;
+        html += `<input type="checkbox" onchange="toggleCategoryNA(${editCatIdx}, this.checked, 'edit')" style="width:14px;height:14px;accent-color:#565A5B;cursor:pointer;">`;
+        html += `N/A 전체</label>`;
+      }
+      html += `</div>`;
     } else {
       html += `<div class="px-5 py-3" style="background:#ffffff;"><div class="cat-header"><span style="font-size:14px;font-weight:600;color:#303A3C;">${catName}</span><span style="font-size:12px;color:#9EA2A1;margin-left:8px;">최대 ${catData.maxPoints}점</span></div></div>`;
     }
-    html += `<div style="background:#ffffff;">`;
+    html += `<div style="background:#ffffff;" data-edit-cat="${editCatIdx}">`;
 
-    // Delegate item rendering to shared function
     html += renderChecklistItems(catData.items, editingScores, editingRemarks, type, {
       mode: 'edit',
       scoreHandler: 'setEditScore',
       remarkHandler: 'setEditRemark',
       naHandler: 'setEditScoreNA',
       binaryScoreHandler: 'setEditScore',
-      stopPropagation: true
+      stopPropagation: true,
+      catIdx: editCatIdx
     });
 
     html += `</div></div>`;
+    editCatIdx++;
   }
 
   html += `<div class="flex gap-3 mt-4 justify-end">`;
@@ -4806,8 +4960,8 @@ function renderEditDetail(idx, entry) {
   html += `<h4 style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">심사 정보 수정</h4>`;
   html += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
   html += `<div id="editAuditorPicker_${idx}"></div>`;
-  html += `<div><label class="apple-label">심사 시작일</label><input id="editDateStart_${idx}" type="date" value="${entry.record.auditDateStart || entry.record.auditDate || ''}" class="apple-input"></div>`;
-  html += `<div><label class="apple-label">심사 종료일</label><input id="editDateEnd_${idx}" type="date" value="${entry.record.auditDateEnd || ''}" class="apple-input"></div>`;
+  html += `<div><label class="apple-label">심사 시작일</label><input id="editDateStart_${idx}" type="text" data-fp value="${entry.record.auditDateStart || entry.record.auditDate || ''}" class="apple-input" onchange="linkDatePair('editDateStart_${idx}','editDateEnd_${idx}')"></div>`;
+  html += `<div><label class="apple-label">심사 종료일</label><input id="editDateEnd_${idx}" type="text" data-fp value="${entry.record.auditDateEnd || ''}" class="apple-input" min="${entry.record.auditDateStart || ''}"></div>`;
   html += `</div></div>`;
 
   // 점수 수정 체크리스트
@@ -6795,15 +6949,21 @@ function renderSchedule() {
 
   for (let m = 1; m <= 12; m++) {
     const items = monthMap[m] || [];
+    const isCurrentMonth = (m === currentMonth && scheduleYear === currentYear);
+    const rowBg = isCurrentMonth ? 'background:rgba(210,0,21,0.04);' : '';
     if (items.length === 0) {
-      html += `<tr><td data-label="월" style="text-align:center;font-weight:600;">${m}월</td><td data-label="대상" style="color:#9EA2A1;">예정 없음</td><td data-label="심사원">-</td><td data-label="심사 기간" style="text-align:center;">-</td><td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle('upcoming')}">예정</span></td></tr>`;
+      html += `<tr style="${rowBg}"><td data-label="월" style="text-align:center;font-weight:600;${isCurrentMonth?'color:#D20015;':''}">${m}월</td><td data-label="대상" style="color:#C0CED1;">예정 없음</td><td data-label="심사원" style="color:#C0CED1;">-</td><td data-label="심사 기간" style="text-align:center;color:#C0CED1;">-</td><td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle('upcoming')}">예정</span></td></tr>`;
     } else {
       items.forEach((item, i) => {
         const statusResult = calcScheduleStatus(item);
         const dateStr = item.dateStart ? (item.dateEnd && item.dateEnd !== item.dateStart ? item.dateStart.substring(5) + ' ~ ' + item.dateEnd.substring(5) : item.dateStart.substring(5)) : '-';
-        html += '<tr style="cursor:pointer;" onclick="setSchedulePhase(2,\'' + item.id + '\')">';
-        if (i === 0) html += `<td data-label="월" style="text-align:center;font-weight:600;" rowspan="${items.length}">${m}월</td>`;
-        html += `<td data-label="대상" style="font-weight:500;">${item.displayName || item.station}</td>`;
+        const isDivision = !!DIVISIONS[item.station];
+        const dotColor = isDivision ? '#6366F1' : '#22C55E';
+        const nameColor = isDivision ? 'color:#6366F1;' : '';
+        const dotHtml = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};margin-right:6px;vertical-align:middle;"></span>`;
+        html += `<tr style="cursor:pointer;${rowBg}" onclick="setSchedulePhase(2,'${item.id}')">`;
+        if (i === 0) html += `<td data-label="월" style="text-align:center;font-weight:600;${isCurrentMonth?'color:#D20015;':''}" rowspan="${items.length}">${m}월</td>`;
+        html += `<td data-label="대상" style="font-weight:500;${nameColor}">${dotHtml}${item.displayName || item.station}</td>`;
         html += `<td data-label="심사원" style="font-size:12px;color:#565A5B;">${item.auditors || '-'}</td>`;
         html += `<td data-label="심사 기간" style="text-align:center;font-size:12px;">${dateStr}</td>`;
         html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(statusResult.status)}">${statusResult.label}</span></td>`;
@@ -6915,11 +7075,11 @@ function showScheduleStation(scheduleId) {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += `<input type="date" id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}">`;
+  html += `<input type="text" data-fp id="scheduleDateStart" class="apple-input" value="${item.dateStart || ''}" onchange="linkDatePair('scheduleDateStart','scheduleDateEnd')">`;
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
-  html += `<input type="date" id="scheduleDateEnd" class="apple-input" value="${item.dateEnd || ''}">`;
+  html += `<input type="text" data-fp id="scheduleDateEnd" class="apple-input" value="${item.dateEnd || ''}" min="${item.dateStart || ''}">`;
   html += '</div>';
   html += '</div>';
 
@@ -7346,11 +7506,11 @@ function renderAddScheduleForm() {
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
   html += '<div>';
   html += '<label class="apple-label">심사 시작일</label>';
-  html += '<input type="date" id="newScheduleDateStart" class="apple-input">';
+  html += '<input type="text" data-fp id="newScheduleDateStart" class="apple-input" onchange="linkDatePair(\'newScheduleDateStart\',\'newScheduleDateEnd\')">';
   html += '</div>';
   html += '<div>';
   html += '<label class="apple-label">심사 종료일</label>';
-  html += '<input type="date" id="newScheduleDateEnd" class="apple-input">';
+  html += '<input type="text" data-fp id="newScheduleDateEnd" class="apple-input">';
   html += '</div>';
   html += '</div>';
 
@@ -8629,7 +8789,7 @@ Object.assign(window, {
   exportJSON, importJSON, resetAllData,
   showAddAuditorForm, hideAuditorForm, editAuditor,
   saveAuditorForm, deleteAuditor,
-  renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel,
+  renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel, toggleCategoryNA,
   // Firebase
   uploadAllToFirebase, downloadFromFirebase,
   // Auth
