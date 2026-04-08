@@ -603,6 +603,7 @@ select.apple-input {
     <div style="font-size:12px;letter-spacing:-0.224px;color:rgba(255,255,255,0.55);display:flex;align-items:center;gap:8px;">
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
+      <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
       <span>v14</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
@@ -616,6 +617,7 @@ select.apple-input {
         <span style="font-size:14px;font-weight:600;color:#fff;letter-spacing:-0.3px;">이스타항공 품질관리시스템 포털</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
+        <span id="envBadgeMobile" style="display:inline-block;border-radius:980px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:0.5px;"></span>
         <span style="font-size:11px;color:rgba(255,255,255,0.5);">v14</span>
         <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
       </div>
@@ -1069,8 +1071,9 @@ select.apple-input {
       <div class="flex gap-3 flex-wrap">
         <button onclick="uploadAllToFirebase()" class="pill-btn pill-btn-primary">전체 데이터 업로드</button>
         <button onclick="downloadFromFirebase()" class="pill-btn pill-btn-outline">Firebase에서 불러오기</button>
+        <button onclick="migrateDataToEnvPrefix()" class="pill-btn pill-btn-outline" style="border-color:#F59E0B;color:#F59E0B;">데이터 마이그레이션</button>
       </div>
-      <p style="font-size:12px;color:#9EA2A1;margin-top:8px;">저장 시 자동으로 Firebase에 동기화됩니다. 수동 업로드/다운로드도 가능합니다.</p>
+      <p style="font-size:12px;color:#9EA2A1;margin-top:8px;">저장 시 자동으로 Firebase에 동기화됩니다. 현재 환경: <strong id="envLabelInSync"></strong></p>
     </div>
 
     <div class="apple-card p-6 mb-5">
@@ -2357,11 +2360,42 @@ const CYCLE_LABELS = {
   exception: {label:'확인심사',style:'background:rgba(210,0,21,0.15);color:#D20015'}
 };
 
+// ============================================================================
+// ENVIRONMENT DETECTION — prod/test 데이터 분리
+// ============================================================================
+const APP_ENV = (function() {
+  const path = window.location.pathname;
+  if (path.includes('/ze-qms-portal/')) return 'prod';
+  if (path.includes('/eastar-maturity-test/')) return 'test';
+  return 'test'; // localhost/file → 안전하게 test 기본값
+})();
+const ENV_PREFIX = APP_ENV;
+
+function applyEnvBadge() {
+  const isProd = APP_ENV === 'prod';
+  const label = isProd ? '운영' : '테스트';
+  const bg = isProd ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)';
+  const fg = isProd ? '#22C55E' : '#F59E0B';
+  ['envBadge', 'envBadgeMobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = label; el.style.background = bg; el.style.color = fg; }
+  });
+  const syncLabel = document.getElementById('envLabelInSync');
+  if (syncLabel) { syncLabel.textContent = label + ' (' + ENV_PREFIX + '/)'; syncLabel.style.color = fg; }
+}
+
+function dbRef(path) {
+  if (!firebaseDb) return null;
+  if (path && path.startsWith('.info/')) return firebaseDb.ref(path);
+  const fullPath = path ? (ENV_PREFIX + '/' + path) : ENV_PREFIX;
+  return firebaseDb.ref(fullPath);
+}
+
 // Auditor data
 // v14.0.0: 빈 배열 — 모든 심사원 데이터는 사용자 입력 + Firebase로 관리
 const PRELOADED_AUDITORS = [];
 
-const AUDITOR_STORAGE_KEY = 'eastar_auditors';
+const AUDITOR_STORAGE_KEY = 'eastar_' + APP_ENV + '_auditors';
 let auditorList = [];
 
 function loadAuditors() {
@@ -2406,7 +2440,7 @@ let currentScores = {};
 let currentChecklist = null;
 let chartInstances = {};
 function getChartHeight() { return window.innerWidth < 768 ? 220 : 350; }
-const STORAGE_KEY = 'eastar_maturity_data';
+const STORAGE_KEY = 'eastar_' + APP_ENV + '_maturity_data';
 let viewEntries = [];
 let editingScores = {};
 let editingRemarks = {};
@@ -2418,7 +2452,7 @@ let unsavedChanges = false;
 let viewPhase = 1;
 
 // Schedule state
-const SCHEDULE_STORAGE_KEY = 'eastar_schedule_data';
+const SCHEDULE_STORAGE_KEY = 'eastar_' + APP_ENV + '_schedule_data';
 let scheduleData = [];
 let schedulePhase = 1;
 let currentScheduleId = null;
@@ -2435,7 +2469,7 @@ function scheduleGoBack() {
   if (schedulePhase === 2) { setSchedulePhase(1); return; }
 }
 
-const CUSTOM_STATIONS_KEY = 'eastar_custom_stations';
+const CUSTOM_STATIONS_KEY = 'eastar_' + APP_ENV + '_custom_stations';
 let customStations = [];
 
 // Firebase
@@ -2475,7 +2509,7 @@ function initFirebase() {
     firebaseAuth.onAuthStateChanged(async (user) => {
       if (user) {
         // 로그인 상태 — 사용자 역할 가져오기
-        const snap = await firebaseDb.ref('users/' + user.uid).once('value');
+        const snap = await dbRef('users/' + user.uid).once('value');
         const userData = snap.val();
         if (userData) {
           currentUser = { uid: user.uid, empNo: emailToEmpNo(user.email), name: userData.name, role: userData.role };
@@ -2509,7 +2543,7 @@ function showLoginScreen() {
   document.getElementById('appWrapper').style.display = 'none';
   // users 노드 확인 → 비어있으면 관리자 등록 폼 표시
   if (firebaseDb) {
-    firebaseDb.ref('users').once('value').then(snap => {
+    dbRef('users').once('value').then(snap => {
       if (!snap.exists() || !snap.val()) {
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('adminSetupForm').style.display = 'block';
@@ -2567,7 +2601,7 @@ async function doAdminSetup() {
   try {
     errEl.style.display = 'none';
     const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), pw);
-    await firebaseDb.ref('users/' + cred.user.uid).set({
+    await dbRef('users/' + cred.user.uid).set({
       empNo, name, role: 'admin', createdAt: new Date().toISOString().slice(0,10)
     });
     // onAuthStateChanged가 처리
@@ -2662,7 +2696,7 @@ async function renderUserManagement() {
   if (!container) return;
   if (!hasRole('admin')) { container.innerHTML = ''; return; }
   try {
-    const snap = await firebaseDb.ref('users').once('value');
+    const snap = await dbRef('users').once('value');
     const users = snap.val() || {};
     let html = '';
     const userEntries = Object.entries(users);
@@ -2721,7 +2755,7 @@ async function createNewUser() {
     const adminPwPrompt = prompt('계정 생성을 위해 관리자 비밀번호를 입력해주세요:');
     if (!adminPwPrompt) { resultEl.innerHTML = ''; return; }
     const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), tempPw);
-    await firebaseDb.ref('users/' + cred.user.uid).set({
+    await dbRef('users/' + cred.user.uid).set({
       empNo, name, role, createdAt: new Date().toISOString().slice(0,10)
     });
     // admin으로 재로그인
@@ -2739,7 +2773,7 @@ async function createNewUser() {
 async function changeUserRole(uid, newRole) {
   if (!requireRole('admin')) return;
   try {
-    await firebaseDb.ref('users/' + uid + '/role').set(newRole);
+    await dbRef('users/' + uid + '/role').set(newRole);
     showToast('역할이 변경되었습니다.', 'success');
   } catch(e) { showToast('역할 변경 실패', 'error'); }
 }
@@ -2748,7 +2782,7 @@ async function deleteUser(uid, empNo) {
   if (!requireRole('admin')) return;
   if (!confirm(`${empNo} 사용자를 삭제하시겠습니까?\n(Firebase Auth 계정은 Console에서 별도 삭제 필요)`)) return;
   try {
-    await firebaseDb.ref('users/' + uid).remove();
+    await dbRef('users/' + uid).remove();
     showToast('사용자가 삭제되었습니다.', 'success');
     renderUserManagement();
   } catch(e) { showToast('삭제 실패', 'error'); }
@@ -7783,11 +7817,11 @@ function resetAllData() {
   // 일정 데이터 초기화
   localStorage.removeItem(SCHEDULE_STORAGE_KEY);
   scheduleData = [];
-  if (firebaseDb) firebaseDb.ref('schedule').remove().catch(e => console.warn('Firebase 일정 삭제 실패:', e));
+  if (firebaseDb) dbRef('schedule').remove().catch(e => console.warn('Firebase 일정 삭제 실패:', e));
   // 심사원 데이터 초기화
   localStorage.removeItem(AUDITOR_STORAGE_KEY);
   auditorList = [];
-  if (firebaseDb) firebaseDb.ref('auditors').remove().catch(e => console.warn('Firebase 심사원 삭제 실패:', e));
+  if (firebaseDb) dbRef('auditors').remove().catch(e => console.warn('Firebase 심사원 삭제 실패:', e));
   showToast('모든 데이터가 초기화되었습니다.', 'info');
   renderDataManagement();
 }
@@ -8057,7 +8091,7 @@ function setupFirebaseListeners() {
   if (!firebaseDb) return;
 
   // Listen for allData changes — Firebase 우선
-  firebaseDb.ref('assessments').on('value', (snapshot) => {
+  dbRef('assessments').on('value', (snapshot) => {
     const data = snapshot.val();
     const isFirst = !_fbFirstSync.assessments;
     _fbFirstSync.assessments = true;
@@ -8086,7 +8120,7 @@ function setupFirebaseListeners() {
   });
 
   // Listen for auditors changes — Firebase 우선
-  firebaseDb.ref('auditors').on('value', (snapshot) => {
+  dbRef('auditors').on('value', (snapshot) => {
     const data = snapshot.val();
     const isFirst = !_fbFirstSync.auditors;
     _fbFirstSync.auditors = true;
@@ -8104,7 +8138,7 @@ function setupFirebaseListeners() {
   });
 
   // Listen for schedule changes — Firebase 우선
-  firebaseDb.ref('schedule').on('value', (snapshot) => {
+  dbRef('schedule').on('value', (snapshot) => {
     const data = snapshot.val();
     const isFirst = !_fbFirstSync.schedule;
     _fbFirstSync.schedule = true;
@@ -8123,7 +8157,7 @@ function setupFirebaseListeners() {
   });
 
   // Listen for custom stations — Firebase 우선
-  firebaseDb.ref('customStations').on('value', (snapshot) => {
+  dbRef('customStations').on('value', (snapshot) => {
     const data = snapshot.val();
     _fbFirstSync.customStations = true;
 
@@ -8173,7 +8207,7 @@ function firebaseSaveAllData() {
       if (d.remarks) copy.remarks = encodeScoresForFirebase(d.remarks);
       assessmentObj[key] = copy;
     });
-    return firebaseDb.ref('assessments').set(assessmentObj);
+    return dbRef('assessments').set(assessmentObj);
   } catch(e) { console.error('Firebase save assessments failed:', e); showToast('심사 데이터 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
@@ -8184,7 +8218,7 @@ function firebaseSaveAuditors() {
     auditorList.forEach((a, i) => {
       obj[a.id || ('A' + i)] = a;
     });
-    return firebaseDb.ref('auditors').set(obj);
+    return dbRef('auditors').set(obj);
   } catch(e) { console.warn('Firebase save auditors failed:', e); showToast('심사원 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
@@ -8195,7 +8229,7 @@ function firebaseSaveSchedule() {
     scheduleData.forEach(s => {
       obj[s.id] = s;
     });
-    return firebaseDb.ref('schedule').set(obj);
+    return dbRef('schedule').set(obj);
   } catch(e) { console.warn('Firebase save schedule failed:', e); showToast('일정 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
@@ -8206,7 +8240,7 @@ function firebaseSaveCustomStations() {
     customStations.forEach((cs, i) => {
       obj[cs.station.replace(/[.#$/\[\]]/g, '_')] = cs;
     });
-    return firebaseDb.ref('customStations').set(obj);
+    return dbRef('customStations').set(obj);
   } catch(e) { console.warn('Firebase save custom stations failed:', e); showToast('커스텀 지점 Firebase 저장 실패', 'error'); return Promise.reject(e); }
 }
 
@@ -8230,7 +8264,7 @@ async function uploadAllToFirebase() {
 function downloadFromFirebase() {
   if (!firebaseDb) { showToast('Firebase가 연결되지 않았습니다.', 'error'); return; }
   showLoading('Firebase에서 다운로드 중...');
-  firebaseDb.ref('/').once('value').then(snapshot => {
+  dbRef('').once('value').then(snapshot => {
     const data = snapshot.val();
     if (data) {
       if (data.assessments) {
@@ -8262,6 +8296,46 @@ function downloadFromFirebase() {
     showToast('다운로드 실패: ' + e.message, 'error');
     hideLoading();
   });
+}
+
+// ============================================================================
+// DATA MIGRATION — 기존 루트 데이터를 환경별 경로로 복사
+// ============================================================================
+async function migrateDataToEnvPrefix() {
+  if (!requireRole('admin')) return;
+  if (!firebaseDb) { showToast('Firebase 연결 필요', 'error'); return; }
+
+  const targetEnv = prompt('마이그레이션할 환경을 입력하세요 (prod 또는 test):');
+  if (targetEnv !== 'prod' && targetEnv !== 'test') {
+    showToast('올바른 환경을 입력해주세요 (prod 또는 test)', 'error');
+    return;
+  }
+
+  if (!confirm('기존 루트 데이터를 "' + targetEnv + '/" 하위로 복사합니다.\n기존 데이터는 유지됩니다. 진행하시겠습니까?')) return;
+
+  showLoading('데이터 마이그레이션 중...');
+  try {
+    const rootSnap = await firebaseDb.ref('/').once('value');
+    const rootData = rootSnap.val();
+    if (!rootData) { showToast('루트에 마이그레이션할 데이터가 없습니다.', 'warning'); hideLoading(); return; }
+
+    const migrationData = {};
+    let count = 0;
+    ['assessments', 'auditors', 'schedule', 'customStations', 'users'].forEach(collection => {
+      if (rootData[collection]) {
+        migrationData[targetEnv + '/' + collection] = rootData[collection];
+        count++;
+      }
+    });
+
+    if (count === 0) { showToast('마이그레이션할 데이터가 없습니다.', 'warning'); hideLoading(); return; }
+
+    await firebaseDb.ref('/').update(migrationData);
+    showToast(count + '개 컬렉션이 "' + targetEnv + '/" 하위로 복사되었습니다.', 'success');
+  } catch(e) {
+    showToast('마이그레이션 실패: ' + (e.message || ''), 'error');
+  }
+  hideLoading();
 }
 
 // ============================================================================
@@ -8678,6 +8752,8 @@ function renderViewRecentStations() {
 }
 
 function init() {
+  // 환경 배지 표시
+  applyEnvBadge();
   // Firebase 먼저 초기화 → Auth 상태에 따라 앱 로드 (onLoginSuccess에서 처리)
   initFirebase();
 
@@ -8849,7 +8925,9 @@ Object.assign(window, {
   saveAuditorForm, deleteAuditor,
   renderAuditorPicker, addAuditorTag, removeAuditorTag, importAuditorExcel, toggleCategoryNA,
   // Firebase
-  uploadAllToFirebase, downloadFromFirebase,
+  uploadAllToFirebase, downloadFromFirebase, migrateDataToEnvPrefix,
+  // Environment
+  APP_ENV, ENV_PREFIX,
   // Auth
   doLogin, doLogout, doAdminSetup, doPasswordChange, showPasswordChange, showLoginForm,
   createNewUser, changeUserRole, deleteUser, hasRole, requireRole,
