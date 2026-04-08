@@ -7530,12 +7530,13 @@ function showAddScheduleForm() {
 
 function saveNewSchedule() {
   const stationSelect = document.getElementById('newScheduleStation').value;
+  const newStationName = document.getElementById('newStationName');
+  const newStationInput = newStationName ? newStationName.value.trim() : '';
   let station, note = '';
 
-  if (stationSelect === '__new__') {
-    station = document.getElementById('newStationName').value.trim();
-    if (!station) { showToast('지점명을 입력해주세요.', 'warning'); return; }
-
+  if (newStationInput) {
+    // 신규 심사 대상 직접 입력
+    station = newStationInput;
     const region = document.getElementById('newStationRegion').value;
     const paxCompany = document.getElementById('newStationPax').value.trim();
     const rampCompany = document.getElementById('newStationRamp').value.trim();
@@ -7550,7 +7551,7 @@ function saveNewSchedule() {
     station = stationSelect;
   }
 
-  if (!station) { showToast('지점을 선택해주세요.', 'warning'); return; }
+  if (!station) { showToast('심사 대상을 선택해주세요.', 'warning'); return; }
 
   const year = parseInt(document.getElementById('newScheduleYear').value);
   const dateStart = document.getElementById('newScheduleDateStart').value;
@@ -7641,10 +7642,9 @@ function autoDetectCycle() {
 }
 
 function toggleNewStationForm() {
-  const sel = document.getElementById('newScheduleStation');
   const form = document.getElementById('newStationFields');
-  if (sel && form) {
-    form.classList.toggle('hidden', sel.value !== '__new__');
+  if (form) {
+    form.classList.toggle('hidden');
   }
 }
 
@@ -7680,9 +7680,9 @@ function renderAddScheduleForm() {
 
   // Station select with optgroups
   html += '<div class="mb-4">';
-  html += '<label class="apple-label">지점</label>';
-  html += '<select id="newScheduleStation" class="apple-input" onchange="toggleNewStationForm();autoDetectCycle()">';
-  html += '<option value="">지점을 선택하세요</option>';
+  html += '<label class="apple-label">심사 대상</label>';
+  html += '<select id="newScheduleStation" class="apple-input" onchange="autoDetectCycle()">';
+  html += '<option value="">심사 대상을 선택하세요</option>';
   for (const [region, data] of Object.entries(REGIONS)) {
     html += '<optgroup label="' + region + '">';
     data.stations.forEach(st => {
@@ -7695,18 +7695,18 @@ function renderAddScheduleForm() {
     html += '<option value="' + div + '">' + div + '</option>';
   });
   html += '</optgroup>';
-  html += '<optgroup label="기타">';
-  html += '<option value="__new__">+ 신규 지점 직접 입력</option>';
-  html += '</optgroup>';
   html += '</select>';
+  html += '<button type="button" onclick="toggleNewStationForm()" style="margin-top:6px;background:none;border:none;color:#9EA2A1;font-size:12px;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;">';
+  html += '<span style="font-size:15px;line-height:1;">+</span> 심사 대상 신규 추가';
+  html += '</button>';
   html += '</div>';
 
   // New station fields (hidden by default)
   html += '<div id="newStationFields" class="hidden" style="background:#f5f5f7;border-radius:12px;padding:16px;margin-bottom:16px;">';
-  html += '<p style="font-size:13px;font-weight:600;color:#303A3C;margin-bottom:12px;">신규 지점 정보</p>';
+  html += '<p style="font-size:13px;font-weight:600;color:#303A3C;margin-bottom:12px;">신규 심사 대상 정보</p>';
   html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
   html += '<div>';
-  html += '<label class="apple-label">지점명</label>';
+  html += '<label class="apple-label">심사 대상명</label>';
   html += '<input type="text" id="newStationName" class="apple-input" placeholder="예: 하노이">';
   html += '</div>';
   html += '<div>';
@@ -7790,7 +7790,7 @@ function renderAddScheduleForm() {
   setTimeout(() => {
     renderAuditorPicker('newScheduleAuditorPicker', '');
     const stSel = document.getElementById('newScheduleStation');
-    if (stSel) makeSearchable(stSel, { placeholder: '지점명 검색...' });
+    if (stSel) makeSearchable(stSel, { placeholder: '심사 대상 검색...' });
   }, 0);
 }
 
