@@ -616,7 +616,7 @@ select.apple-input {
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span>v14</span>
+      <span>v15</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
@@ -630,7 +630,7 @@ select.apple-input {
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span id="envBadgeMobile" style="display:inline-block;border-radius:980px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:0.5px;"></span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.5);">v14</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.5);">v15</span>
         <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
       </div>
     </div>
@@ -729,22 +729,9 @@ select.apple-input {
             <select id="inputYear" class="apple-input" onchange="renderInputPendingStations()"></select>
             <script>(function(){const s=document.getElementById('inputYear'),y=new Date().getFullYear();for(let i=y-2;i<=y+1;i++){const o=document.createElement('option');o.value=i;o.textContent=i;if(i===y)o.selected=true;s.appendChild(o);}})()</script>
           </div>
-          <div id="stationSelectArea">
-            <label class="apple-label">지점</label>
-            <select id="inputStation" class="apple-input" onchange="updateInputExclusion()"></select>
-          </div>
-          <div id="divisionSelectArea">
-            <label class="apple-label">실/본부 선택</label>
-            <select id="inputDivision" class="apple-input" onchange="updateInputExclusion()">
-              <option value="">선택하세요</option>
-              <option value="운항본부">운항본부</option>
-              <option value="정비본부">정비본부</option>
-              <option value="운송본부">운송본부</option>
-              <option value="객실본부">객실본부</option>
-              <option value="안전보안실">안전보안실</option>
-              <option value="종합통제실">종합통제실</option>
-              <option value="케이터링운영파트">케이터링운영파트</option>
-            </select>
+          <div>
+            <label class="apple-label">심사 대상</label>
+            <select id="inputTarget" class="apple-input"></select>
           </div>
         </div>
         <button onclick="inputSearch()" class="pill-btn pill-btn-primary">조회</button>
@@ -886,23 +873,10 @@ select.apple-input {
               <option value="pending">심사 예정</option>
             </select>
           </div>
-          <div id="viewStationSearchArea">
-            <label class="apple-label">지점</label>
-            <select id="viewStationSelect" class="apple-input">
-              <option value="">전체 지점</option>
-            </select>
-          </div>
-          <div id="viewDivisionSearchArea">
-            <label class="apple-label">실/본부</label>
-            <select id="viewDivisionSelect" class="apple-input">
-              <option value="">전체 실/본부</option>
-              <option value="운항본부">운항본부</option>
-              <option value="정비본부">정비본부</option>
-              <option value="운송본부">운송본부</option>
-              <option value="객실본부">객실본부</option>
-              <option value="안전보안실">안전보안실</option>
-              <option value="종합통제실">종합통제실</option>
-              <option value="케이터링운영파트">케이터링운영파트</option>
+          <div id="viewTargetArea">
+            <label class="apple-label">심사 대상</label>
+            <select id="viewTarget" class="apple-input">
+              <option value="">전체</option>
             </select>
           </div>
         </div>
@@ -1188,7 +1162,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v14 &middot; 2026
+  안전기획팀 &middot; v15 &middot; 2026
 </footer>
 
 <script>
@@ -3398,7 +3372,10 @@ function calculateScores(scores, checklist) {
     categoryAverages,
     totalScore,
     maxScore,
-    overallAverage: totalItems > 0 ? totalScore / totalItems : 0,
+    overallAverage: (function() {
+      const cats = Object.values(categoryAverages).filter(v => v > 0);
+      return cats.length > 0 ? cats.reduce((a, b) => a + b, 0) / cats.length : 0;
+    })(),
     achievementRate: maxScore > 0 ? (totalScore / maxScore) * 100 : 0,
     totalItems
   };
@@ -3616,26 +3593,55 @@ function switchTab(idx) {
 // ============================================================================
 // TAB 1: SCORE INPUT (4-Phase Workflow)
 // ============================================================================
-function populateStationDropdown() {
-  const sel = document.getElementById('inputStation');
+function populateInputTargetDropdown() {
+  const sel = document.getElementById('inputTarget');
   sel.innerHTML = '';
   const emptyOpt = document.createElement('option');
   emptyOpt.value = '';
   emptyOpt.textContent = '선택하세요';
   sel.appendChild(emptyOpt);
+  // Stations by region
   for (const [region, data] of Object.entries(REGIONS)) {
+    if (region === '협력사(본사)') continue; // 별도 그룹으로 처리
     const optgroup = document.createElement('optgroup');
     optgroup.label = region;
     for (const station of data.stations) {
       const opt = document.createElement('option');
       opt.value = station;
       opt.textContent = station;
+      opt.dataset.category = 'branch';
       optgroup.appendChild(opt);
     }
     sel.appendChild(optgroup);
   }
+  // 협력사(본사) stations
+  if (REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.length > 0) {
+    const osGroup = document.createElement('optgroup');
+    osGroup.label = '협력사(본사)';
+    for (const station of REGIONS['협력사(본사)'].stations) {
+      const opt = document.createElement('option');
+      opt.value = station;
+      opt.textContent = station;
+      opt.dataset.category = 'branch';
+      osGroup.appendChild(opt);
+    }
+    sel.appendChild(osGroup);
+  }
+  // Divisions
+  const divGroup = document.createElement('optgroup');
+  divGroup.label = '실/본부';
+  for (const divName of DIVISION_NAMES) {
+    const opt = document.createElement('option');
+    opt.value = divName;
+    opt.textContent = divName;
+    opt.dataset.category = 'division';
+    divGroup.appendChild(opt);
+  }
+  sel.appendChild(divGroup);
   if (sel._comboRefresh) sel._comboRefresh();
 }
+// backward compat alias
+function populateStationDropdown() { populateInputTargetDropdown(); }
 
 function setInputPhase(phase) {
   inputPhase = phase;
@@ -3687,10 +3693,8 @@ function switchAuditCategory(cat) {
   const allBtn = document.getElementById('catBtnAll');
   const branchBtn = document.getElementById('catBtnBranch');
   const divBtn = document.getElementById('catBtnDivision');
-  const stationArea = document.getElementById('stationSelectArea');
-  const divArea = document.getElementById('divisionSelectArea');
 
-  // 카테고리 전환 시 필드 초기화 (disabled 상태 포함)
+  // 카테고리 전환 시 필드 초기화
   clearAllInputFields();
 
   // 모든 버튼 비활성
@@ -3700,46 +3704,29 @@ function switchAuditCategory(cat) {
 
   if (cat === 'all') {
     if (allBtn) allBtn.style.cssText = 'background:#D20015;color:#fff;';
-    if (stationArea) stationArea.classList.remove('hidden');
-    if (divArea) divArea.classList.remove('hidden');
   } else if (cat === 'branch') {
     if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
-    if (stationArea) stationArea.classList.remove('hidden');
-    if (divArea) divArea.classList.add('hidden');
   } else {
     if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
-    if (stationArea) stationArea.classList.add('hidden');
-    if (divArea) divArea.classList.remove('hidden');
   }
-  updateInputExclusion();
   renderInputPendingStations();
 }
 
 function inputSearch() {
   selectedYear = parseInt(document.getElementById('inputYear').value);
-  if (selectedAuditCategory === 'division') {
-    selectedDivision = document.getElementById('inputDivision').value;
-    if (!selectedDivision) { showToast('실/본부를 선택해주세요.', 'warning'); return; }
-    selectedStation = selectedDivision;
-  } else if (selectedAuditCategory === 'all') {
-    // 전체 모드: 실/본부 값이 있으면 division, 지점 값이 있으면 branch
-    const divVal = document.getElementById('inputDivision').value;
-    const staVal = document.getElementById('inputStation').value;
-    if (divVal) {
-      selectedDivision = divVal;
-      selectedStation = divVal;
-      selectedAuditCategory = 'division';
-    } else if (staVal) {
-      selectedStation = staVal;
-      selectedAuditCategory = 'branch';
-    } else {
-      showToast('지점 또는 실/본부를 선택해주세요.', 'warning'); return;
-    }
+  const targetVal = document.getElementById('inputTarget').value;
+  if (!targetVal) { showToast('심사 대상을 선택해주세요.', 'warning'); return; }
+
+  // Determine category from selected value
+  if (DIVISION_NAMES.includes(targetVal)) {
+    selectedAuditCategory = 'division';
+    selectedDivision = targetVal;
+    selectedStation = targetVal;
   } else {
-    selectedStation = document.getElementById('inputStation').value;
-    if (!selectedStation) { showToast('지점을 선택해주세요.', 'warning'); return; }
+    selectedAuditCategory = 'branch';
+    selectedStation = targetVal;
+    selectedDivision = '';
   }
-  if (!selectedStation) { showToast('지점 또는 실/본부를 선택해주세요.', 'warning'); return; }
 
   document.getElementById('phase2StationTitle').textContent = `${selectedStation} — ${selectedYear}년`;
   const today = new Date().toISOString().slice(0, 10);
@@ -4350,24 +4337,55 @@ function viewGoHome() {
   setViewPhase(1);
 }
 
-function populateViewStationDropdown() {
-  const sel = document.getElementById('viewStationSelect');
+function populateViewTargetDropdown() {
+  const sel = document.getElementById('viewTarget');
   const region = document.getElementById('viewRegion').value;
-  sel.innerHTML = '<option value="">전체 지점</option>';
+  sel.innerHTML = '<option value="">전체</option>';
+  // Stations by region
   const regionsToShow = region === '전체' ? Object.keys(REGIONS) : (REGIONS[region] ? [region] : []);
   for (const reg of regionsToShow) {
+    if (reg === '협력사(본사)') continue; // 별도 그룹으로 처리
     const optgroup = document.createElement('optgroup');
     optgroup.label = reg;
     for (const station of REGIONS[reg].stations) {
       const opt = document.createElement('option');
       opt.value = station;
       opt.textContent = station;
+      opt.dataset.category = 'branch';
       optgroup.appendChild(opt);
     }
     sel.appendChild(optgroup);
   }
+  // 협력사(본사) stations
+  if ((region === '전체' || region === '협력사(본사)') && REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.length > 0) {
+    const osGroup = document.createElement('optgroup');
+    osGroup.label = '협력사(본사)';
+    for (const station of REGIONS['협력사(본사)'].stations) {
+      const opt = document.createElement('option');
+      opt.value = station;
+      opt.textContent = station;
+      opt.dataset.category = 'branch';
+      osGroup.appendChild(opt);
+    }
+    sel.appendChild(osGroup);
+  }
+  // Divisions (only when region is 전체)
+  if (region === '전체') {
+    const divGroup = document.createElement('optgroup');
+    divGroup.label = '실/본부';
+    for (const divName of DIVISION_NAMES) {
+      const opt = document.createElement('option');
+      opt.value = divName;
+      opt.textContent = divName;
+      opt.dataset.category = 'division';
+      divGroup.appendChild(opt);
+    }
+    sel.appendChild(divGroup);
+  }
   if (sel._comboRefresh) sel._comboRefresh();
 }
+// backward compat alias
+function populateViewStationDropdown() { populateViewTargetDropdown(); }
 
 function switchViewCategory(cat) {
   selectedViewCategory = cat;
@@ -4376,14 +4394,10 @@ function switchViewCategory(cat) {
   const divBtn = document.getElementById('viewCatBtnDivision');
   const regionArea = document.getElementById('viewRegionArea');
   const typeArea = document.getElementById('viewTypeArea');
-  const stationSearchArea = document.getElementById('viewStationSearchArea');
-  const divisionSearchArea = document.getElementById('viewDivisionSearchArea');
 
-  // Reset select values
-  ['viewStationSelect','viewDivisionSelect'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; if (el._comboRefresh) el._comboRefresh(); }
-  });
+  // Reset viewTarget
+  const viewTarget = document.getElementById('viewTarget');
+  if (viewTarget) { viewTarget.value = ''; if (viewTarget._comboRefresh) viewTarget._comboRefresh(); }
 
   // 모든 버튼 비활성 스타일로 초기화
   [allBtn, branchBtn, divBtn].forEach(btn => {
@@ -4395,55 +4409,31 @@ function switchViewCategory(cat) {
     if (allBtn) allBtn.style.cssText = 'background:#D20015;color:#fff;';
     if (regionArea) regionArea.classList.remove('hidden');
     if (typeArea) typeArea.classList.remove('hidden');
-    if (stationSearchArea) stationSearchArea.classList.remove('hidden');
-    if (divisionSearchArea) divisionSearchArea.classList.remove('hidden');
   } else if (cat === 'branch') {
     if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
     if (regionArea) regionArea.classList.remove('hidden');
     if (typeArea) typeArea.classList.remove('hidden');
-    if (stationSearchArea) stationSearchArea.classList.remove('hidden');
-    if (divisionSearchArea) divisionSearchArea.classList.add('hidden');
   } else {
     if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
     if (regionArea) regionArea.classList.add('hidden');
     if (typeArea) typeArea.classList.add('hidden');
-    if (stationSearchArea) stationSearchArea.classList.add('hidden');
-    if (divisionSearchArea) divisionSearchArea.classList.remove('hidden');
   }
+  populateViewTargetDropdown();
   renderViewRecentStations();
 }
 
 function clearAllSearchFields() {
-  ['viewStationSelect', 'viewDivisionSelect'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; if (el._comboRefresh) el._comboRefresh(); }
-  });
+  const el = document.getElementById('viewTarget');
+  if (el) { el.value = ''; if (el._comboRefresh) el._comboRefresh(); }
 }
 
 function clearAllInputFields() {
-  ['inputStation', 'inputDivision'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; el.disabled = false; el.style.opacity = '1'; }
-  });
+  const el = document.getElementById('inputTarget');
+  if (el) { el.value = ''; if (el._comboRefresh) el._comboRefresh(); }
 }
 
 function updateInputExclusion() {
-  const station = document.getElementById('inputStation');
-  const division = document.getElementById('inputDivision');
-  if (!station || !division) return;
-
-  if (station.value) {
-    division.disabled = true;
-    division.style.opacity = '0.4';
-  } else if (division.value) {
-    station.disabled = true;
-    station.style.opacity = '0.4';
-  } else {
-    station.disabled = false;
-    station.style.opacity = '1';
-    division.disabled = false;
-    division.style.opacity = '1';
-  }
+  // No longer needed with unified dropdown — kept as no-op for backward compat
 }
 
 function viewSearch() {
@@ -4451,8 +4441,9 @@ function viewSearch() {
   const catFilter = selectedViewCategory || 'all';
   const region = document.getElementById('viewRegion').value;
   const type = document.getElementById('viewType').value;
-  const selectedStationFilter = document.getElementById('viewStationSelect').value;
-  const selectedDivisionFilter = document.getElementById('viewDivisionSelect').value;
+  const viewTargetVal = document.getElementById('viewTarget').value;
+  const selectedStationFilter = viewTargetVal && !DIVISION_NAMES.includes(viewTargetVal) ? viewTargetVal : '';
+  const selectedDivisionFilter = viewTargetVal && DIVISION_NAMES.includes(viewTargetVal) ? viewTargetVal : '';
   const statusFilter = document.getElementById('viewStatus').value;
 
   // Build entries
@@ -4821,7 +4812,7 @@ function renderScoreViewTable() {
       divTypeArr.forEach(type => {
         html += `<td style="text-align:center;">${makeTypeBadge(group.types[type], type)}</td>`;
       });
-      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
+      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
       html += `<tr id="${rowId}" class="hidden"><td colspan="${3 + divTypeArr.length + 1}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
@@ -4936,7 +4927,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
       html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px 0;">`;
       html += `<span style="color:#9EA2A1;font-size:13px;">미작성</span>`;
       if (isDivGroup) {
-        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${group.year}';document.getElementById('inputDivision').value='${group.station}';inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
+        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
       } else {
         html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','${type}')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
       }
@@ -5443,7 +5434,8 @@ function navigateToInput(year, station, type) {
   selectedYear = year;
   selectedStation = station;
   document.getElementById('inputYear').value = year;
-  document.getElementById('inputStation').value = station;
+  document.getElementById('inputTarget').value = station;
+  if (document.getElementById('inputTarget')._comboRefresh) document.getElementById('inputTarget')._comboRefresh();
 
   // Phase 2 셋업
   document.getElementById('phase2StationTitle').textContent = `${station} — ${year}년`;
@@ -5538,11 +5530,12 @@ function renderStatsDashboard() {
     </div>
   `;
 
-  // Regional summary
+  // Regional summary (grade types only — binary 제외)
+  const gradeYearData = yearData.filter(d => getScoringMethod(d.type) === 'grade');
   let regHtml = '<table class="apple-table compact-mobile">';
   regHtml += '<thead><tr><th style="text-align:left;">지역</th><th style="text-align:center;">지점 평균</th><th style="text-align:center;">여객 평균</th><th style="text-align:center;">램프 평균</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
   for (const [region] of Object.entries(REGIONS)) {
-    const regionData = yearData.filter(d => d.region === region);
+    const regionData = gradeYearData.filter(d => d.region === region);
     const branchAvg = calcAvgForTypeRegion(regionData, 'branch');
     const paxAvg = calcAvgForTypeRegion(regionData, 'pax');
     const rampAvg = calcAvgForTypeRegion(regionData, 'ramp');
@@ -5557,9 +5550,9 @@ function renderStatsDashboard() {
   regHtml += '</tbody></table>';
   document.getElementById('regionalTable').innerHTML = regHtml;
 
-  // Station ranking
+  // Station ranking (grade types only — binary 제외)
   const stationMap = {};
-  yearData.forEach(d => {
+  gradeYearData.forEach(d => {
     if (!stationMap[d.station]) stationMap[d.station] = { sum: 0, count: 0, region: d.region };
     const avg = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
     stationMap[d.station].sum += avg;
@@ -5580,10 +5573,10 @@ function renderStatsDashboard() {
   document.getElementById('rankingTable').innerHTML = rankHtml;
 
   // ========== 취약 항목 분석 (고도화) ==========
-  // 1. 대분류별 데이터 수집 + 구분별(지점/여객/램프) 비교
+  // 1. 대분류별 데이터 수집 + 구분별(지점/여객/램프) 비교 — grade types only
   const catData = {};
   const itemData = {}; // 소분류
-  yearData.forEach(d => {
+  gradeYearData.forEach(d => {
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
     for (const [cat, catAvg] of Object.entries(result.categoryAverages)) {
@@ -5682,9 +5675,9 @@ function renderStatsDashboard() {
   });
   document.getElementById('weakCategoriesTable').innerHTML = weakHtml;
 
-  // ========== 지점별 취약 패턴 ==========
+  // ========== 지점별 취약 패턴 (grade types only) ==========
   const stationPatterns = {};
-  yearData.forEach(d => {
+  gradeYearData.forEach(d => {
     if (!stationPatterns[d.station]) stationPatterns[d.station] = { region: d.region, weakItems: 0, totalItems: 0, weakCats: {} };
     const checklist = getChecklist(d.type);
     for (const [catName, catInfo] of Object.entries(checklist)) {
@@ -5746,7 +5739,7 @@ function renderStatsDashboard() {
   // 연도별 전체 평균 비교 카드
   threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
-    const yData = allData.filter(d => d.year == y && d.auditCategory === 'branch');
+    const yData = allData.filter(d => d.year == y && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
     let avg = 0, count = 0;
     yData.forEach(d => {
       avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
@@ -5763,9 +5756,9 @@ function renderStatsDashboard() {
   });
   threeYearHtml += '</div>';
 
-  // 연도별 지점 비교 테이블
+  // 연도별 지점 비교 테이블 (grade types only)
   const allStations = new Set();
-  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory === 'branch').forEach(d => allStations.add(d.station)));
+  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade').forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
   threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -5778,7 +5771,7 @@ function renderStatsDashboard() {
 
   [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
     const yearAvgs = years.map(y => {
-      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch');
+      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
       if (stData.length === 0) return null;
       return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
     });
@@ -5822,7 +5815,7 @@ function renderStatsDashboard() {
   const ctx3y = document.getElementById('threeYearChart')?.getContext('2d');
   if (ctx3y) {
     const commonStations3y = [...allStations].filter(station => {
-      return years.every(y => allData.some(d => d.year == y && d.station === station));
+      return years.every(y => allData.some(d => d.year == y && d.station === station && getScoringMethod(d.type) === 'grade'));
     }).sort((a, b) => a.localeCompare(b, 'ko'));
 
     const datasets3y = years.map((y, i) => {
@@ -5830,7 +5823,7 @@ function renderStatsDashboard() {
       return {
         label: `${y}년`,
         data: commonStations3y.map(station => {
-          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch');
+          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
           if (stData.length === 0) return null;
           return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
         }),
@@ -7906,13 +7899,13 @@ function showScheduleStation(scheduleId) {
     html += '<div class="flex gap-3 flex-wrap">';
     if (stationData.length > 0) {
       if (isDivisionSchedule) {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('division');document.getElementById('viewDivisionSelect').value='${item.station}';if(document.getElementById('viewDivisionSelect')._comboRefresh)document.getElementById('viewDivisionSelect')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('division');document.getElementById('viewTarget').value='${item.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
       } else {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('branch');document.getElementById('viewStationSelect').value='${item.station}';if(document.getElementById('viewStationSelect')._comboRefresh)document.getElementById('viewStationSelect')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
+        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('branch');document.getElementById('viewTarget').value='${item.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
       }
     }
     if (isDivisionSchedule) {
-      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
+      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${item.year}';document.getElementById('inputTarget').value='${item.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
     } else {
       html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
     }
@@ -7922,7 +7915,7 @@ function showScheduleStation(scheduleId) {
     html += '<div style="font-size:40px;margin-bottom:12px;">📋</div>';
     html += '<p style="font-size:15px;color:#9EA2A1;margin-bottom:16px;">아직 점검이 실시되지 않았습니다</p>';
     if (isDivisionSchedule) {
-      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();switchAuditCategory('division');document.getElementById('inputYear').value='${item.year}';document.getElementById('inputDivision').value='${item.station}';inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
+      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${item.year}';document.getElementById('inputTarget').value='${item.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
     } else {
       html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-primary">점검표 작성</button>`;
     }
@@ -9151,9 +9144,9 @@ function renderHome() {
         }
       }
       if (hasBinary && !hasGrade) {
-        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('division');document.getElementById('viewDivisionSelect').value='${station}';if(document.getElementById('viewDivisionSelect')._comboRefresh)document.getElementById('viewDivisionSelect')._comboRefresh();viewSearch()">`;
+        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('division');document.getElementById('viewTarget').value='${station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
       } else {
-        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewStationSelect').value='${station}';if(document.getElementById('viewStationSelect')._comboRefresh)document.getElementById('viewStationSelect')._comboRefresh();viewSearch()">`;
+        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewTarget').value='${station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
       }
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
       recentHtml += `<div style="display:flex;align-items:center;gap:6px;">${scoreBadge}<svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
@@ -9275,9 +9268,9 @@ function renderInputPendingStations() {
   pendingStations.forEach(s => {
     let clickAction;
     if (s.isDivision) {
-      clickAction = `clearAllInputFields();switchAuditCategory('division');document.getElementById('inputDivision').value='${s.station}';inputSearch()`;
+      clickAction = `clearAllInputFields();document.getElementById('inputTarget').value='${s.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch()`;
     } else {
-      clickAction = `clearAllInputFields();switchAuditCategory('branch');document.getElementById('inputStation').value='${s.station}';inputSearch()`;
+      clickAction = `clearAllInputFields();document.getElementById('inputTarget').value='${s.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch()`;
     }
     const divTag = s.isDivision ? '<div style="font-size:10px;color:#6366F1;">실/본부</div>' : '';
     html += `<tr style="cursor:pointer;" onclick="${clickAction}">`;
@@ -9345,7 +9338,7 @@ function renderViewRecentStations() {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
       const vals = [s.types.branch, s.types.pax, s.types.ramp].filter(v => v != null);
       const totalAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewStationSelect').value='${s.station}';if(document.getElementById('viewStationSelect')._comboRefresh)document.getElementById('viewStationSelect')._comboRefresh();viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
       html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
       html += `<td style="text-align:center;">${totalAvg != null ? '<span class="badge-pill" style="' + avgBadgeStyle(totalAvg) + ';font-weight:700;">' + totalAvg.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
@@ -9376,7 +9369,7 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     divisionStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();switchViewCategory('division');document.getElementById('viewDivisionSelect').value='${s.station}';if(document.getElementById('viewDivisionSelect')._comboRefresh)document.getElementById('viewDivisionSelect')._comboRefresh();viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
       html += `<td style="font-weight:600;">${s.station}<div style="font-size:10px;color:#6366F1;">실/본부</div></td>`;
       divTypeArr.forEach(type => {
         const rate = s.types[type];
@@ -9400,10 +9393,8 @@ function init() {
   // 환경 배지 표시
   applyEnvBadge();
   // Combobox 적용 (정적 select)
-  makeSearchable(document.getElementById('inputStation'), { placeholder: '지점명 검색...' });
-  makeSearchable(document.getElementById('inputDivision'), { placeholder: '실/본부 검색...' });
-  makeSearchable(document.getElementById('viewStationSelect'), { placeholder: '지점명 검색...' });
-  makeSearchable(document.getElementById('viewDivisionSelect'), { placeholder: '실/본부 검색...' });
+  makeSearchable(document.getElementById('inputTarget'), { placeholder: '심사 대상 검색...' });
+  makeSearchable(document.getElementById('viewTarget'), { placeholder: '심사 대상 검색...' });
   // Firebase 먼저 초기화 → Auth 상태에 따라 앱 로드 (onLoginSuccess에서 처리)
   initFirebase();
 
@@ -9591,6 +9582,7 @@ Object.assign(window, {
   getTypeLabel, getChecklistName, avgColor, avgBadgeStyle,
   getScheduleStatusLabels, getScheduleStatusBadgeStyle,
   populateStationDropdown, populateViewStationDropdown,
+  populateInputTargetDropdown, populateViewTargetDropdown,
   setInputPhase, setViewPhase,
   renderDivisionStats, renderDivisionAnalysis,
   renderOutsourcingStats, renderAuditorStats, renderOutsourcingAnalysis, toggleSection,
