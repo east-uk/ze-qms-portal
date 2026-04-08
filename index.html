@@ -3170,6 +3170,28 @@ function loadSchedule() {
     scheduleData = [];
     saveSchedule();
   }
+  // Normalize auditTarget for existing records that don't have it
+  normalizeScheduleTargets();
+}
+
+function normalizeScheduleTargets() {
+  let modified = false;
+  scheduleData.forEach(s => {
+    if (!s.auditTarget) {
+      if (DIVISION_NAMES.includes(s.station)) {
+        s.auditTarget = 'division';
+      } else {
+        const region = getRegionForStation(s.station);
+        if (region === '협력사(본사)') {
+          s.auditTarget = 'outsourcing';
+        } else {
+          s.auditTarget = 'branch';
+        }
+      }
+      modified = true;
+    }
+  });
+  if (modified) saveSchedule();
 }
 
 function saveSchedule() {
@@ -3507,6 +3529,7 @@ function migrateSafetyScoreIds(record) {
 }
 
 // v14.0.0: 레코드 정규화 — CHECKLIST_REGISTRY 기반으로 auditCategory/scoringMethod 설정
+// v14.1.0: auditTarget 추가 — schedule 데이터의 auditTarget 참조, 없으면 자동 추론
 function normalizeRecord(d) {
   const reg = CHECKLIST_REGISTRY[d.type];
   if (reg) {
@@ -3515,6 +3538,28 @@ function normalizeRecord(d) {
   } else {
     if (!d.auditCategory) d.auditCategory = 'branch';
     if (!d.scoringMethod) d.scoringMethod = 'grade';
+  }
+  // auditTarget: schedule에서 가져오거나, 자동 추론
+  if (!d.auditTarget) {
+    const station = d.station || d.division;
+    if (station) {
+      if (DIVISION_NAMES.includes(station)) {
+        d.auditTarget = 'division';
+      } else {
+        const region = getRegionForStation(station);
+        if (region === '협력사(본사)') {
+          d.auditTarget = 'outsourcing';
+        } else {
+          d.auditTarget = 'branch';
+        }
+      }
+    } else {
+      d.auditTarget = d.auditCategory || 'branch';
+    }
+  }
+  // region 보정: 외주협력업체 지점이 잘못된 region을 가진 경우 수정
+  if (d.auditTarget === 'outsourcing' && d.region && d.region !== '협력사(본사)') {
+    d.region = '협력사(본사)';
   }
   if (!d.remarks) d.remarks = {};
   d = migrateSafetyScoreIds(d);
@@ -4409,10 +4454,18 @@ function switchViewCategory(cat) {
   const regionArea = document.getElementById('viewRegionArea');
   const typeArea = document.getElementById('viewTypeArea');
 
-  // Reset viewTarget and viewType dropdown
+  // Clear viewTarget when user switches category
   const viewTarget = document.getElementById('viewTarget');
   if (viewTarget) { viewTarget.value = ''; if (viewTarget._comboRefresh) viewTarget._comboRefresh(); }
-  document.getElementById('viewType').value = '전체';
+
+  // Set viewType to match category
+  if (cat === 'branch') {
+    document.getElementById('viewType').value = 'branch';
+  } else if (cat === 'division') {
+    document.getElementById('viewType').value = 'division';
+  } else {
+    document.getElementById('viewType').value = '전체';
+  }
 
   // 모든 버튼 비활성 스타일로 초기화
   [allBtn, branchBtn, divBtn].forEach(btn => {
@@ -4427,7 +4480,7 @@ function switchViewCategory(cat) {
   } else if (cat === 'branch') {
     if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
     if (regionArea) regionArea.classList.remove('hidden');
-    if (typeArea) typeArea.classList.remove('hidden');
+    if (typeArea) typeArea.classList.add('hidden');
   } else {
     // division
     if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
@@ -4454,59 +4507,25 @@ function updateInputExclusion() {
 
 function viewSearch() {
   const year = parseInt(document.getElementById('viewYear').value);
-  const catFilter = selectedViewCategory || 'all';
   const region = document.getElementById('viewRegion').value;
   const categoryFilter = document.getElementById('viewType').value;  // 전체, branch, division, outsourcing
   const viewTargetVal = document.getElementById('viewTarget').value;
-  let selectedStationFilter = '';
-  let selectedDivisionFilter = '';
-  if (viewTargetVal) {
-    if (DIVISION_NAMES.includes(viewTargetVal)) {
-      selectedDivisionFilter = viewTargetVal;
-    } else {
-      selectedStationFilter = viewTargetVal;
-    }
-  }
   const statusFilter = document.getElementById('viewStatus').value;
 
-  // Build entries
   viewEntries = [];
 
-  // 실/본부 데이터 추가
-  if ((catFilter === 'all' || catFilter === 'division') && (categoryFilter === '전체' || categoryFilter === 'division')) {
-    const divRecords = allData.filter(d => d.auditCategory === 'division' && d.year == year);
-    // Group by division
-    const divNames = [...new Set(divRecords.map(d => d.division || d.station))];
-    for (const divName of divNames) {
-      if (selectedDivisionFilter && divName !== selectedDivisionFilter) continue;
-      const records = divRecords.filter(d => (d.division || d.station) === divName);
-      records.forEach(r => {
-        viewEntries.push({ station: divName, type: r.type, company: '', region: '실/본부', year, record: r, auditCategory: 'division' });
-      });
-    }
-    // Also add divisions without records
-    if (catFilter === 'division') {
-      for (const divName of DIVISION_NAMES) {
-        if (selectedDivisionFilter && divName !== selectedDivisionFilter) continue;
-          const divInfo = DIVISIONS[divName];
-        for (const checkType of divInfo.checklists) {
-          const existing = viewEntries.find(e => e.station === divName && e.type === checkType);
-          if (!existing) {
-            viewEntries.push({ station: divName, type: checkType, company: '', region: '실/본부', year, record: null, auditCategory: 'division' });
-          }
-        }
-      }
-    }
-  }
+  // Determine which target categories to show
+  const showBranch = categoryFilter === '전체' || categoryFilter === 'branch';
+  const showDivision = categoryFilter === '전체' || categoryFilter === 'division';
+  const showOutsourcing = categoryFilter === '전체' || categoryFilter === 'outsourcing';
 
-  // 지점 데이터 추가 (branch category only — excludes 협력사(본사))
-  if ((catFilter === 'all' || catFilter === 'branch') && (categoryFilter === '전체' || categoryFilter === 'branch')) {
+  // BRANCH STATIONS
+  if (showBranch) {
     const regionsToShow = region === '전체' ? Object.keys(REGIONS).filter(r => r !== '협력사(본사)') : (REGIONS[region] && region !== '협력사(본사)' ? [region] : []);
     for (const reg of regionsToShow) {
       for (const station of REGIONS[reg].stations) {
-        if (selectedStationFilter && station !== selectedStationFilter) continue;
-        const typesToShow = ALL_BRANCH_TYPES;
-        for (const t of typesToShow) {
+        if (viewTargetVal && station !== viewTargetVal) continue;
+        for (const t of ALL_BRANCH_TYPES) {
           const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
           const record = findRecord(year, station, t, company || undefined);
           viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: 'branch' });
@@ -4515,18 +4534,29 @@ function viewSearch() {
     }
   }
 
-  // 외주협력업체 데이터 (협력사(본사) region stations with branch + outsourcing types)
-  if ((catFilter === 'all' || catFilter === 'branch') && (categoryFilter === '전체' || categoryFilter === 'outsourcing')) {
-    if (REGIONS['협력사(본사)']) {
-      for (const station of REGIONS['협력사(본사)'].stations) {
-        if (selectedStationFilter && station !== selectedStationFilter) continue;
-        const allTypes = [...ALL_BRANCH_TYPES, ...OUTSOURCING_TYPES];
-        for (const t of allTypes) {
-          const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
-          const record = findRecord(year, station, t, company || undefined);
-          const cat = CHECKLIST_REGISTRY[t]?.category === 'outsourcing' ? 'outsourcing' : 'branch';
-          viewEntries.push({ station, type: t, company: company || '', region: '협력사(본사)', year, record: record || null, auditCategory: cat });
-        }
+  // DIVISION
+  if (showDivision) {
+    for (const divName of DIVISION_NAMES) {
+      if (viewTargetVal && divName !== viewTargetVal) continue;
+      const divInfo = DIVISIONS[divName];
+      if (!divInfo) continue;
+      for (const checkType of divInfo.checklists) {
+        const record = allData.find(d => d.year == year && (d.station === divName || d.division === divName) && d.type === checkType);
+        viewEntries.push({ station: divName, type: checkType, company: '', region: '실/본부', year, record: record || null, auditCategory: 'division' });
+      }
+    }
+  }
+
+  // OUTSOURCING
+  if (showOutsourcing && REGIONS['협력사(본사)']) {
+    for (const station of REGIONS['협력사(본사)'].stations) {
+      if (viewTargetVal && station !== viewTargetVal) continue;
+      const allTypes = [...ALL_BRANCH_TYPES, ...OUTSOURCING_TYPES];
+      for (const t of allTypes) {
+        const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
+        const record = findRecord(year, station, t, company || undefined);
+        const cat = CHECKLIST_REGISTRY[t]?.category === 'outsourcing' ? 'outsourcing' : 'branch';
+        viewEntries.push({ station, type: t, company: company || '', region: '협력사(본사)', year, record: record || null, auditCategory: cat });
       }
     }
   }
@@ -4554,10 +4584,7 @@ function viewSearch() {
   if (categoryFilter !== '전체') filterDesc.push(categoryLabels[categoryFilter] || categoryFilter);
   if (statusFilter === 'completed') filterDesc.push('심사완료');
   if (statusFilter === 'pending') filterDesc.push('심사예정');
-  if (searchText) filterDesc.push(`"${searchText}"`);
-  if (selectedStationFilter) filterDesc.push(selectedStationFilter);
-  if (divisionSearchText) filterDesc.push(`"${divisionSearchText}"`);
-  if (selectedDivisionFilter) filterDesc.push(selectedDivisionFilter);
+  if (viewTargetVal) filterDesc.push(viewTargetVal);
 
   document.getElementById('viewResultTitle').textContent = `${year}년 조회 결과`;
   document.getElementById('viewResultSubtitle').textContent =
@@ -4847,7 +4874,7 @@ function renderScoreViewTable() {
       divTypeArr.forEach(type => {
         html += `<td style="text-align:center;">${makeTypeBadge(group.types[type], type)}</td>`;
       });
-      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
+      html += `<td style="text-align:center;">${status.hasData ? status.html : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;">${status.html}<button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`}</td>`;
       html += `</tr>`;
       html += `<tr id="${rowId}" class="hidden"><td colspan="${3 + divTypeArr.length + 1}" style="padding:0;background:#f5f5f7;"><div id="viewGroupDetail_${gIdx}" style="padding:16px;">${renderGroupReadOnlyDetail(gIdx, group)}</div></td></tr>`;
     });
@@ -4962,7 +4989,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
       html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px 0;">`;
       html += `<span style="color:#9EA2A1;font-size:13px;">미작성</span>`;
       if (isDivGroup) {
-        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
+        html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();switchTab(1);setTimeout(()=>{document.getElementById('inputYear').value='${group.year}';document.getElementById('inputTarget').value='${group.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
       } else {
         html += `<div style="margin-top:8px;"><button onclick="event.stopPropagation();navigateToInput(${group.year},'${group.station}','${type}')" class="pill-btn pill-btn-primary" style="font-size:12px;padding:4px 14px;">작성</button></div>`;
       }
@@ -7933,27 +7960,15 @@ function showScheduleStation(scheduleId) {
     // Action buttons
     html += '<div class="flex gap-3 flex-wrap">';
     if (stationData.length > 0) {
-      if (isDivisionSchedule) {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('division');document.getElementById('viewTarget').value='${item.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
-      } else {
-        html += `<button onclick="switchTab(2);setTimeout(()=>{clearAllSearchFields();document.getElementById('viewYear').value='${item.year}';switchViewCategory('branch');document.getElementById('viewTarget').value='${item.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
-      }
+      html += `<button onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewYear').value='${item.year}';document.getElementById('viewType').value='전체';document.getElementById('viewRegion').value='전체';document.getElementById('viewTarget').value='${item.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100);" class="pill-btn pill-btn-primary">점수 상세보기</button>`;
     }
-    if (isDivisionSchedule) {
-      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${item.year}';document.getElementById('inputTarget').value='${item.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
-    } else {
-      html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
-    }
+    html += `<button onclick="switchTab(1);setTimeout(()=>{document.getElementById('inputYear').value='${item.year}';document.getElementById('inputTarget').value='${item.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-outline" style="border-color:#D20015;color:#D20015;">점검표 작성</button>`;
     html += '</div>';
   } else {
     html += '<div style="text-align:center;padding:32px 0;">';
     html += '<div style="font-size:40px;margin-bottom:12px;">📋</div>';
     html += '<p style="font-size:15px;color:#9EA2A1;margin-bottom:16px;">아직 점검이 실시되지 않았습니다</p>';
-    if (isDivisionSchedule) {
-      html += `<button onclick="switchTab(1);setTimeout(()=>{clearAllInputFields();document.getElementById('inputYear').value='${item.year}';document.getElementById('inputTarget').value='${item.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
-    } else {
-      html += `<button onclick="navigateToInput(${item.year},'${item.station}')" class="pill-btn pill-btn-primary">점검표 작성</button>`;
-    }
+    html += `<button onclick="switchTab(1);setTimeout(()=>{document.getElementById('inputYear').value='${item.year}';document.getElementById('inputTarget').value='${item.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch();},100);" class="pill-btn pill-btn-primary">점검표 작성</button>`;
     html += '</div>';
   }
   html += '</div>';
@@ -8052,6 +8067,8 @@ function saveNewSchedule() {
   const cycleSel = document.getElementById('newScheduleCycle');
   const auditCycle = cycleSel ? cycleSel.value : 'yearly';
   const exceptionReason = document.getElementById('newScheduleExceptionReason')?.value || '';
+  const auditTargetSel = document.getElementById('newScheduleTarget');
+  const auditTarget = auditTargetSel ? auditTargetSel.value : 'branch';
 
   // 같은 연도 같은 지점 중복 등록 방지
   const duplicate = scheduleData.find(s => s.year === year && s.station === station);
@@ -8068,7 +8085,8 @@ function saveNewSchedule() {
     id: newId, year, month, station, displayName: station,
     auditors, dateStart, dateEnd, status, note,
     auditCycle: auditCycle,
-    cycleReason: auditCycle === 'exception' ? exceptionReason : ''
+    cycleReason: auditCycle === 'exception' ? exceptionReason : '',
+    auditTarget: auditTarget
   });
 
   saveSchedule();
@@ -8124,6 +8142,26 @@ function autoDetectCycle() {
         const reasonInput = document.getElementById('newScheduleExceptionReason');
         if (reasonInput && cycleInfo.reason) reasonInput.value = cycleInfo.reason;
       }
+    }
+  }
+  // auditTarget 자동 감지
+  autoDetectTarget();
+}
+
+function autoDetectTarget() {
+  const stationSel = document.getElementById('newScheduleStation');
+  const targetSel = document.getElementById('newScheduleTarget');
+  if (!stationSel || !targetSel) return;
+  const station = stationSel.value;
+  if (!station || station === '__new__') return;
+  if (DIVISION_NAMES.includes(station)) {
+    targetSel.value = 'division';
+  } else {
+    const region = getRegionForStation(station);
+    if (region === '협력사(본사)') {
+      targetSel.value = 'outsourcing';
+    } else {
+      targetSel.value = 'branch';
     }
   }
 }
@@ -8214,6 +8252,16 @@ function renderAddScheduleForm() {
   html += '<input type="text" id="newStationRamp" class="apple-input" placeholder="예: XYZ Ramp">';
   html += '</div>';
   html += '</div>';
+  html += '</div>';
+
+  // Audit target type (branch/division/outsourcing)
+  html += '<div class="mb-4">';
+  html += '<label class="apple-label">심사 대상 구분</label>';
+  html += '<select id="newScheduleTarget" class="apple-input">';
+  html += '<option value="branch">지점</option>';
+  html += '<option value="division">실/본부</option>';
+  html += '<option value="outsourcing">외주협력업체</option>';
+  html += '</select>';
   html += '</div>';
 
   // Audit cycle selector
@@ -8824,6 +8872,7 @@ function setupFirebaseListeners() {
     const newData = Object.values(data);
     if (isFirst || JSON.stringify(newData) !== JSON.stringify(scheduleData)) {
       scheduleData = newData;
+      normalizeScheduleTargets();
       localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
       if (activeTab === 5) renderSchedule();
     }
@@ -8952,6 +9001,7 @@ function downloadFromFirebase() {
       }
       if (data.schedule) {
         scheduleData = Object.values(data.schedule);
+        normalizeScheduleTargets();
         localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleData));
       }
       if (data.customStations) {
@@ -9178,11 +9228,7 @@ function renderHome() {
           scoreBadge = `<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">-</span>`;
         }
       }
-      if (hasBinary && !hasGrade) {
-        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('division');document.getElementById('viewTarget').value='${station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
-      } else {
-        recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);clearAllSearchFields();switchViewCategory('branch');document.getElementById('viewTarget').value='${station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
-      }
+      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewType').value='전체';document.getElementById('viewRegion').value='전체';document.getElementById('viewTarget').value='${station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100)">`;
       recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
       recentHtml += `<div style="display:flex;align-items:center;gap:6px;">${scoreBadge}<svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
       recentHtml += `</div>`;
@@ -9301,12 +9347,7 @@ function renderInputPendingStations() {
   html += '</tr></thead><tbody>';
 
   pendingStations.forEach(s => {
-    let clickAction;
-    if (s.isDivision) {
-      clickAction = `clearAllInputFields();document.getElementById('inputTarget').value='${s.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch()`;
-    } else {
-      clickAction = `clearAllInputFields();document.getElementById('inputTarget').value='${s.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch()`;
-    }
+    const clickAction = `document.getElementById('inputTarget').value='${s.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch()`;
     const divTag = s.isDivision ? '<div style="font-size:10px;color:#6366F1;">실/본부</div>' : '';
     html += `<tr style="cursor:pointer;" onclick="${clickAction}">`;
     html += `<td data-label="${colLabel}" style="font-weight:600;">${s.displayName}${divTag}</td>`;
@@ -9333,7 +9374,9 @@ function renderViewRecentStations() {
     const map = isDivType ? divisionMap : branchMap;
     const key = isDivType ? (d.division || d.station) : d.station;
     if (!map[key]) {
-      map[key] = { station: key, region: isDivType ? '실/본부' : (d.region || getRegionForStation(d.station)), types: {}, latestDate: '', isDivision: isDivType };
+      const stationRegion = isDivType ? '실/본부' : (d.region || getRegionForStation(d.station));
+      const displayRegion = stationRegion === '협력사(본사)' ? '외주협력업체' : stationRegion;
+      map[key] = { station: key, region: displayRegion, types: {}, latestDate: '', isDivision: isDivType };
     }
     if (isDivType) {
       const result = calculateBinaryScores(d.scores, getChecklist(d.type));
@@ -9373,7 +9416,7 @@ function renderViewRecentStations() {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
       const vals = [s.types.branch, s.types.pax, s.types.ramp].filter(v => v != null);
       const totalAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();document.getElementById('viewType').value='전체';document.getElementById('viewRegion').value='전체';viewSearch()">`;
       html += `<td data-label="지점" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#9EA2A1;">${s.region}</div></td>`;
       html += `<td style="text-align:center;">${totalAvg != null ? '<span class="badge-pill" style="' + avgBadgeStyle(totalAvg) + ';font-weight:700;">' + totalAvg.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;">${s.types.branch ? '<span class="badge-pill" style="' + avgBadgeStyle(s.types.branch) + '">' + s.types.branch.toFixed(2) + '</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
@@ -9404,7 +9447,7 @@ function renderViewRecentStations() {
     html += '</tr></thead><tbody>';
     divisionStations.forEach(s => {
       const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
-      html += `<tr style="cursor:pointer;" onclick="clearAllSearchFields();document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
+      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();document.getElementById('viewType').value='전체';document.getElementById('viewRegion').value='전체';viewSearch()">`;
       html += `<td style="font-weight:600;">${s.station}<div style="font-size:10px;color:#6366F1;">실/본부</div></td>`;
       divTypeArr.forEach(type => {
         const rate = s.types[type];
