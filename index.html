@@ -532,8 +532,8 @@ select.apple-input {
     <!-- 로그인 폼 -->
     <div id="loginForm" class="apple-card" style="padding:24px;">
       <div style="margin-bottom:16px;">
-        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
-        <input id="loginEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리 입력" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">아이디</label>
+        <input id="loginEmpNo" type="text" maxlength="20" placeholder="사번 또는 admin" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div style="margin-bottom:20px;">
         <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
@@ -545,31 +545,13 @@ select.apple-input {
         <button onclick="showPasswordChange()" style="background:none;border:none;color:#9EA2A1;font-size:12px;cursor:pointer;text-decoration:underline;">비밀번호 변경</button>
       </div>
     </div>
-    <!-- 최초 관리자 등록 폼 (users 비어있을 때) -->
-    <div id="adminSetupForm" class="apple-card" style="padding:24px;display:none;">
-      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:4px;">초기 관리자 등록</h3>
-      <p style="font-size:12px;color:#9EA2A1;margin-bottom:16px;">첫 번째 사용자가 관리자로 등록됩니다.</p>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
-        <input id="setupEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리" class="apple-input">
-      </div>
-      <div style="margin-bottom:12px;">
-        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">이름</label>
-        <input id="setupName" type="text" placeholder="이름 입력" class="apple-input">
-      </div>
-      <div style="margin-bottom:20px;">
-        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
-        <input id="setupPassword" type="password" placeholder="비밀번호 6자리 이상" class="apple-input">
-      </div>
-      <button onclick="doAdminSetup()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">관리자 등록</button>
-      <div id="setupError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
-    </div>
+    <!-- adminSetupForm 제거 — admin 계정은 Firebase Console에서 사전 생성 -->
     <!-- 비밀번호 변경 폼 -->
     <div id="pwChangeForm" class="apple-card" style="padding:24px;display:none;">
       <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">비밀번호 변경</h3>
       <div style="margin-bottom:12px;">
         <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">사번</label>
-        <input id="pwChangeEmpNo" type="text" inputmode="numeric" maxlength="7" placeholder="사번 7자리" class="apple-input">
+        <input id="pwChangeEmpNo" type="text" maxlength="20" placeholder="사번 또는 admin" class="apple-input">
       </div>
       <div style="margin-bottom:12px;">
         <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">현재 비밀번호</label>
@@ -2510,7 +2492,12 @@ function initFirebase() {
       if (user) {
         // 로그인 상태 — 사용자 역할 가져오기
         const snap = await dbRef('users/' + user.uid).once('value');
-        const userData = snap.val();
+        let userData = snap.val();
+        // admin 계정이 DB에 없으면 자동 생성
+        if (!userData && user.email === 'admin' + AUTH_DOMAIN) {
+          userData = { empNo: 'admin', name: '관리자', role: 'admin', createdAt: new Date().toISOString().slice(0,10) };
+          await dbRef('users/' + user.uid).set(userData);
+        }
         if (userData) {
           currentUser = { uid: user.uid, empNo: emailToEmpNo(user.email), name: userData.name, role: userData.role };
           onLoginSuccess();
@@ -2541,40 +2528,31 @@ function initFirebase() {
 function showLoginScreen() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appWrapper').style.display = 'none';
-  // users 노드 확인 → 비어있으면 관리자 등록 폼 표시
-  if (firebaseDb) {
-    dbRef('users').once('value').then(snap => {
-      if (!snap.exists() || !snap.val()) {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('adminSetupForm').style.display = 'block';
-        document.getElementById('pwChangeForm').style.display = 'none';
-      } else {
-        showLoginForm();
-      }
-    }).catch(() => showLoginForm());
-  }
+  showLoginForm();
 }
 
 function showLoginForm() {
   document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('adminSetupForm').style.display = 'none';
   document.getElementById('pwChangeForm').style.display = 'none';
   document.getElementById('loginError').style.display = 'none';
 }
 
 function showPasswordChange() {
   document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('adminSetupForm').style.display = 'none';
   document.getElementById('pwChangeForm').style.display = 'block';
   document.getElementById('pwChangeError').style.display = 'none';
   document.getElementById('pwChangeSuccess').style.display = 'none';
+}
+
+function isValidLoginId(id) {
+  return id === 'admin' || /^\d{7}$/.test(id);
 }
 
 async function doLogin() {
   const empNo = document.getElementById('loginEmpNo').value.trim();
   const pw = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
-  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!empNo || !isValidLoginId(empNo)) { errEl.textContent = '사번 7자리 또는 admin을 입력해주세요.'; errEl.style.display = 'block'; return; }
   if (!pw) { errEl.textContent = '비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
   try {
     errEl.style.display = 'none';
@@ -2618,7 +2596,7 @@ async function doPasswordChange() {
   const errEl = document.getElementById('pwChangeError');
   const okEl = document.getElementById('pwChangeSuccess');
   errEl.style.display = 'none'; okEl.style.display = 'none';
-  if (!empNo || empNo.length !== 7) { errEl.textContent = '사번 7자리를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  if (!empNo || !isValidLoginId(empNo)) { errEl.textContent = '사번 7자리 또는 admin을 입력해주세요.'; errEl.style.display = 'block'; return; }
   if (!oldPw) { errEl.textContent = '현재 비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
   if (!newPw || newPw.length < 6) { errEl.textContent = '새 비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
   try {
