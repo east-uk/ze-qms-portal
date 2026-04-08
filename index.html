@@ -3391,11 +3391,14 @@ function calculateScores(scores, checklist) {
   for (const [catName, catData] of Object.entries(checklist)) {
     let catSum = 0;
     let catCount = 0;
-    let catNaCount = 0;
     for (const item of catData.items) {
       const score = scores[item.id];
       if (score === 'N/A') {
-        catNaCount++;
+        // N/A → 2.5점으로 계산
+        catSum += 2.5;
+        catCount++;
+        totalScore += 2.5;
+        totalItems++;
       } else if (score !== null && score !== undefined) {
         catSum += Number(score);
         catCount++;
@@ -3404,19 +3407,13 @@ function calculateScores(scores, checklist) {
       }
     }
     categoryAverages[catName] = catCount > 0 ? catSum / catCount : 0;
-    // maxPoints에서 N/A 항목의 배점을 차감
-    const catMaxPoints = catData.maxPoints || (catData.items.length * maxPointsPerItem);
-    const naDeduction = catNaCount * (catData.items.length > 0 ? catMaxPoints / catData.items.length : maxPointsPerItem);
-    maxScore += (catMaxPoints - naDeduction);
+    maxScore += (catData.maxPoints || (catData.items.length * maxPointsPerItem));
   }
   return {
     categoryAverages,
     totalScore,
     maxScore,
-    overallAverage: (function() {
-      const cats = Object.values(categoryAverages).filter(v => v > 0);
-      return cats.length > 0 ? cats.reduce((a, b) => a + b, 0) / cats.length : 0;
-    })(),
+    overallAverage: totalItems > 0 ? totalScore / totalItems : 0,
     achievementRate: maxScore > 0 ? (totalScore / maxScore) * 100 : 0,
     totalItems
   };
