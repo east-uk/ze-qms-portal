@@ -2902,10 +2902,11 @@ function onLoginSuccess() {
     loadAllData();
     loadAuditors();
     loadSchedule();
-    populateStationDropdown();
-    populateViewStationDropdown();
-    renderInputPendingStations();
   }
+  // 드롭다운은 항상 초기화 (Firebase 리스너가 먼저 데이터를 로드할 수 있으므로)
+  populateStationDropdown();
+  populateViewStationDropdown();
+  renderInputPendingStations();
   switchTab(0);
 }
 
