@@ -859,8 +859,8 @@ select.apple-input {
             <select id="viewType" class="apple-input">
               <option value="전체">전체</option>
               <option value="branch">지점</option>
-              <option value="pax">여객협력사</option>
-              <option value="ramp">램프협력사</option>
+              <option value="division">실/본부</option>
+              <option value="outsourcing">외주협력업체</option>
             </select>
           </div>
         </div>
@@ -3061,6 +3061,19 @@ function saveCustomStations() {
 }
 
 function mergeCustomStations() {
+  // Auto-migrate known outsourcing companies to correct category
+  let migrated = false;
+  customStations.forEach(cs => {
+    if (cs.station === '프리존에어포트서비스' && cs.region !== '협력사(본사)') {
+      cs.region = '협력사(본사)';
+      migrated = true;
+    }
+  });
+  if (migrated) {
+    localStorage.setItem(CUSTOM_STATIONS_KEY, JSON.stringify(customStations));
+    firebaseSaveCustomStations();
+  }
+
   customStations.forEach(cs => {
     if (!REGIONS[cs.region]) {
       REGIONS[cs.region] = { type: cs.region, stations: [] };
@@ -4396,9 +4409,10 @@ function switchViewCategory(cat) {
   const regionArea = document.getElementById('viewRegionArea');
   const typeArea = document.getElementById('viewTypeArea');
 
-  // Reset viewTarget
+  // Reset viewTarget and viewType dropdown
   const viewTarget = document.getElementById('viewTarget');
   if (viewTarget) { viewTarget.value = ''; if (viewTarget._comboRefresh) viewTarget._comboRefresh(); }
+  document.getElementById('viewType').value = '전체';
 
   // 모든 버튼 비활성 스타일로 초기화
   [allBtn, branchBtn, divBtn].forEach(btn => {
@@ -4415,6 +4429,7 @@ function switchViewCategory(cat) {
     if (regionArea) regionArea.classList.remove('hidden');
     if (typeArea) typeArea.classList.remove('hidden');
   } else {
+    // division
     if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
     if (regionArea) regionArea.classList.add('hidden');
     if (typeArea) typeArea.classList.add('hidden');
@@ -4441,17 +4456,24 @@ function viewSearch() {
   const year = parseInt(document.getElementById('viewYear').value);
   const catFilter = selectedViewCategory || 'all';
   const region = document.getElementById('viewRegion').value;
-  const type = document.getElementById('viewType').value;
+  const categoryFilter = document.getElementById('viewType').value;  // 전체, branch, division, outsourcing
   const viewTargetVal = document.getElementById('viewTarget').value;
-  const selectedStationFilter = viewTargetVal && !DIVISION_NAMES.includes(viewTargetVal) ? viewTargetVal : '';
-  const selectedDivisionFilter = viewTargetVal && DIVISION_NAMES.includes(viewTargetVal) ? viewTargetVal : '';
+  let selectedStationFilter = '';
+  let selectedDivisionFilter = '';
+  if (viewTargetVal) {
+    if (DIVISION_NAMES.includes(viewTargetVal)) {
+      selectedDivisionFilter = viewTargetVal;
+    } else {
+      selectedStationFilter = viewTargetVal;
+    }
+  }
   const statusFilter = document.getElementById('viewStatus').value;
 
   // Build entries
   viewEntries = [];
 
   // 실/본부 데이터 추가
-  if (catFilter === 'all' || catFilter === 'division') {
+  if ((catFilter === 'all' || catFilter === 'division') && (categoryFilter === '전체' || categoryFilter === 'division')) {
     const divRecords = allData.filter(d => d.auditCategory === 'division' && d.year == year);
     // Group by division
     const divNames = [...new Set(divRecords.map(d => d.division || d.station))];
@@ -4477,22 +4499,33 @@ function viewSearch() {
     }
   }
 
-  // 지점 데이터 추가
-  if (catFilter === 'all' || catFilter === 'branch') {
-    const regionsToShow = region === '전체' ? Object.keys(REGIONS) : (REGIONS[region] ? [region] : []);
+  // 지점 데이터 추가 (branch category only — excludes 협력사(본사))
+  if ((catFilter === 'all' || catFilter === 'branch') && (categoryFilter === '전체' || categoryFilter === 'branch')) {
+    const regionsToShow = region === '전체' ? Object.keys(REGIONS).filter(r => r !== '협력사(본사)') : (REGIONS[region] && region !== '협력사(본사)' ? [region] : []);
     for (const reg of regionsToShow) {
       for (const station of REGIONS[reg].stations) {
         if (selectedStationFilter && station !== selectedStationFilter) continue;
-        let typesToShow = type === '전체' ? ALL_BRANCH_TYPES : [type];
-        // 협력사(본사) 구분 지점에 외주협력업체 유형 추가
-        if (type === '전체' && reg === '협력사(본사)') {
-          typesToShow = [...typesToShow, ...OUTSOURCING_TYPES];
-        }
+        const typesToShow = ALL_BRANCH_TYPES;
         for (const t of typesToShow) {
           const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
           const record = findRecord(year, station, t, company || undefined);
+          viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: 'branch' });
+        }
+      }
+    }
+  }
+
+  // 외주협력업체 데이터 (협력사(본사) region stations with branch + outsourcing types)
+  if ((catFilter === 'all' || catFilter === 'branch') && (categoryFilter === '전체' || categoryFilter === 'outsourcing')) {
+    if (REGIONS['협력사(본사)']) {
+      for (const station of REGIONS['협력사(본사)'].stations) {
+        if (selectedStationFilter && station !== selectedStationFilter) continue;
+        const allTypes = [...ALL_BRANCH_TYPES, ...OUTSOURCING_TYPES];
+        for (const t of allTypes) {
+          const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
+          const record = findRecord(year, station, t, company || undefined);
           const cat = CHECKLIST_REGISTRY[t]?.category === 'outsourcing' ? 'outsourcing' : 'branch';
-          viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: cat });
+          viewEntries.push({ station, type: t, company: company || '', region: '협력사(본사)', year, record: record || null, auditCategory: cat });
         }
       }
     }
@@ -4517,7 +4550,8 @@ function viewSearch() {
   const totalCount = viewEntries.length;
   const filterDesc = [];
   if (region !== '전체') filterDesc.push(region);
-  if (type !== '전체') filterDesc.push(getTypeLabel(type));
+  const categoryLabels = { branch: '지점', division: '실/본부', outsourcing: '외주협력업체' };
+  if (categoryFilter !== '전체') filterDesc.push(categoryLabels[categoryFilter] || categoryFilter);
   if (statusFilter === 'completed') filterDesc.push('심사완료');
   if (statusFilter === 'pending') filterDesc.push('심사예정');
   if (searchText) filterDesc.push(`"${searchText}"`);
