@@ -3391,14 +3391,11 @@ function calculateScores(scores, checklist) {
   for (const [catName, catData] of Object.entries(checklist)) {
     let catSum = 0;
     let catCount = 0;
+    let catNaCount = 0;
     for (const item of catData.items) {
       const score = scores[item.id];
       if (score === 'N/A') {
-        // N/A → 2.5점으로 계산
-        catSum += 2.5;
-        catCount++;
-        totalScore += 2.5;
-        totalItems++;
+        catNaCount++; // N/A → 제외 (분자/분모 모두에서 빠짐)
       } else if (score !== null && score !== undefined) {
         catSum += Number(score);
         catCount++;
@@ -3407,7 +3404,9 @@ function calculateScores(scores, checklist) {
       }
     }
     categoryAverages[catName] = catCount > 0 ? catSum / catCount : 0;
-    maxScore += (catData.maxPoints || (catData.items.length * maxPointsPerItem));
+    // maxScore에서 N/A 항목 배점 차감
+    const catMaxPoints = catData.maxPoints || (catData.items.length * maxPointsPerItem);
+    maxScore += catMaxPoints - (catNaCount * maxPointsPerItem);
   }
   return {
     categoryAverages,
