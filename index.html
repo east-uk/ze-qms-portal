@@ -545,7 +545,21 @@ select.apple-input {
         <button onclick="showPasswordChange()" style="background:none;border:none;color:#9EA2A1;font-size:12px;cursor:pointer;text-decoration:underline;">비밀번호 변경</button>
       </div>
     </div>
-    <!-- adminSetupForm 제거 — admin 계정은 Firebase Console에서 사전 생성 -->
+    <!-- 최초 로그인 비밀번호 변경 폼 -->
+    <div id="forcePasswordForm" class="apple-card" style="padding:24px;display:none;">
+      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:4px;">비밀번호 변경 필요</h3>
+      <p style="font-size:12px;color:#9EA2A1;margin-bottom:16px;">최초 로그인입니다. 새 비밀번호를 설정해주세요.</p>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">새 비밀번호</label>
+        <input id="forcePwNew" type="password" placeholder="새 비밀번호 6자리 이상" class="apple-input" onkeydown="if(event.key==='Enter')document.getElementById('forcePwConfirm').focus()">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">새 비밀번호 확인</label>
+        <input id="forcePwConfirm" type="password" placeholder="비밀번호 재입력" class="apple-input" onkeydown="if(event.key==='Enter')doForcePasswordChange()">
+      </div>
+      <button onclick="doForcePasswordChange()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">비밀번호 변경</button>
+      <div id="forcePwError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
+    </div>
     <!-- 비밀번호 변경 폼 -->
     <div id="pwChangeForm" class="apple-card" style="padding:24px;display:none;">
       <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">비밀번호 변경</h3>
@@ -2502,7 +2516,11 @@ function initFirebase() {
         }
         if (userData) {
           currentUser = { uid: user.uid, empNo: emailToEmpNo(user.email), name: userData.name, role: userData.role };
-          onLoginSuccess();
+          if (userData.mustChangePassword) {
+            showForcePasswordChange();
+          } else {
+            onLoginSuccess();
+          }
         } else {
           // DB에 사용자 정보 없음 (비정상) → 로그아웃
           await firebaseAuth.signOut();
@@ -2536,6 +2554,7 @@ function showLoginScreen() {
 function showLoginForm() {
   document.getElementById('loginForm').style.display = 'block';
   document.getElementById('pwChangeForm').style.display = 'none';
+  document.getElementById('forcePasswordForm').style.display = 'none';
   document.getElementById('loginError').style.display = 'none';
 }
 
@@ -2611,6 +2630,37 @@ async function doPasswordChange() {
   } catch(e) {
     if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') errEl.textContent = '현재 비밀번호가 올바르지 않습니다.';
     else errEl.textContent = '변경 실패: ' + (e.message || '');
+    errEl.style.display = 'block';
+  }
+}
+
+function showForcePasswordChange() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appWrapper').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('pwChangeForm').style.display = 'none';
+  document.getElementById('forcePasswordForm').style.display = 'block';
+  document.getElementById('forcePwError').style.display = 'none';
+  document.getElementById('forcePwNew').value = '';
+  document.getElementById('forcePwConfirm').value = '';
+}
+
+async function doForcePasswordChange() {
+  const newPw = document.getElementById('forcePwNew').value;
+  const confirmPw = document.getElementById('forcePwConfirm').value;
+  const errEl = document.getElementById('forcePwError');
+  errEl.style.display = 'none';
+  if (!newPw || newPw.length < 6) { errEl.textContent = '비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = '비밀번호가 일치하지 않습니다.'; errEl.style.display = 'block'; return; }
+  try {
+    const user = firebaseAuth.currentUser;
+    await user.updatePassword(newPw);
+    await dbRef('users/' + user.uid + '/mustChangePassword').remove();
+    document.getElementById('forcePasswordForm').style.display = 'none';
+    showToast('비밀번호가 변경되었습니다.', 'success');
+    onLoginSuccess();
+  } catch(e) {
+    errEl.textContent = '변경 실패: ' + (e.message || '알 수 없는 오류');
     errEl.style.display = 'block';
   }
 }
@@ -2737,16 +2787,17 @@ async function createNewUser() {
     try {
       const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), tempPw);
       await dbRef('users/' + cred.user.uid).set({
-        empNo, name, role, createdAt: new Date().toISOString().slice(0,10)
+        empNo, name, role, createdAt: new Date().toISOString().slice(0,10), mustChangePassword: true
       });
       // admin으로 재로그인
       await firebaseAuth.signInWithEmailAndPassword(adminEmail, adminPwPrompt);
     } finally {
       _suppressAuthRedirect = false;
     }
-    resultEl.innerHTML = `<span style="color:#22C55E;">✓ ${name}(${empNo}) 계정이 생성되었습니다.</span><br><span style="font-weight:600;">임시 비밀번호: ${tempPw}</span><br><span style="color:#9EA2A1;">사용자에게 전달 후 비밀번호 변경을 안내해주세요.</span>`;
     document.getElementById('newUserEmpNo').value = '';
     document.getElementById('newUserName').value = '';
+    // 임시 비밀번호를 alert로 안내 (닫기 전까지 유지)
+    alert(`✓ ${name}(${empNo}) 계정이 생성되었습니다.\n\n임시 비밀번호: ${tempPw}\n\n사용자에게 전달해주세요.\n최초 로그인 시 비밀번호 변경이 필요합니다.`);
     renderUserManagement();
   } catch(e) {
     if (e.code === 'auth/email-already-in-use') resultEl.innerHTML = '<span style="color:#D20015;">이미 등록된 사번입니다.</span>';
@@ -8913,7 +8964,7 @@ Object.assign(window, {
   // Environment
   APP_ENV, ENV_PREFIX,
   // Auth
-  doLogin, doLogout, doAdminSetup, doPasswordChange, showPasswordChange, showLoginForm,
+  doLogin, doLogout, doAdminSetup, doPasswordChange, doForcePasswordChange, showPasswordChange, showLoginForm, showForcePasswordChange,
   createNewUser, changeUserRole, deleteUser, hasRole, requireRole,
   // Home
   renderHome, renderInputPendingStations, renderViewRecentStations,
