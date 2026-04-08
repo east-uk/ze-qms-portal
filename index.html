@@ -935,6 +935,8 @@ select.apple-input {
       <div id="statsSubTabBar" class="flex gap-2 mt-3">
         <button class="sub-tab sub-tab-active" onclick="switchStatsSubTab('branch')" id="statsSubBranch">지점 성숙도</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('division')" id="statsSubDivision">실/본부 심사</button>
+        <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('outsourcing')" id="statsSubOutsourcing">외주협력업체</button>
+        <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('auditor')" id="statsSubAuditor">심사원 활동</button>
       </div>
       <select id="statsYear" class="hidden"><option></option></select>
       <script>
@@ -965,6 +967,10 @@ select.apple-input {
     <div id="branchStatsContent">
     <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
     <div class="apple-card p-6 mb-6">
+      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">3개년 비교</h3>
+      <div id="threeYearComparison"></div>
+    </div>
+    <div class="apple-card p-6 mb-6">
       <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">지역별 평균</h3>
       <div class="overflow-x-auto" id="regionalTable"></div>
     </div>
@@ -982,16 +988,10 @@ select.apple-input {
       <p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">반복적으로 낮은 점수를 보이는 지점과 항목을 분석합니다</p>
       <div id="stationWeakPatterns"></div>
     </div>
-    <div class="apple-card p-6 mb-6">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">심사원 활동 현황</h3>
-      <div class="overflow-x-auto" id="auditorStatsTable"></div>
-    </div>
-    <div class="apple-card p-6">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">3개년 비교</h3>
-      <div id="threeYearComparison"></div>
-    </div>
     </div><!-- end branchStatsContent -->
     <div id="divisionStatsContent" class="hidden"></div>
+    <div id="outsourcingStatsContent" class="hidden"></div>
+    <div id="auditorStatsContent" class="hidden"></div>
   </div>
 
   <!-- Tab 4: Analysis -->
@@ -1003,6 +1003,7 @@ select.apple-input {
       <div id="analysisSubTabBar" class="flex gap-2 mt-3">
         <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('division')" id="analysisSubDivision">실/본부 심사</button>
+        <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('outsourcing')" id="analysisSubOutsourcing">외주협력업체</button>
       </div>
       <select id="analysisYear" class="hidden"><option></option></select>
       <script>
@@ -1032,6 +1033,7 @@ select.apple-input {
     </div>
     <div id="branchAnalysisContent"><div id="analysisContainer"></div></div>
     <div id="divisionAnalysisContent" class="hidden"></div>
+    <div id="outsourcingAnalysisContent" class="hidden"></div>
   </div>
 
   <!-- Tab 5: Audit Schedule -->
@@ -2153,6 +2155,54 @@ const CHECKLIST_SAFETY_DIVISION = {
   }
 };
 
+const CHECKLIST_OUTSOURCING = {
+  '1. 조업사(협력업체) 품질': {
+    items: [
+      {id:"1-1",text:"자체 교육프로그램 운영 여부"},
+      {id:"1-2",text:"교육훈련 기록 유지"},
+      {id:"1-3",text:"여객·수하물 취급 기준 준수"},
+      {id:"1-4",text:"관련 매뉴얼 보유 및 숙지"},
+      {id:"1-5",text:"별도 운영 매뉴얼 수립"},
+      {id:"1-6",text:"지침 전파 체계"},
+      {id:"1-7",text:"브리핑 일지 기록"},
+      {id:"1-8",text:"Ground Handling Quality List 모니터링"}
+    ]
+  },
+  '2. 승객 및 수하물 처리': {
+    items: [
+      {id:"2-1",text:"운송 조건 및 금지물품 게시"},
+      {id:"2-2",text:"위탁·기내 수하물 처리 절차"},
+      {id:"2-3",text:"보안 검색 절차"},
+      {id:"2-4",text:"비상구 좌석 제한 숙지"},
+      {id:"2-5",text:"수하물 크기·중량 기준 숙지"},
+      {id:"2-6",text:"초과 수하물 확인"},
+      {id:"2-7",text:"보안 위해물품 처리"},
+      {id:"2-8",text:"수하물 테스트 유닛 운영"},
+      {id:"2-9",text:"초과 기내수하물 반입 제한"},
+      {id:"2-10",text:"LMC 절차"},
+      {id:"2-11",text:"Gate No-show 수하물 처리"},
+      {id:"2-12",text:"특수 여객 코드 부여"},
+      {id:"2-13",text:"비행서류·운송기록 관리"},
+      {id:"2-14",text:"비정상 운항 절차 (LERAP)"}
+    ]
+  },
+  '3. 탑재 관리': {
+    items: [
+      {id:"3-1",text:"탑재 관리 절차 및 업무 분장"},
+      {id:"3-2",text:"특수 화물 Load Controller 통보"},
+      {id:"3-3",text:"Loading Instruction 정확성"},
+      {id:"3-4",text:"LIR 서명 권한"},
+      {id:"3-5",text:"탑재 감독자 확인·서명"},
+      {id:"3-6",text:"Load Sheet 작성·권한"},
+      {id:"3-7",text:"LMC 절차"},
+      {id:"3-8",text:"NOTOC 발행 절차"},
+      {id:"3-9",text:"수동 탑재 계획표 비치"},
+      {id:"3-10",text:"탑재 관리 규정·절차"},
+      {id:"3-11",text:"LIR·Load Sheet 기록 보관 (3개월 이상)"}
+    ]
+  }
+};
+
 const CHECKLIST_SAFETY_BRANCH = {
   "1. SMS 일반사항": {
     items: [
@@ -2265,6 +2315,8 @@ const CHECKLIST_REGISTRY = {
   ramp: { name:"램프협력사 품질심사", checklist: CHECKLIST_RAMP, scoring:"grade", category:"branch" },
   // 지점 안전감사 (S/U/NA)
   safety_branch: { name:"지점 안전감사", checklist: CHECKLIST_SAFETY_BRANCH, scoring:"binary", category:"branch" },
+  // 외주협력업체 점검 (S/U/NA)
+  outsourcing: { name:"외주협력업체 점검", checklist: CHECKLIST_OUTSOURCING, scoring:"binary", category:"outsourcing" },
   // 실/본부 품질심사 (S/U/NA)
   qa_flight_ops: { name:"운항본부 품질심사", checklist: CHECKLIST_QA_FLIGHT_OPS, scoring:"binary", category:"division" },
   qa_flight_quality: { name:"운항품질팀 품질심사", checklist: CHECKLIST_QA_FLIGHT_QUALITY, scoring:"binary", category:"division" },
@@ -2291,8 +2343,10 @@ const BINARY_BRANCH_TYPES = Object.entries(CHECKLIST_REGISTRY)
 const ALL_BRANCH_TYPES = [...GRADE_BRANCH_TYPES, ...BINARY_BRANCH_TYPES];
 const DIVISION_TYPES = Object.entries(CHECKLIST_REGISTRY)
   .filter(([_, r]) => r.category === 'division').map(([k]) => k);
+const OUTSOURCING_TYPES = Object.entries(CHECKLIST_REGISTRY)
+  .filter(([_, r]) => r.category === 'outsourcing').map(([k]) => k);
 const TYPES_WITH_COMPANY = ['pax', 'ramp'];
-const TYPE_SHORT_LABELS = { branch:'지점', pax:'여객', ramp:'램프', safety_branch:'안전감사' };
+const TYPE_SHORT_LABELS = { branch:'지점', pax:'여객', ramp:'램프', safety_branch:'안전감사', outsourcing:'외주협력' };
 
 let selectedAuditCategory = 'all'; // 'all', 'branch', or 'division'
 let selectedViewCategory = 'all'; // 'all', 'branch', or 'division'
@@ -3033,10 +3087,11 @@ function saveCustomStations() {
 
 function mergeCustomStations() {
   customStations.forEach(cs => {
-    if (REGIONS[cs.region]) {
-      if (!REGIONS[cs.region].stations.includes(cs.station)) {
-        REGIONS[cs.region].stations.push(cs.station);
-      }
+    if (!REGIONS[cs.region]) {
+      REGIONS[cs.region] = { type: cs.region, stations: [] };
+    }
+    if (!REGIONS[cs.region].stations.includes(cs.station)) {
+      REGIONS[cs.region].stations.push(cs.station);
     }
     if (cs.paxCompany && !HANDLING_COMPANIES.pax[cs.station]) {
       HANDLING_COMPANIES.pax[cs.station] = cs.paxCompany;
@@ -3733,6 +3788,13 @@ function renderTypeStatusCards() {
       { key: 'pax', label: '여객협력사' },
       { key: 'ramp', label: '램프협력사' }
     ];
+    // 협력사(본사) 구분 지점에 외주협력업체 점검표 추가
+    const stationRegion = getRegionForStation(selectedStation);
+    if (stationRegion === '협력사(본사)') {
+      OUTSOURCING_TYPES.forEach(key => {
+        types.push({ key, label: CHECKLIST_REGISTRY[key].name });
+      });
+    }
   }
   let html = '';
   types.forEach(t => {
@@ -3786,6 +3848,14 @@ function inputShowTypes() {
       { key: 'ramp', label: '램프협력사 품질심사 점검표', desc: '램프 조업 협력사 점검 (1~4등급)', scoring: 'grade' },
       { key: 'safety_branch', label: '지점 안전감사 점검표', desc: 'S(적합) / U(부적합) / N/A 방식', scoring: 'binary' }
     ];
+    // 협력사(본사) 구분 지점에 외주협력업체 점검표 추가
+    const stationRegion = getRegionForStation(selectedStation);
+    if (stationRegion === '협력사(본사)') {
+      OUTSOURCING_TYPES.forEach(key => {
+        const reg = CHECKLIST_REGISTRY[key];
+        types.push({ key, label: reg.name + ' 점검표', desc: 'S(적합) / U(부적합) / N/A 방식', scoring: reg.scoring });
+      });
+    }
   }
 
   let html = '';
@@ -4421,11 +4491,16 @@ function viewSearch() {
     for (const reg of regionsToShow) {
       for (const station of REGIONS[reg].stations) {
         if (selectedStationFilter && station !== selectedStationFilter) continue;
-        const typesToShow = type === '전체' ? ALL_BRANCH_TYPES : [type];
+        let typesToShow = type === '전체' ? ALL_BRANCH_TYPES : [type];
+        // 협력사(본사) 구분 지점에 외주협력업체 유형 추가
+        if (type === '전체' && reg === '협력사(본사)') {
+          typesToShow = [...typesToShow, ...OUTSOURCING_TYPES];
+        }
         for (const t of typesToShow) {
           const company = TYPES_WITH_COMPANY.includes(t) ? (HANDLING_COMPANIES[t]?.[station] || '') : undefined;
           const record = findRecord(year, station, t, company || undefined);
-          viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: 'branch' });
+          const cat = CHECKLIST_REGISTRY[t]?.category === 'outsourcing' ? 'outsourcing' : 'branch';
+          viewEntries.push({ station, type: t, company: company || '', region: reg, year, record: record || null, auditCategory: cat });
         }
       }
     }
@@ -5409,9 +5484,11 @@ function navigateToInput(year, station, type) {
 function renderStatsDashboard() {
   if (typeof statsSubTab === 'undefined') window.statsSubTab = 'branch';
   if (statsSubTab === 'division') { renderDivisionStats(); return; }
+  if (statsSubTab === 'outsourcing') { renderOutsourcingStats(); return; }
+  if (statsSubTab === 'auditor') { renderAuditorStats(); return; }
   // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
-  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
+  const yearData = allData.filter(d => d.year == year && d.auditCategory === 'branch');
 
   // Calculate averages
   let totalAvg = 0, totalCount = 0;
@@ -5659,38 +5736,6 @@ function renderStatsDashboard() {
   }
   document.getElementById('stationWeakPatterns').innerHTML = patternHtml;
 
-  // Auditor activity stats
-  let audHtml = '<table class="apple-table compact-mobile"><thead><tr>';
-  audHtml += '<th style="text-align:left;">심사원</th>';
-  audHtml += '<th style="text-align:left;">팀</th>';
-  audHtml += '<th style="text-align:left;">권한그룹</th>';
-  audHtml += '<th style="text-align:center;">교육 유효</th>';
-  audHtml += '<th style="text-align:center;">' + year + '년 실적</th>';
-  audHtml += '</tr></thead><tbody>';
-
-  const auditorsSorted = [...auditorList].sort((a, b) => {
-    const ca = getAuditorActivityCount(a.name, year);
-    const cb = getAuditorActivityCount(b.name, year);
-    return cb - ca;
-  });
-
-  auditorsSorted.forEach(a => {
-    const count = getAuditorActivityCount(a.name, year);
-    const ts = getTrainingStatus(a.trainingExpiry);
-    audHtml += '<tr>';
-    audHtml += `<td style="font-weight:600;">${a.name}</td>`;
-    audHtml += `<td style="font-size:13px;color:#565A5B;">${a.team}</td>`;
-    audHtml += `<td style="font-size:13px;">${a.role}</td>`;
-    audHtml += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
-    audHtml += `<td style="text-align:center;font-weight:600;font-size:15px;color:${count > 0 ? '#D20015' : '#9EA2A1'};">${count}건</td></tr>`;
-  });
-
-  if (auditorList.length === 0) {
-    audHtml += '<tr><td colspan="5" style="text-align:center;color:#9EA2A1;padding:24px;">등록된 심사원이 없습니다.</td></tr>';
-  }
-  audHtml += '</tbody></table>';
-  document.getElementById('auditorStatsTable').innerHTML = audHtml;
-
   // ========== 3개년 비교 (올해/작년/재작년) ==========
   const thisYear = new Date().getFullYear();
   const years = [thisYear - 2, thisYear - 1, thisYear];
@@ -5701,7 +5746,7 @@ function renderStatsDashboard() {
   // 연도별 전체 평균 비교 카드
   threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
-    const yData = allData.filter(d => d.year == y && d.auditCategory !== 'division');
+    const yData = allData.filter(d => d.year == y && d.auditCategory === 'branch');
     let avg = 0, count = 0;
     yData.forEach(d => {
       avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
@@ -5720,7 +5765,7 @@ function renderStatsDashboard() {
 
   // 연도별 지점 비교 테이블
   const allStations = new Set();
-  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory !== 'division').forEach(d => allStations.add(d.station)));
+  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory === 'branch').forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
   threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -5733,7 +5778,7 @@ function renderStatsDashboard() {
 
   [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
     const yearAvgs = years.map(y => {
-      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division');
+      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch');
       if (stData.length === 0) return null;
       return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
     });
@@ -5763,8 +5808,12 @@ function renderStatsDashboard() {
 
   threeYearHtml += '</tbody></table></div>';
 
-  // 3개년 추이 차트
-  threeYearHtml += `<div style="margin-top:16px;height:${getChartHeight()}px;"><canvas id="threeYearChart"></canvas></div>`;
+  // 3개년 추이 차트 (접기/펼치기 토글)
+  threeYearHtml += `<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:16px;" onclick="toggleSection('yearCompareChart')">`;
+  threeYearHtml += `<span style="font-size:14px;font-weight:600;color:#565A5B;">3개년 추이 그래프</span>`;
+  threeYearHtml += `<span id="yearCompareChartArrow" style="color:#9EA2A1;">\u25BE</span>`;
+  threeYearHtml += `</div>`;
+  threeYearHtml += `<div id="yearCompareChart" style="margin-top:8px;height:${getChartHeight()}px;"><canvas id="threeYearChart"></canvas></div>`;
 
   document.getElementById('threeYearComparison').innerHTML = threeYearHtml;
 
@@ -5781,7 +5830,7 @@ function renderStatsDashboard() {
       return {
         label: `${y}년`,
         data: commonStations3y.map(station => {
-          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory !== 'division');
+          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch');
           if (stData.length === 0) return null;
           return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
         }),
@@ -5805,19 +5854,23 @@ function renderStatsDashboard() {
   }
 }
 
+function toggleSection(sectionId) {
+  const el = document.getElementById(sectionId);
+  const arrow = document.getElementById(sectionId + 'Arrow');
+  if (el) el.classList.toggle('hidden');
+  if (arrow) arrow.textContent = el.classList.contains('hidden') ? '\u25B8' : '\u25BE';
+}
+
 function switchStatsSubTab(tab) {
   window.statsSubTab = tab;
-  document.getElementById('statsSubBranch').className = tab === 'branch' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
-  document.getElementById('statsSubDivision').className = tab === 'division' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
-  const branchContent = document.getElementById('branchStatsContent');
-  const divContent = document.getElementById('divisionStatsContent');
-  if (tab === 'branch') {
-    if (branchContent) branchContent.classList.remove('hidden');
-    if (divContent) divContent.classList.add('hidden');
-  } else {
-    if (branchContent) branchContent.classList.add('hidden');
-    if (divContent) divContent.classList.remove('hidden');
-  }
+  const tabs = ['branch', 'division', 'outsourcing', 'auditor'];
+  tabs.forEach(t => {
+    const btn = document.getElementById('statsSub' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.className = t === tab ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+    const contentId = t + 'StatsContent';
+    const content = document.getElementById(contentId);
+    if (content) content.classList.toggle('hidden', t !== tab);
+  });
   renderStatsDashboard();
 }
 
@@ -5961,6 +6014,217 @@ function renderDivisionStats() {
   document.getElementById('divisionStatsContent').innerHTML = html;
 }
 
+// ============================================================================
+// OUTSOURCING STATS
+// ============================================================================
+function renderOutsourcingStats() {
+  const year = parseInt(document.getElementById('statsYear')?.value || new Date().getFullYear());
+  const outData = allData.filter(d => d.auditCategory === 'outsourcing' && d.year == year);
+
+  let html = '';
+  html += `<div class="flex items-center gap-3 mb-4">`;
+  html += `<span style="font-size:13px;color:#9EA2A1;">${year}년 · 외주협력업체 점검 ${outData.length}건</span>`;
+  html += `</div>`;
+
+  if (outData.length === 0) {
+    html += `<div class="apple-card" style="padding:40px;text-align:center;">`;
+    html += `<div style="font-size:15px;color:#9EA2A1;">${year}년 외주협력업체 점검 데이터가 없습니다</div>`;
+    html += `</div>`;
+    document.getElementById('outsourcingStatsContent').innerHTML = html;
+    return;
+  }
+
+  // Summary cards
+  let totalS = 0, totalU = 0, totalNA = 0, totalItems = 0;
+  outData.forEach(d => {
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const score = d.scores[itemId];
+        if (score === 'S') totalS++;
+        else if (score === 'U') totalU++;
+        else if (score === 'N/A') totalNA++;
+        totalItems++;
+      });
+    });
+  });
+  const complianceRate = (totalS + totalU) > 0 ? (totalS / (totalS + totalU) * 100).toFixed(1) : '0.0';
+  const auditedStations = new Set(outData.map(d => d.station)).size;
+
+  html += `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">점검 업체</div><div style="font-size:36px;font-weight:600;color:#303A3C;">${auditedStations}</div><div style="font-size:12px;color:#9EA2A1;">${outData.length}건 심사</div></div>`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">적합률</div><div style="font-size:36px;font-weight:600;color:${parseFloat(complianceRate) >= 90 ? '#22C55E' : parseFloat(complianceRate) >= 70 ? '#F59E0B' : '#D20015'};">${complianceRate}%</div><div style="font-size:12px;color:#9EA2A1;">S:${totalS} / U:${totalU}</div></div>`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">적합 항목</div><div style="font-size:36px;font-weight:600;color:#22C55E;">${totalS}</div><div style="font-size:12px;color:#9EA2A1;">전체 ${totalItems}항목</div></div>`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">부적합 항목</div><div style="font-size:36px;font-weight:600;color:#D20015;">${totalU}</div><div style="font-size:12px;color:#9EA2A1;">N/A: ${totalNA}건</div></div>`;
+  html += `</div>`;
+
+  // Per-company compliance table
+  const companyGroups = {};
+  outData.forEach(d => {
+    if (!companyGroups[d.station]) companyGroups[d.station] = { s: 0, u: 0, na: 0, total: 0, region: d.region };
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const score = d.scores[itemId];
+        companyGroups[d.station].total++;
+        if (score === 'S') companyGroups[d.station].s++;
+        else if (score === 'U') companyGroups[d.station].u++;
+        else if (score === 'N/A') companyGroups[d.station].na++;
+      });
+    });
+  });
+
+  html += `<div class="apple-card p-6 mb-6">`;
+  html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">업체별 적합률</h3>`;
+  html += `<div class="overflow-x-auto"><table class="apple-table compact-mobile"><thead><tr>`;
+  html += `<th style="text-align:left;">업체</th><th style="text-align:center;">적합(S)</th><th style="text-align:center;">부적합(U)</th><th style="text-align:center;">N/A</th><th style="text-align:center;">적합률</th>`;
+  html += `</tr></thead><tbody>`;
+
+  Object.entries(companyGroups)
+    .sort((a, b) => { const ra = a[1].s / Math.max(a[1].s + a[1].u, 1); const rb = b[1].s / Math.max(b[1].s + b[1].u, 1); return rb - ra; })
+    .forEach(([station, v]) => {
+      const rate = (v.s + v.u) > 0 ? (v.s / (v.s + v.u) * 100).toFixed(1) : '-';
+      const rateColor = rate === '-' ? '#9EA2A1' : parseFloat(rate) >= 90 ? '#22C55E' : parseFloat(rate) >= 70 ? '#F59E0B' : '#D20015';
+      html += `<tr><td style="font-weight:600;">${station}<div style="font-size:11px;color:#9EA2A1;">${v.region || ''}</div></td>`;
+      html += `<td style="text-align:center;color:#22C55E;font-weight:600;">${v.s}</td>`;
+      html += `<td style="text-align:center;color:#D20015;font-weight:600;">${v.u}</td>`;
+      html += `<td style="text-align:center;color:#9EA2A1;">${v.na}</td>`;
+      html += `<td style="text-align:center;"><span class="badge-pill" style="background:${rateColor}22;color:${rateColor};font-weight:600;">${rate}%</span></td></tr>`;
+    });
+  html += `</tbody></table></div></div>`;
+
+  // Per-category compliance
+  const catGroups = {};
+  outData.forEach(d => {
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      if (!catGroups[cat]) catGroups[cat] = { s: 0, u: 0, na: 0 };
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const score = d.scores[itemId];
+        if (score === 'S') catGroups[cat].s++;
+        else if (score === 'U') catGroups[cat].u++;
+        else if (score === 'N/A') catGroups[cat].na++;
+      });
+    });
+  });
+
+  html += `<div class="apple-card p-6 mb-6">`;
+  html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">범주별 적합률</h3>`;
+  Object.entries(catGroups).forEach(([cat, v]) => {
+    const rate = (v.s + v.u) > 0 ? (v.s / (v.s + v.u) * 100).toFixed(1) : '0.0';
+    const rateColor = parseFloat(rate) >= 90 ? '#22C55E' : parseFloat(rate) >= 70 ? '#F59E0B' : '#D20015';
+    const barW = Math.min(parseFloat(rate), 100).toFixed(0);
+    html += `<div style="padding:12px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
+    html += `<div class="flex justify-between items-center">`;
+    html += `<span style="font-size:14px;font-weight:600;color:#303A3C;">${cat}</span>`;
+    html += `<span style="font-size:14px;font-weight:600;color:${rateColor};">${rate}%</span>`;
+    html += `</div>`;
+    html += `<div style="margin-top:6px;background:#f5f5f7;border-radius:4px;height:8px;"><div style="height:8px;border-radius:4px;width:${barW}%;background:${rateColor};"></div></div>`;
+    html += `<div style="font-size:11px;color:#9EA2A1;margin-top:4px;">S: ${v.s} / U: ${v.u} / N/A: ${v.na}</div>`;
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  // Non-compliant items list
+  const uItems = [];
+  outData.forEach(d => {
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const itemText = typeof item === 'string' ? item : item.text;
+        if (d.scores[itemId] === 'U') {
+          uItems.push({ station: d.station, category: cat, item: itemText, auditor: d.auditor || '' });
+        }
+      });
+    });
+  });
+
+  if (uItems.length > 0) {
+    html += `<div class="apple-card p-6">`;
+    html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:4px;">부적합 항목 목록</h3>`;
+    html += `<p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">${uItems.length}건의 부적합 항목</p>`;
+    uItems.forEach(u => {
+      html += `<div style="padding:8px 0;border-bottom:1px solid rgba(192,206,209,0.1);">`;
+      html += `<div style="font-size:13px;font-weight:600;color:#D20015;">${u.station}</div>`;
+      html += `<div style="font-size:12px;color:#565A5B;margin-top:2px;padding-left:8px;border-left:2px solid #D20015;">`;
+      html += `<span style="color:#9EA2A1;">[${u.category}]</span> ${u.item}`;
+      html += `</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  document.getElementById('outsourcingStatsContent').innerHTML = html;
+}
+
+// ============================================================================
+// AUDITOR STATS (separated from branchStatsContent)
+// ============================================================================
+function renderAuditorStats() {
+  const year = parseInt(document.getElementById('statsYear')?.value || new Date().getFullYear());
+
+  let html = '';
+  html += `<div class="flex items-center gap-3 mb-4">`;
+  html += `<span style="font-size:13px;color:#9EA2A1;">${year}년 · 심사원 활동 현황</span>`;
+  html += `</div>`;
+
+  // Summary cards
+  const totalAuditors = auditorList.length;
+  const activeAuditors = auditorList.filter(a => getAuditorActivityCount(a.name, year) > 0).length;
+  const totalActivities = auditorList.reduce((sum, a) => sum + getAuditorActivityCount(a.name, year), 0);
+  const validTraining = auditorList.filter(a => getTrainingStatus(a.trainingExpiry).label !== '만료').length;
+
+  html += `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">전체 심사원</div><div style="font-size:36px;font-weight:600;color:#303A3C;">${totalAuditors}</div><div style="font-size:12px;color:#9EA2A1;">등록 인원</div></div>`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">활동 심사원</div><div style="font-size:36px;font-weight:600;color:#D20015;">${activeAuditors}</div><div style="font-size:12px;color:#9EA2A1;">${year}년 실적 보유</div></div>`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">총 심사 건수</div><div style="font-size:36px;font-weight:600;color:#303A3C;">${totalActivities}</div><div style="font-size:12px;color:#9EA2A1;">${year}년 전체</div></div>`;
+  html += `<div class="apple-card" style="padding:20px;"><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">교육 유효</div><div style="font-size:36px;font-weight:600;color:${validTraining === totalAuditors ? '#22C55E' : '#F59E0B'};">${validTraining}</div><div style="font-size:12px;color:#9EA2A1;">/ ${totalAuditors}명</div></div>`;
+  html += `</div>`;
+
+  // Auditor activity table
+  html += `<div class="apple-card p-6">`;
+  html += `<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin-bottom:16px;">심사원별 상세</h3>`;
+  html += `<div class="overflow-x-auto">`;
+  html += '<table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th style="text-align:left;">심사원</th>';
+  html += '<th style="text-align:left;">팀</th>';
+  html += '<th style="text-align:left;">권한그룹</th>';
+  html += '<th style="text-align:center;">교육 유효</th>';
+  html += '<th style="text-align:center;">' + year + '년 실적</th>';
+  html += '</tr></thead><tbody>';
+
+  const auditorsSorted = [...auditorList].sort((a, b) => {
+    const ca = getAuditorActivityCount(a.name, year);
+    const cb = getAuditorActivityCount(b.name, year);
+    return cb - ca;
+  });
+
+  auditorsSorted.forEach(a => {
+    const count = getAuditorActivityCount(a.name, year);
+    const ts = getTrainingStatus(a.trainingExpiry);
+    html += '<tr>';
+    html += `<td style="font-weight:600;">${a.name}</td>`;
+    html += `<td style="font-size:13px;color:#565A5B;">${a.team}</td>`;
+    html += `<td style="font-size:13px;">${a.role}</td>`;
+    html += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
+    html += `<td style="text-align:center;font-weight:600;font-size:15px;color:${count > 0 ? '#D20015' : '#9EA2A1'};">${count}건</td></tr>`;
+  });
+
+  if (auditorList.length === 0) {
+    html += '<tr><td colspan="5" style="text-align:center;color:#9EA2A1;padding:24px;">등록된 심사원이 없습니다.</td></tr>';
+  }
+  html += '</tbody></table></div></div>';
+
+  document.getElementById('auditorStatsContent').innerHTML = html;
+}
+
 
 function toggleWeakDetail(id, header) {
   const el = document.getElementById(id);
@@ -6026,15 +6290,16 @@ function destroyChart(id) {
 function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
+  if (analysisSubTab === 'outsourcing') { renderOutsourcingAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
-  const yearData = allData.filter(d => d.year == year && d.auditCategory !== 'division');
-  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory !== 'division');
+  const yearData = allData.filter(d => d.year == year && d.auditCategory === 'branch');
+  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory === 'branch');
   const container = document.getElementById('analysisContainer');
 
   // ===== Pre-calculate all analysis data =====
 
   // 1. Trend: 3-year comparison
-  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory !== 'division');
+  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory === 'branch');
   const stationsTwoYearsAgo = {};
   twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
     stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
@@ -6624,17 +6889,14 @@ function renderAnalysis() {
 
 function switchAnalysisSubTab(tab) {
   window.analysisSubTab = tab;
-  document.getElementById('analysisSubBranch').className = tab === 'branch' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
-  document.getElementById('analysisSubDivision').className = tab === 'division' ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
-  const branchContent = document.getElementById('branchAnalysisContent');
-  const divContent = document.getElementById('divisionAnalysisContent');
-  if (tab === 'branch') {
-    if (branchContent) branchContent.classList.remove('hidden');
-    if (divContent) divContent.classList.add('hidden');
-  } else {
-    if (branchContent) branchContent.classList.add('hidden');
-    if (divContent) divContent.classList.remove('hidden');
-  }
+  const tabs = ['branch', 'division', 'outsourcing'];
+  tabs.forEach(t => {
+    const btn = document.getElementById('analysisSub' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.className = t === tab ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
+    const contentId = t + 'AnalysisContent';
+    const content = document.getElementById(contentId);
+    if (content) content.classList.toggle('hidden', t !== tab);
+  });
   renderAnalysis();
 }
 
@@ -6734,6 +6996,200 @@ function renderDivisionAnalysis() {
     setTimeout(() => {
       renderDivisionTrendChart(divData, year);
       renderDivisionRiskChart(yearData);
+    }, 100);
+  }
+}
+
+// ============================================================================
+// OUTSOURCING ANALYSIS
+// ============================================================================
+function renderOutsourcingAnalysis() {
+  const year = parseInt(document.getElementById('analysisYear')?.value || new Date().getFullYear());
+  const outData = allData.filter(d => d.auditCategory === 'outsourcing');
+  const yearData = outData.filter(d => d.year == year);
+
+  let html = '';
+  html += `<div class="flex items-center gap-3 mb-4">`;
+  html += `<span style="font-size:13px;color:#9EA2A1;">${year}년 · 외주협력업체 분석</span>`;
+  html += `</div>`;
+
+  if (yearData.length === 0) {
+    html += `<div class="apple-card" style="padding:40px;text-align:center;"><div style="font-size:15px;color:#9EA2A1;">${year}년 외주협력업체 점검 데이터가 없습니다</div></div>`;
+    document.getElementById('outsourcingAnalysisContent').innerHTML = html;
+    return;
+  }
+
+  // 1. Compliance rate per company comparison
+  const companyStats = {};
+  yearData.forEach(d => {
+    if (!companyStats[d.station]) companyStats[d.station] = { s: 0, u: 0, na: 0, region: d.region };
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const score = d.scores[itemId];
+        if (score === 'S') companyStats[d.station].s++;
+        else if (score === 'U') companyStats[d.station].u++;
+        else if (score === 'N/A') companyStats[d.station].na++;
+      });
+    });
+  });
+
+  html += `<div class="apple-card mb-4" style="padding:20px;">`;
+  html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">업체별 적합률 비교</div>`;
+  html += `<canvas id="outCompanyChart" height="200"></canvas>`;
+  html += `</div>`;
+
+  // 2. Category compliance rates
+  const catStats = {};
+  yearData.forEach(d => {
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      if (!catStats[cat]) catStats[cat] = { s: 0, u: 0, na: 0 };
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const score = d.scores[itemId];
+        if (score === 'S') catStats[cat].s++;
+        else if (score === 'U') catStats[cat].u++;
+        else if (score === 'N/A') catStats[cat].na++;
+      });
+    });
+  });
+
+  html += `<div class="apple-card mb-4" style="padding:20px;">`;
+  html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">범주별 적합률</div>`;
+  html += `<canvas id="outCategoryChart" height="200"></canvas>`;
+  html += `</div>`;
+
+  // 3. Non-compliant pattern analysis
+  const uPatterns = {};
+  yearData.forEach(d => {
+    const checklist = getChecklist(d.type);
+    Object.entries(checklist).forEach(([cat, items]) => {
+      const itemList = Array.isArray(items) ? items : (items.items || []);
+      itemList.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const itemText = typeof item === 'string' ? item : item.text;
+        if (d.scores[itemId] === 'U') {
+          const key = itemId || itemText;
+          if (!uPatterns[key]) uPatterns[key] = { text: itemText, count: 0, stations: [] };
+          uPatterns[key].count++;
+          if (!uPatterns[key].stations.includes(d.station)) uPatterns[key].stations.push(d.station);
+        }
+      });
+    });
+  });
+
+  const sortedPatterns = Object.values(uPatterns).sort((a, b) => b.count - a.count);
+
+  html += `<div class="apple-card mb-4" style="padding:20px;">`;
+  html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:4px;">부적합 패턴 분석</div>`;
+  html += `<p style="font-size:13px;color:#9EA2A1;margin-bottom:16px;">여러 업체에서 반복 발생하는 부적합 항목</p>`;
+
+  if (sortedPatterns.length === 0) {
+    html += `<div style="text-align:center;color:#9EA2A1;padding:20px;">부적합 항목이 없습니다.</div>`;
+  } else {
+    sortedPatterns.slice(0, 15).forEach(p => {
+      const barW = Math.min((p.count / yearData.length) * 100, 100).toFixed(0);
+      html += `<div style="padding:8px 0;border-bottom:1px solid rgba(192,206,209,0.1);">`;
+      html += `<div class="flex justify-between items-center">`;
+      html += `<span style="font-size:13px;color:#303A3C;flex:1;">${p.text}</span>`;
+      html += `<span style="font-size:13px;font-weight:600;color:#D20015;flex-shrink:0;margin-left:8px;">${p.count}건</span>`;
+      html += `</div>`;
+      html += `<div style="margin-top:4px;background:#f5f5f7;border-radius:3px;height:4px;"><div style="height:4px;border-radius:3px;width:${barW}%;background:#D20015;"></div></div>`;
+      html += `<div style="font-size:11px;color:#565A5B;margin-top:2px;">발생 업체: ${p.stations.join(', ')}</div>`;
+      html += `</div>`;
+    });
+  }
+  html += `</div>`;
+
+  // 4. Year-over-year trend (if data exists)
+  const prevYearData = outData.filter(d => d.year == year - 1);
+  if (prevYearData.length > 0) {
+    const calcRate = (data) => {
+      let s = 0, u = 0;
+      data.forEach(d => {
+        const checklist = getChecklist(d.type);
+        Object.entries(checklist).forEach(([cat, items]) => {
+          const itemList = Array.isArray(items) ? items : (items.items || []);
+          itemList.forEach(item => {
+            const itemId = typeof item === 'string' ? item : item.id;
+            if (d.scores[itemId] === 'S') s++;
+            else if (d.scores[itemId] === 'U') u++;
+          });
+        });
+      });
+      return (s + u) > 0 ? (s / (s + u) * 100).toFixed(1) : '-';
+    };
+
+    const prevRate = calcRate(prevYearData);
+    const currRate = calcRate(yearData);
+    const delta = prevRate !== '-' && currRate !== '-' ? (parseFloat(currRate) - parseFloat(prevRate)).toFixed(1) : null;
+
+    html += `<div class="apple-card" style="padding:20px;">`;
+    html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">전년 대비 변화</div>`;
+    html += `<div class="grid grid-cols-3 gap-4">`;
+    html += `<div style="text-align:center;"><div style="font-size:12px;color:#9EA2A1;">${year-1}년 적합률</div><div style="font-size:24px;font-weight:600;color:#565A5B;">${prevRate}%</div></div>`;
+    html += `<div style="text-align:center;"><div style="font-size:12px;color:#9EA2A1;">${year}년 적합률</div><div style="font-size:24px;font-weight:600;color:#D20015;">${currRate}%</div></div>`;
+    if (delta !== null) {
+      const dColor = parseFloat(delta) > 0 ? '#22C55E' : parseFloat(delta) < 0 ? '#D20015' : '#9EA2A1';
+      const dArrow = parseFloat(delta) > 0 ? '\u25B2' : parseFloat(delta) < 0 ? '\u25BC' : '-';
+      html += `<div style="text-align:center;"><div style="font-size:12px;color:#9EA2A1;">변화</div><div style="font-size:24px;font-weight:600;color:${dColor};">${dArrow} ${Math.abs(parseFloat(delta))}%p</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  document.getElementById('outsourcingAnalysisContent').innerHTML = html;
+
+  // Render charts
+  if (yearData.length > 0) {
+    setTimeout(() => {
+      // Company chart
+      const companyNames = Object.keys(companyStats);
+      const companyRates = companyNames.map(c => {
+        const v = companyStats[c];
+        return (v.s + v.u) > 0 ? (v.s / (v.s + v.u) * 100) : 0;
+      });
+      const ctxCompany = document.getElementById('outCompanyChart')?.getContext('2d');
+      if (ctxCompany) {
+        destroyChart('outCompanyChart');
+        chartInstances['outCompanyChart'] = new Chart(ctxCompany, {
+          type: 'bar',
+          data: {
+            labels: companyNames,
+            datasets: [{ label: '적합률 (%)', data: companyRates, backgroundColor: '#D2001588', borderRadius: 4 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+      // Category chart
+      const catNames = Object.keys(catStats);
+      const catRates = catNames.map(c => {
+        const v = catStats[c];
+        return (v.s + v.u) > 0 ? (v.s / (v.s + v.u) * 100) : 0;
+      });
+      const ctxCat = document.getElementById('outCategoryChart')?.getContext('2d');
+      if (ctxCat) {
+        destroyChart('outCategoryChart');
+        chartInstances['outCategoryChart'] = new Chart(ctxCat, {
+          type: 'bar',
+          data: {
+            labels: catNames.map(c => c.length > 15 ? c.substring(0, 15) + '...' : c),
+            datasets: [{ label: '적합률 (%)', data: catRates, backgroundColor: ['#D2001588', '#22C55E88', '#F59E0B88'], borderRadius: 4 }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            scales: { x: { min: 0, max: 100, ticks: { callback: v => v + '%' } }, y: { grid: { display: false } } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
     }, 100);
   }
 }
@@ -7012,6 +7468,9 @@ function getScheduleStatusBadgeStyle(status) {
 function getExpectedTypesForStation(station) {
   // 본부/실인 경우 해당 점검표 유형 반환
   if (DIVISIONS[station]) return DIVISIONS[station].checklists;
+  // 협력사(본사) 구분 지점은 기본 4종 + 외주협력업체
+  const region = getRegionForStation(station);
+  if (region === '협력사(본사)') return [...ALL_BRANCH_TYPES, ...OUTSOURCING_TYPES];
   // 지점인 경우 기본 4종 (품질심사 3종 + 안전감사)
   return ALL_BRANCH_TYPES;
 }
@@ -7710,11 +8169,12 @@ function renderAddScheduleForm() {
   html += '<input type="text" id="newStationName" class="apple-input" placeholder="예: 하노이">';
   html += '</div>';
   html += '<div>';
-  html += '<label class="apple-label">지역</label>';
+  html += '<label class="apple-label">구분</label>';
   html += '<select id="newStationRegion" class="apple-input">';
   Object.keys(REGIONS).forEach(r => {
     html += '<option value="' + r + '">' + r + '</option>';
   });
+  html += '<option value="협력사(본사)">협력사(본사)</option>';
   html += '</select>';
   html += '</div>';
   html += '<div>';
@@ -9133,6 +9593,7 @@ Object.assign(window, {
   populateStationDropdown, populateViewStationDropdown,
   setInputPhase, setViewPhase,
   renderDivisionStats, renderDivisionAnalysis,
+  renderOutsourcingStats, renderAuditorStats, renderOutsourcingAnalysis, toggleSection,
   // Utility exposed
   Scoring, ChartUtil, SafeStorage, CONFIG,
 });
