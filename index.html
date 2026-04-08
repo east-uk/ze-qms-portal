@@ -2460,6 +2460,7 @@ let firebaseDb = null;
 let firebaseAuth = null;
 let firebaseConnected = false;
 let currentUser = null;  // { uid, empNo, name, role }
+let _suppressAuthRedirect = false; // 사용자 생성 중 onAuthStateChanged 리디렉트 방지
 const AUTH_DOMAIN = '@eastar.local';
 
 function empNoToEmail(empNo) { return empNo + AUTH_DOMAIN; }
@@ -2489,6 +2490,7 @@ function initFirebase() {
 
     // Auth 상태 변경 리스너
     firebaseAuth.onAuthStateChanged(async (user) => {
+      if (_suppressAuthRedirect) return; // 사용자 생성 중에는 무시
       if (user) {
         // 로그인 상태 — 사용자 역할 가져오기
         const snap = await dbRef('users/' + user.uid).once('value');
@@ -2728,16 +2730,20 @@ async function createNewUser() {
   const adminEmail = currentUser.empNo + AUTH_DOMAIN;
   try {
     resultEl.innerHTML = '<span style="color:#9EA2A1;">생성 중...</span>';
-    // 현재 admin 비밀번호를 재인증에 사용하기 어려우므로 다른 방법 사용
-    // createUser 후 자동 로그인되므로, 바로 admin으로 재로그인
     const adminPwPrompt = prompt('계정 생성을 위해 관리자 비밀번호를 입력해주세요:');
     if (!adminPwPrompt) { resultEl.innerHTML = ''; return; }
-    const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), tempPw);
-    await dbRef('users/' + cred.user.uid).set({
-      empNo, name, role, createdAt: new Date().toISOString().slice(0,10)
-    });
-    // admin으로 재로그인
-    await firebaseAuth.signInWithEmailAndPassword(adminEmail, adminPwPrompt);
+    // createUser 시 자동 로그인 방지 플래그
+    _suppressAuthRedirect = true;
+    try {
+      const cred = await firebaseAuth.createUserWithEmailAndPassword(empNoToEmail(empNo), tempPw);
+      await dbRef('users/' + cred.user.uid).set({
+        empNo, name, role, createdAt: new Date().toISOString().slice(0,10)
+      });
+      // admin으로 재로그인
+      await firebaseAuth.signInWithEmailAndPassword(adminEmail, adminPwPrompt);
+    } finally {
+      _suppressAuthRedirect = false;
+    }
     resultEl.innerHTML = `<span style="color:#22C55E;">✓ ${name}(${empNo}) 계정이 생성되었습니다.</span><br><span style="font-weight:600;">임시 비밀번호: ${tempPw}</span><br><span style="color:#9EA2A1;">사용자에게 전달 후 비밀번호 변경을 안내해주세요.</span>`;
     document.getElementById('newUserEmpNo').value = '';
     document.getElementById('newUserName').value = '';
