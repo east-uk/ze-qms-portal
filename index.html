@@ -2896,14 +2896,13 @@ function onLoginSuccess() {
   if (nameElM) nameElM.textContent = currentUser.name || currentUser.empNo;
   // 역할별 UI 적용
   applyRolePermissions(currentUser.role);
-  // 앱 데이터 로드 (최초 1회)
-  if (allData.length === 0) {
-    loadCustomStations();
-    loadAllData();
-    loadAuditors();
-    loadSchedule();
-  }
-  // 드롭다운은 항상 초기화 (Firebase 리스너가 먼저 데이터를 로드할 수 있으므로)
+  // 앱 데이터 로드 — Firebase 리스너가 먼저 데이터를 로드할 수 있으므로 각각 빈값 체크
+  if (customStations.length === 0) loadCustomStations();
+  else mergeCustomStations(); // customStations가 Firebase에서 이미 로드되어도 REGIONS에 반영
+  if (allData.length === 0) loadAllData();
+  if (auditorList.length === 0) loadAuditors();
+  if (scheduleData.length === 0) loadSchedule();
+  // 드롭다운은 항상 초기화
   populateStationDropdown();
   populateViewStationDropdown();
   renderInputPendingStations();
