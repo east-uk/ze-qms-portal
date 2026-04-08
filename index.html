@@ -1059,6 +1059,12 @@ select.apple-input {
     </div>
 
     <div class="apple-card p-6 mb-5">
+      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">등록된 심사 대상 관리</h3>
+      <p style="font-size:12px;color:#9EA2A1;margin-bottom:12px;">일정 추가 시 신규 등록한 심사 대상 목록입니다. 삭제하면 드롭다운에서도 제거됩니다.</p>
+      <div id="customStationList"></div>
+    </div>
+
+    <div class="apple-card p-6 mb-5">
       <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">백업</h3>
       <div class="flex gap-3 flex-wrap">
         <button onclick="exportJSON()" class="pill-btn pill-btn-outline" style="border-color:#303A3C;color:#303A3C;">JSON 내보내기</button>
@@ -8332,9 +8338,62 @@ function renderAddScheduleForm() {
 // ============================================================================
 // TAB 6: DATA MANAGEMENT
 // ============================================================================
+function renderCustomStationList() {
+  const container = document.getElementById('customStationList');
+  if (!container) return;
+  if (customStations.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#9EA2A1;font-size:13px;padding:16px;">등록된 신규 심사 대상이 없습니다.</div>';
+    return;
+  }
+  const categoryLabel = { '협력사(본사)': '외주협력업체' };
+  let html = '<table class="apple-table compact-mobile"><thead><tr>';
+  html += '<th>심사 대상</th><th>구분</th><th>여객 조업사</th><th>램프 조업사</th><th style="width:60px;"></th>';
+  html += '</tr></thead><tbody>';
+  customStations.forEach((cs, idx) => {
+    const catDisplay = categoryLabel[cs.region] || cs.region || '-';
+    html += `<tr>`;
+    html += `<td style="font-weight:600;">${cs.station}</td>`;
+    html += `<td><span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#565A5B;font-size:11px;">${catDisplay}</span></td>`;
+    html += `<td style="font-size:12px;color:#565A5B;">${cs.paxCompany || '-'}</td>`;
+    html += `<td style="font-size:12px;color:#565A5B;">${cs.rampCompany || '-'}</td>`;
+    html += `<td style="text-align:center;"><button onclick="deleteCustomStation(${idx})" style="background:none;border:none;color:#D20015;cursor:pointer;font-size:16px;padding:2px 6px;" title="삭제">&times;</button></td>`;
+    html += `</tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function deleteCustomStation(idx) {
+  if (!requireRole('admin')) return;
+  const cs = customStations[idx];
+  if (!cs) return;
+  if (!confirm(`"${cs.station}" 심사 대상을 삭제하시겠습니까?\n\n드롭다운 목록에서 제거됩니다.\n(기존 심사 데이터는 유지됩니다.)`)) return;
+
+  // REGIONS에서도 제거
+  const region = cs.region;
+  if (REGIONS[region]) {
+    REGIONS[region].stations = REGIONS[region].stations.filter(s => s !== cs.station);
+    if (REGIONS[region].stations.length === 0) delete REGIONS[region];
+  }
+
+  // customStations에서 제거
+  customStations.splice(idx, 1);
+  saveCustomStations();
+
+  // 드롭다운 갱신
+  populateStationDropdown();
+  populateViewStationDropdown();
+
+  // 리스트 갱신
+  renderCustomStationList();
+  showToast(`"${cs.station}" 이(가) 삭제되었습니다.`, 'success');
+}
+
 function renderDataManagement() {
   // 사용자 관리 렌더링 (admin만)
   renderUserManagement();
+  // 커스텀 심사 대상 목록
+  renderCustomStationList();
   // Populate export station dropdown
   const sel = document.getElementById('exportStation');
   const currentVal = sel.value;
@@ -9637,7 +9696,7 @@ Object.assign(window, {
   scrollToMonthDetail, addExceptionAudit, toggleExceptionReason,
   autoDetectCycle, toggleNewStationForm, renderAddScheduleForm,
   // Data management
-  renderDataManagement, exportAllExcel, exportStationExcel,
+  renderDataManagement, renderCustomStationList, deleteCustomStation, exportAllExcel, exportStationExcel,
   exportJSON, importJSON, resetAllData,
   showAddAuditorForm, hideAuditorForm, editAuditor,
   saveAuditorForm, deleteAuditor,
