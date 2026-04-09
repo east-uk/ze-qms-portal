@@ -6549,8 +6549,9 @@ function renderAnalysis() {
   yearData.forEach(d => {
     if (!stationScoreArrays[d.station]) stationScoreArrays[d.station] = { scores: [], region: d.region };
     for (const [, val] of Object.entries(d.scores)) {
-      if (val !== 'N/A' && val !== undefined && val !== null) {
-        stationScoreArrays[d.station].scores.push(Number(val));
+      if (val !== 'N/A' && val !== undefined && val !== null && val !== '') {
+        const num = Number(val);
+        if (!isNaN(num)) stationScoreArrays[d.station].scores.push(num);
       }
     }
   });
