@@ -9565,7 +9565,7 @@ function renderViewRecentStations() {
       const stationRegion = isDivType ? '실/본부' : isOutsourcing ? '외주협력업체' : (d.region || getRegionForStation(d.station));
       map[key] = { station: key, region: stationRegion, types: {}, latestDate: '', isDivision: isDivType, isOutsourcing: isOutsourcing };
     }
-    if (isDivType) {
+    if (isDivType || isOutsourcing) {
       const result = calculateBinaryScores(d.scores, getChecklist(d.type));
       map[key].types[d.type] = result.complianceRate;
     } else {
