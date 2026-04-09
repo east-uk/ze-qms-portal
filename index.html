@@ -6408,14 +6408,15 @@ function renderAnalysis() {
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   if (analysisSubTab === 'outsourcing') { renderOutsourcingAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
-  const yearData = allData.filter(d => d.year == year && d.auditCategory === 'branch');
-  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory === 'branch');
+  // 지점 성숙도 분석: grade 타입만 (안전감사 binary 제외), 협력사(본사) 제외
+  const yearData = allData.filter(d => d.year == year && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
+  const prevYearData = allData.filter(d => d.year == year - 1 && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
   const container = document.getElementById('analysisContainer');
 
   // ===== Pre-calculate all analysis data =====
 
   // 1. Trend: 3-year comparison
-  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory === 'branch');
+  const twoYearsAgoData = allData.filter(d => d.year == year - 2 && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
   const stationsTwoYearsAgo = {};
   twoYearsAgoData.filter(d => d.type === 'branch').forEach(d => {
     stationsTwoYearsAgo[d.station] = calculateScores(d.scores, getChecklist('branch')).overallAverage;
@@ -7153,9 +7154,11 @@ function renderOutsourcingAnalysis() {
     });
   });
 
+  const companyCount = Object.keys(companyStats).length;
+  const companyChartH = Math.max(200, Math.min(companyCount * 40, 400));
   html += `<div class="apple-card mb-4" style="padding:20px;">`;
   html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">업체별 적합률 비교</div>`;
-  html += `<canvas id="outCompanyChart" height="200"></canvas>`;
+  html += `<div style="height:${companyChartH}px;"><canvas id="outCompanyChart"></canvas></div>`;
   html += `</div>`;
 
   // 2. Category compliance rates
@@ -7175,9 +7178,11 @@ function renderOutsourcingAnalysis() {
     });
   });
 
+  const catCount = Object.keys(catStats).length;
+  const catChartH = Math.max(200, Math.min(catCount * 40, 400));
   html += `<div class="apple-card mb-4" style="padding:20px;">`;
   html += `<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">범주별 적합률</div>`;
-  html += `<canvas id="outCategoryChart" height="200"></canvas>`;
+  html += `<div style="height:${catChartH}px;"><canvas id="outCategoryChart"></canvas></div>`;
   html += `</div>`;
 
   // 3. Non-compliant pattern analysis
