@@ -9482,9 +9482,11 @@ function renderInputPendingStations() {
   const pendingStations = [];
   scheduleData.filter(s => s.year === year).forEach(s => {
     const isDivision = !!DIVISIONS[s.station];
+    const isOutsourcing = s.auditTarget === 'outsourcing' || (!isDivision && REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.includes(s.station));
     // 카테고리 필터링
-    if (cat === 'branch' && isDivision) return;
+    if (cat === 'branch' && (isDivision || isOutsourcing)) return;
     if (cat === 'division' && !isDivision) return;
+    if (cat === 'outsourcing' && !isOutsourcing) return;
 
     const expected = getExpectedTypesForStation(s.station);
     const completedTypes = expected.filter(type => {
@@ -9500,6 +9502,7 @@ function renderInputPendingStations() {
         completed: completedTypes.length,
         total: expected.length,
         isDivision: isDivision,
+        isOutsourcing: isOutsourcing,
         status: calcScheduleStatus(s)
       });
     }
@@ -9511,9 +9514,9 @@ function renderInputPendingStations() {
   });
 
   // 제목 및 완료 메시지 동적 변경
-  const titleMap = { all: '점검표 미입력 지점/실본부', branch: '점검표 미입력 지점', division: '점검표 미입력 실/본부' };
-  const doneMap = { all: '모든 점검표가 입력 완료되었습니다.', branch: '모든 지점의 점검표가 입력 완료되었습니다.', division: '모든 실/본부의 점검표가 입력 완료되었습니다.' };
-  const colLabel = cat === 'division' ? '실/본부' : '지점';
+  const titleMap = { all: '점검표 미입력 지점/실본부', branch: '점검표 미입력 지점', division: '점검표 미입력 실/본부', outsourcing: '점검표 미입력 외주협력업체' };
+  const doneMap = { all: '모든 점검표가 입력 완료되었습니다.', branch: '모든 지점의 점검표가 입력 완료되었습니다.', division: '모든 실/본부의 점검표가 입력 완료되었습니다.', outsourcing: '모든 외주협력업체의 점검표가 입력 완료되었습니다.' };
+  const colLabel = cat === 'division' ? '실/본부' : cat === 'outsourcing' ? '업체' : '지점';
 
   if (pendingStations.length === 0) {
     container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#22C55E;font-size:14px;padding:20px;">' + doneMap[cat] + '</div></div>';
@@ -9531,7 +9534,7 @@ function renderInputPendingStations() {
 
   pendingStations.forEach(s => {
     const clickAction = `document.getElementById('inputTarget').value='${s.station}';if(document.getElementById('inputTarget')._comboRefresh)document.getElementById('inputTarget')._comboRefresh();inputSearch()`;
-    const divTag = s.isDivision ? '<div style="font-size:10px;color:#6366F1;">실/본부</div>' : '';
+    const divTag = s.isDivision ? '<div style="font-size:10px;color:#6366F1;">실/본부</div>' : s.isOutsourcing ? '<div style="font-size:10px;color:#F59E0B;">외주협력</div>' : '';
     html += `<tr style="cursor:pointer;" onclick="${clickAction}">`;
     html += `<td data-label="${colLabel}" style="font-weight:600;">${s.displayName}${divTag}</td>`;
     html += `<td data-label="심사월" style="text-align:center;font-size:12px;">${s.month}월</td>`;
@@ -9549,17 +9552,18 @@ function renderViewRecentStations() {
   if (!container) return;
   const year = parseInt(document.getElementById('viewYear').value);
 
-  // 지점/본부 분리 집계
+  // 지점/본부/외주협력 분리 집계
   const branchMap = {};
   const divisionMap = {};
+  const outsourcingMap = {};
   allData.filter(d => d.year == year).forEach(d => {
     const isDivType = getScoringMethod(d.type) === 'binary' && d.auditCategory === 'division';
-    const map = isDivType ? divisionMap : branchMap;
+    const isOutsourcing = d.auditCategory === 'outsourcing' || (!isDivType && d.region === '협력사(본사)');
+    const map = isDivType ? divisionMap : isOutsourcing ? outsourcingMap : branchMap;
     const key = isDivType ? (d.division || d.station) : d.station;
     if (!map[key]) {
-      const stationRegion = isDivType ? '실/본부' : (d.region || getRegionForStation(d.station));
-      const displayRegion = stationRegion === '협력사(본사)' ? '외주협력업체' : stationRegion;
-      map[key] = { station: key, region: displayRegion, types: {}, latestDate: '', isDivision: isDivType };
+      const stationRegion = isDivType ? '실/본부' : isOutsourcing ? '외주협력업체' : (d.region || getRegionForStation(d.station));
+      map[key] = { station: key, region: stationRegion, types: {}, latestDate: '', isDivision: isDivType, isOutsourcing: isOutsourcing };
     }
     if (isDivType) {
       const result = calculateBinaryScores(d.scores, getChecklist(d.type));
@@ -9573,10 +9577,12 @@ function renderViewRecentStations() {
 
   const branchStations = Object.values(branchMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
   const divisionStations = Object.values(divisionMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
+  const outsourcingStations = Object.values(outsourcingMap).sort((a, b) => (b.latestDate || '').localeCompare(a.latestDate || ''));
 
   const showBranch = (selectedViewCategory === 'all' || selectedViewCategory === 'branch') && branchStations.length > 0;
   const showDivision = (selectedViewCategory === 'all' || selectedViewCategory === 'division') && divisionStations.length > 0;
-  if (!showBranch && !showDivision) {
+  const showOutsourcing = (selectedViewCategory === 'all' || selectedViewCategory === 'outsourcing') && outsourcingStations.length > 0;
+  if (!showBranch && !showDivision && !showOutsourcing) {
     container.innerHTML = '<div class="apple-card p-6"><div style="text-align:center;color:#9EA2A1;font-size:14px;padding:20px;">' + year + '년 입력된 점검표가 없습니다.</div></div>';
     return;
   }
@@ -9641,6 +9647,34 @@ function renderViewRecentStations() {
           html += `<td style="text-align:center;"><span style="color:#C0CED1;">-</span></td>`;
         }
       });
+      html += `<td style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // --- 외주협력업체 테이블 ---
+  if (showOutsourcing) {
+    html += '<div class="apple-card" style="padding:14px;margin-top:16px;">';
+    html += '<h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:12px;">' + year + '년 외주협력업체 심사 완료 <span style="font-size:12px;color:#9EA2A1;font-weight:400;">(' + outsourcingStations.length + '개 업체)</span></h3>';
+    html += '<table class="apple-table compact-mobile"><thead><tr>';
+    html += '<th style="text-align:left;">업체</th>';
+    html += '<th style="text-align:center;">적합률</th>';
+    html += '<th style="text-align:center;">심사일</th>';
+    html += '</tr></thead><tbody>';
+    outsourcingStations.forEach(s => {
+      const dateDisplay = s.latestDate ? s.latestDate.substring(5) : '-';
+      const typeKeys = Object.keys(s.types);
+      let totalS = 0, totalSU = 0;
+      typeKeys.forEach(t => {
+        const rate = s.types[t];
+        if (rate != null) { totalS += rate; totalSU++; }
+      });
+      const avgRate = totalSU > 0 ? totalS / totalSU : null;
+      const rateStyle = avgRate != null ? (avgRate >= 90 ? 'background:rgba(34,197,94,0.15);color:#22C55E' : avgRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B' : 'background:rgba(210,0,21,0.15);color:#D20015') : '';
+      html += `<tr style="cursor:pointer;" onclick="document.getElementById('viewTarget').value='${s.station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch()">`;
+      html += `<td data-label="업체" style="font-weight:600;">${s.station}<div style="font-size:10px;color:#F59E0B;">외주협력</div></td>`;
+      html += `<td style="text-align:center;">${avgRate != null ? '<span class="badge-pill" style="' + rateStyle + '">' + avgRate.toFixed(0) + '%</span>' : '<span style="color:#C0CED1;">-</span>'}</td>`;
       html += `<td style="text-align:center;font-size:11px;color:#565A5B;">${dateDisplay}</td>`;
       html += '</tr>';
     });
