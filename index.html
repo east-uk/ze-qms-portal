@@ -616,7 +616,7 @@ select.apple-input {
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span>v15</span>
+      <span>v15.2</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
@@ -630,7 +630,7 @@ select.apple-input {
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span id="envBadgeMobile" style="display:inline-block;border-radius:980px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:0.5px;"></span>
-        <span style="font-size:11px;color:rgba(255,255,255,0.5);">v15</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.5);">v15.2</span>
         <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
       </div>
     </div>
@@ -1024,112 +1024,152 @@ select.apple-input {
 
     <!-- 사용자 관리 (admin만 표시) -->
     <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">사용자 관리</h3>
-      <div id="userManagementArea"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_user')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">사용자 관리</h3>
+        <span id="mgmt_userArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_user" class="hidden" style="margin-top:16px;">
+        <div id="userManagementArea"></div>
+      </div>
     </div>
 
     <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">엑셀 내보내기</h3>
-      <div class="flex gap-3 flex-wrap items-end">
-        <button onclick="exportAllExcel()" class="pill-btn" style="background:#22C55E;color:#fff;">전체 내보내기</button>
-        <div class="flex gap-2 items-end">
-          <div>
-            <label class="apple-label">지점 선택</label>
-            <select id="exportStation" class="apple-input" style="width:auto;font-size:14px;min-width:140px;">
-              <option value="">지점 선택</option>
-            </select>
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_excel')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">엑셀 내보내기</h3>
+        <span id="mgmt_excelArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_excel" class="hidden" style="margin-top:16px;">
+        <div class="flex gap-3 flex-wrap items-end">
+          <button onclick="exportAllExcel()" class="pill-btn" style="background:#22C55E;color:#fff;">전체 내보내기</button>
+          <div class="flex gap-2 items-end">
+            <div>
+              <label class="apple-label">지점 선택</label>
+              <select id="exportStation" class="apple-input" style="width:auto;font-size:14px;min-width:140px;">
+                <option value="">지점 선택</option>
+              </select>
+            </div>
+            <button onclick="exportStationExcel()" class="pill-btn" style="background:#22C55E;color:#fff;">개별 내보내기</button>
           </div>
-          <button onclick="exportStationExcel()" class="pill-btn" style="background:#22C55E;color:#fff;">개별 내보내기</button>
         </div>
       </div>
     </div>
 
     <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">Firebase 실시간 동기화</h3>
-      <div class="flex items-center gap-3 mb-4">
-        <span style="font-size:14px;color:#565A5B;">연결 상태:</span>
-        <span id="firebaseStatusBadge" class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">확인 중</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_firebase')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">Firebase 실시간 동기화</h3>
+        <span id="mgmt_firebaseArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
       </div>
-      <div class="flex gap-3 flex-wrap">
-        <button onclick="uploadAllToFirebase()" class="pill-btn pill-btn-primary">전체 데이터 업로드</button>
-        <button onclick="downloadFromFirebase()" class="pill-btn pill-btn-outline">Firebase에서 불러오기</button>
-        <button onclick="migrateDataToEnvPrefix()" class="pill-btn pill-btn-outline" style="border-color:#F59E0B;color:#F59E0B;">데이터 마이그레이션</button>
-      </div>
-      <p style="font-size:12px;color:#9EA2A1;margin-top:8px;">저장 시 자동으로 Firebase에 동기화됩니다. 현재 환경: <strong id="envLabelInSync"></strong></p>
-    </div>
-
-    <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">등록된 심사 대상 관리</h3>
-      <p style="font-size:12px;color:#9EA2A1;margin-bottom:12px;">일정 추가 시 신규 등록한 심사 대상 목록입니다. 삭제하면 드롭다운에서도 제거됩니다.</p>
-      <div id="customStationList"></div>
-    </div>
-
-    <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">백업</h3>
-      <div class="flex gap-3 flex-wrap">
-        <button onclick="exportJSON()" class="pill-btn pill-btn-outline" style="border-color:#303A3C;color:#303A3C;">JSON 내보내기</button>
-        <label class="pill-btn pill-btn-outline cursor-pointer" style="border-color:#303A3C;color:#303A3C;">
-          JSON 가져오기
-          <input type="file" accept=".json" class="hidden" onchange="importJSON(event)">
-        </label>
+      <div id="mgmt_firebase" class="hidden" style="margin-top:16px;">
+        <div class="flex items-center gap-3 mb-4">
+          <span style="font-size:14px;color:#565A5B;">연결 상태:</span>
+          <span id="firebaseStatusBadge" class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">확인 중</span>
+        </div>
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="uploadAllToFirebase()" class="pill-btn pill-btn-primary">전체 데이터 업로드</button>
+          <button onclick="downloadFromFirebase()" class="pill-btn pill-btn-outline">Firebase에서 불러오기</button>
+          <button onclick="migrateDataToEnvPrefix()" class="pill-btn pill-btn-outline" style="border-color:#F59E0B;color:#F59E0B;">데이터 마이그레이션</button>
+        </div>
+        <p style="font-size:12px;color:#9EA2A1;margin-top:8px;">저장 시 자동으로 Firebase에 동기화됩니다. 현재 환경: <strong id="envLabelInSync"></strong></p>
       </div>
     </div>
 
     <div class="apple-card p-6 mb-5">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin-bottom:16px;">저장 현황</h3>
-      <div id="storageInfo" style="font-size:14px;color:#565A5B;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_customStation')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">등록된 심사 대상 관리</h3>
+        <span id="mgmt_customStationArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_customStation" class="hidden" style="margin-top:16px;">
+        <p style="font-size:12px;color:#9EA2A1;margin-bottom:12px;">일정 추가 시 신규 등록한 심사 대상 목록입니다. 삭제하면 드롭다운에서도 제거됩니다.</p>
+        <div id="customStationList"></div>
+      </div>
     </div>
 
     <div class="apple-card p-6 mb-5">
-      <div class="flex items-center justify-between mb-4">
-        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;">심사원 관리</h3>
-        <div class="flex gap-2">
-          <label class="pill-btn pill-btn-outline cursor-pointer" style="font-size:13px;padding:6px 16px;border-color:#303A3C;color:#303A3C;">
-            엑셀 업로드
-            <input type="file" accept=".xls,.xlsx" onchange="importAuditorExcel(event)" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_backup')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">백업</h3>
+        <span id="mgmt_backupArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_backup" class="hidden" style="margin-top:16px;">
+        <div class="flex gap-3 flex-wrap">
+          <button onclick="exportJSON()" class="pill-btn pill-btn-outline" style="border-color:#303A3C;color:#303A3C;">JSON 내보내기</button>
+          <label class="pill-btn pill-btn-outline cursor-pointer" style="border-color:#303A3C;color:#303A3C;">
+            JSON 가져오기
+            <input type="file" accept=".json" class="hidden" onchange="importJSON(event)">
           </label>
-          <button onclick="showAddAuditorForm()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:6px 16px;">+ 심사원 등록</button>
         </div>
       </div>
-      <!-- Add/Edit form (hidden) -->
-      <div id="auditorFormArea" class="hidden apple-card-elevated p-5 mb-4">
-        <h4 id="auditorFormTitle" style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">심사원 등록</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div><label class="apple-label">성명</label><input id="af_name" type="text" class="apple-input" placeholder="이름"></div>
-          <div><label class="apple-label">사번</label><input id="af_empNo" type="text" class="apple-input" placeholder="사번"></div>
-          <div><label class="apple-label">팀</label><input id="af_team" type="text" class="apple-input" placeholder="소속팀"></div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div><label class="apple-label">부문</label><input id="af_division" type="text" class="apple-input" placeholder="부문"></div>
-          <div>
-            <label class="apple-label">권한그룹</label>
-            <select id="af_role" class="apple-input">
-              <option value="품질심사원(Auditor)">품질심사원(Auditor)</option>
-              <option value="부문 별 품질담당자">부문 별 품질담당자</option>
-              <option value="수석심사원(Lead Auditor)">수석심사원(Lead Auditor)</option>
-            </select>
+    </div>
+
+    <div class="apple-card p-6 mb-5">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_storage')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">저장 현황</h3>
+        <span id="mgmt_storageArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_storage" class="hidden" style="margin-top:16px;">
+        <div id="storageInfo" style="font-size:14px;color:#565A5B;"></div>
+      </div>
+    </div>
+
+    <div class="apple-card p-6 mb-5">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_auditor')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#303A3C;margin:0;">심사원 관리</h3>
+        <span id="mgmt_auditorArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_auditor" class="hidden" style="margin-top:16px;">
+        <div class="flex items-center justify-end mb-4">
+          <div class="flex gap-2">
+            <label class="pill-btn pill-btn-outline cursor-pointer" style="font-size:13px;padding:6px 16px;border-color:#303A3C;color:#303A3C;">
+              엑셀 업로드
+              <input type="file" accept=".xls,.xlsx" onchange="importAuditorExcel(event)" class="hidden">
+            </label>
+            <button onclick="showAddAuditorForm()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:6px 16px;">+ 심사원 등록</button>
           </div>
-          <div><label class="apple-label">최근 임명일</label><input id="af_appointDate" type="text" data-fp class="apple-input"></div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div><label class="apple-label">초기교육</label><input id="af_initialTraining" type="text" data-fp class="apple-input"></div>
-          <div><label class="apple-label">보수교육</label><input id="af_refreshTraining" type="text" data-fp class="apple-input"></div>
-          <div><label class="apple-label">교육 유효기간</label><input id="af_trainingExpiry" type="text" data-fp class="apple-input"></div>
+        <!-- Add/Edit form (hidden) -->
+        <div id="auditorFormArea" class="hidden apple-card-elevated p-5 mb-4">
+          <h4 id="auditorFormTitle" style="font-size:14px;font-weight:600;color:#303A3C;margin-bottom:12px;">심사원 등록</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div><label class="apple-label">성명</label><input id="af_name" type="text" class="apple-input" placeholder="이름"></div>
+            <div><label class="apple-label">사번</label><input id="af_empNo" type="text" class="apple-input" placeholder="사번"></div>
+            <div><label class="apple-label">팀</label><input id="af_team" type="text" class="apple-input" placeholder="소속팀"></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div><label class="apple-label">부문</label><input id="af_division" type="text" class="apple-input" placeholder="부문"></div>
+            <div>
+              <label class="apple-label">권한그룹</label>
+              <select id="af_role" class="apple-input">
+                <option value="품질심사원(Auditor)">품질심사원(Auditor)</option>
+                <option value="부문 별 품질담당자">부문 별 품질담당자</option>
+                <option value="수석심사원(Lead Auditor)">수석심사원(Lead Auditor)</option>
+              </select>
+            </div>
+            <div><label class="apple-label">최근 임명일</label><input id="af_appointDate" type="text" data-fp class="apple-input"></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div><label class="apple-label">초기교육</label><input id="af_initialTraining" type="text" data-fp class="apple-input"></div>
+            <div><label class="apple-label">보수교육</label><input id="af_refreshTraining" type="text" data-fp class="apple-input"></div>
+            <div><label class="apple-label">교육 유효기간</label><input id="af_trainingExpiry" type="text" data-fp class="apple-input"></div>
+          </div>
+          <input id="af_editId" type="hidden" value="">
+          <div class="flex gap-3 justify-end">
+            <button onclick="hideAuditorForm()" class="pill-btn pill-btn-outline">취소</button>
+            <button onclick="saveAuditorForm()" class="pill-btn pill-btn-primary">저장</button>
+          </div>
         </div>
-        <input id="af_editId" type="hidden" value="">
-        <div class="flex gap-3 justify-end">
-          <button onclick="hideAuditorForm()" class="pill-btn pill-btn-outline">취소</button>
-          <button onclick="saveAuditorForm()" class="pill-btn pill-btn-primary">저장</button>
-        </div>
+        <!-- Auditor list table -->
+        <div id="auditorListTable" class="overflow-x-auto"></div>
       </div>
-      <!-- Auditor list table -->
-      <div id="auditorListTable" class="overflow-x-auto"></div>
     </div>
 
     <div class="apple-card p-6">
-      <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#D20015;margin-bottom:12px;">데이터 초기화</h3>
-      <p style="font-size:14px;color:#9EA2A1;margin-bottom:16px;">모든 저장된 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</p>
-      <button onclick="resetAllData()" class="pill-btn" style="background:#D20015;color:#fff;">데이터 초기화</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleSection('mgmt_reset')">
+        <h3 style="font-size:17px;font-weight:600;letter-spacing:-0.28px;color:#D20015;margin:0;">데이터 초기화</h3>
+        <span id="mgmt_resetArrow" style="color:#9EA2A1;font-size:14px;">&#9656;</span>
+      </div>
+      <div id="mgmt_reset" class="hidden" style="margin-top:12px;">
+        <p style="font-size:14px;color:#9EA2A1;margin-bottom:16px;">모든 저장된 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.</p>
+        <button onclick="resetAllData()" class="pill-btn" style="background:#D20015;color:#fff;">데이터 초기화</button>
+      </div>
     </div>
   </div>
 </main>
@@ -1168,7 +1208,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v15 &middot; 2026
+  안전기획팀 &middot; v15.2 &middot; 2026
 </footer>
 
 <script>
@@ -5544,16 +5584,20 @@ function renderStatsDashboard() {
   // Continue with existing branch stats below...
   const year = parseInt(document.getElementById('statsYear').value);
   const yearData = allData.filter(d => d.year == year && d.auditCategory === 'branch');
+  // 지점 전용 REGIONS (협력사(본사) 제외)
+  const BRANCH_REGIONS = Object.entries(REGIONS).filter(([k]) => k !== '협력사(본사)');
 
-  // Calculate averages
+  // Calculate averages — 협력사(본사) 제외, 전항목 N/A(0.00점) 제외
   let totalAvg = 0, totalCount = 0;
   let domesticAvg = 0, domesticCount = 0;
   let intlAvg = 0, intlCount = 0;
 
   yearData.forEach(d => {
     if (getScoringMethod(d.type) === 'binary') return; // 안전감사(binary) 제외
+    if (d.region === '협력사(본사)') return; // 협력사 데이터 지점 통계에서 제외
     const checklist = getChecklist(d.type);
     const result = calculateScores(d.scores, checklist);
+    if (result.totalItems === 0) return; // 전항목 N/A 제외
     const avg = result.overallAverage;
     totalAvg += avg; totalCount++;
     if (d.region === '국내') { domesticAvg += avg; domesticCount++; }
@@ -5564,10 +5608,12 @@ function renderStatsDashboard() {
   const domAvg = domesticCount > 0 ? (domesticAvg / domesticCount).toFixed(2) : '0.00';
   const intAvg = intlCount > 0 ? (intlAvg / intlCount).toFixed(2) : '0.00';
 
-  // Completion rate: count unique stations completed
-  const completedStations = new Set(yearData.filter(d => d.type === 'branch').map(d => d.station));
-  const totalStations = Object.values(REGIONS).reduce((sum, r) => sum + r.stations.length, 0);
-  const completionRate = totalStations > 0 ? ((completedStations.size / totalStations) * 100).toFixed(1) : '0.0';
+  // Completion rate: scheduleData 등록된 심사대상지 기준 (지점만)
+  const completedStations = new Set(yearData.filter(d => d.region !== '협력사(본사)').map(d => d.station));
+  const scheduledBranchStations = new Set(scheduleData.filter(s => s.year == year && s.auditTarget === 'branch').map(s => s.station));
+  const totalStations = scheduledBranchStations.size;
+  const completedScheduled = [...completedStations].filter(s => scheduledBranchStations.has(s)).length;
+  const completionRate = totalStations > 0 ? ((completedScheduled / totalStations) * 100).toFixed(1) : '0.0';
 
   // Summary cards
   document.getElementById('summaryCards').innerHTML = `
@@ -5589,20 +5635,22 @@ function renderStatsDashboard() {
     <div class="apple-card" style="padding:20px;">
       <div style="font-size:12px;color:#9EA2A1;font-weight:400;margin-bottom:4px;">심사 완료율</div>
       <div style="font-size:36px;font-weight:600;color:#D20015;letter-spacing:-0.28px;line-height:1.07;">${completionRate}%</div>
-      <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${completedStations.size} / ${totalStations} 지점</div>
+      <div style="font-size:12px;color:#9EA2A1;margin-top:4px;">${completedScheduled} / ${totalStations} 지점</div>
     </div>
   `;
 
-  // Regional summary (grade types only — binary 제외)
-  const gradeYearData = yearData.filter(d => getScoringMethod(d.type) === 'grade');
+  // Regional summary (grade types only — binary 제외, 협력사(본사) 제외)
+  const gradeYearData = yearData.filter(d => getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
   let regHtml = '<table class="apple-table compact-mobile">';
   regHtml += '<thead><tr><th style="text-align:left;">지역</th><th style="text-align:center;">지점 평균</th><th style="text-align:center;">여객 평균</th><th style="text-align:center;">램프 평균</th><th style="text-align:center;">종합 평균</th></tr></thead><tbody>';
-  for (const [region] of Object.entries(REGIONS)) {
+  for (const [region] of BRANCH_REGIONS) {
     const regionData = gradeYearData.filter(d => d.region === region);
-    const branchAvg = calcAvgForTypeRegion(regionData, 'branch');
-    const paxAvg = calcAvgForTypeRegion(regionData, 'pax');
-    const rampAvg = calcAvgForTypeRegion(regionData, 'ramp');
-    const allAvg = regionData.length > 0 ? regionData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / regionData.length : 0;
+    // 전항목 N/A 제외한 유효 데이터
+    const validRegionData = regionData.filter(d => calculateScores(d.scores, getChecklist(d.type)).totalItems > 0);
+    const branchAvg = calcAvgForTypeRegion(validRegionData, 'branch');
+    const paxAvg = calcAvgForTypeRegion(validRegionData, 'pax');
+    const rampAvg = calcAvgForTypeRegion(validRegionData, 'ramp');
+    const allAvg = validRegionData.length > 0 ? validRegionData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / validRegionData.length : 0;
     regHtml += `<tr><td style="font-weight:600;">${region}</td>`;
     regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(branchAvg)}">${branchAvg ? branchAvg.toFixed(2) : '-'}</span></td>`;
     regHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(paxAvg)}">${paxAvg ? paxAvg.toFixed(2) : '-'}</span></td>`;
@@ -5613,12 +5661,13 @@ function renderStatsDashboard() {
   regHtml += '</tbody></table>';
   document.getElementById('regionalTable').innerHTML = regHtml;
 
-  // Station ranking (grade types only — binary 제외)
+  // Station ranking (grade types only — binary 제외, 전항목 N/A 제외)
   const stationMap = {};
   gradeYearData.forEach(d => {
+    const result = calculateScores(d.scores, getChecklist(d.type));
+    if (result.totalItems === 0) return; // 전항목 N/A 제외
     if (!stationMap[d.station]) stationMap[d.station] = { sum: 0, count: 0, region: d.region };
-    const avg = calculateScores(d.scores, getChecklist(d.type)).overallAverage;
-    stationMap[d.station].sum += avg;
+    stationMap[d.station].sum += result.overallAverage;
     stationMap[d.station].count++;
   });
   const ranked = Object.entries(stationMap).map(([station, v]) => ({
@@ -5792,20 +5841,22 @@ function renderStatsDashboard() {
   }
   document.getElementById('stationWeakPatterns').innerHTML = patternHtml;
 
-  // ========== 3개년 비교 (올해/작년/재작년) ==========
+  // ========== 3개년 비교 (올해/작년/재작년) — 협력사(본사) 제외 ==========
   const thisYear = new Date().getFullYear();
   const years = [thisYear - 2, thisYear - 1, thisYear];
   const yearLabels = [`${thisYear-2}년 (재작년)`, `${thisYear-1}년 (작년)`, `${thisYear}년 (올해)`];
 
   let threeYearHtml = '';
 
-  // 연도별 전체 평균 비교 카드
+  // 연도별 전체 평균 비교 카드 (항상 표시)
   threeYearHtml += '<div class="grid grid-cols-3 gap-4 mb-6">';
   years.forEach((y, i) => {
-    const yData = allData.filter(d => d.year == y && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
+    const yData = allData.filter(d => d.year == y && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
     let avg = 0, count = 0;
     yData.forEach(d => {
-      avg += calculateScores(d.scores, getChecklist(d.type)).overallAverage;
+      const sc = calculateScores(d.scores, getChecklist(d.type));
+      if (sc.totalItems === 0) return; // 전항목 N/A 제외
+      avg += sc.overallAverage;
       count++;
     });
     const yearAvg = count > 0 ? (avg / count).toFixed(2) : '-';
@@ -5819,9 +5870,16 @@ function renderStatsDashboard() {
   });
   threeYearHtml += '</div>';
 
-  // 연도별 지점 비교 테이블 (grade types only)
+  // 3개년 상세 (표 + 그래프) — 접기/펼치기 (기본 접힘)
+  threeYearHtml += `<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:8px;" onclick="toggleSection('threeYearDetail')">`;
+  threeYearHtml += `<span style="font-size:14px;font-weight:600;color:#565A5B;">3개년 상세 비교</span>`;
+  threeYearHtml += `<span id="threeYearDetailArrow" style="color:#9EA2A1;">\u25B8</span>`;
+  threeYearHtml += `</div>`;
+  threeYearHtml += `<div id="threeYearDetail" class="hidden">`;
+
+  // 연도별 지점 비교 테이블 (grade types only, 협력사 제외)
   const allStations = new Set();
-  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade').forEach(d => allStations.add(d.station)));
+  years.forEach(y => allData.filter(d => d.year == y && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)').forEach(d => allStations.add(d.station)));
 
   threeYearHtml += '<div class="overflow-x-auto">';
   threeYearHtml += '<table class="apple-table compact-mobile"><thead><tr>';
@@ -5834,10 +5892,15 @@ function renderStatsDashboard() {
 
   [...allStations].sort((a, b) => a.localeCompare(b, 'ko')).forEach(station => {
     const yearAvgs = years.map(y => {
-      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
+      const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
       if (stData.length === 0) return null;
-      return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
+      const validData = stData.filter(d => calculateScores(d.scores, getChecklist(d.type)).totalItems > 0);
+      if (validData.length === 0) return null;
+      return validData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / validData.length;
     });
+
+    // 모든 연도가 null이면 표시하지 않음
+    if (yearAvgs.every(a => a === null)) return;
 
     threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
     yearAvgs.forEach(avg => {
@@ -5864,31 +5927,28 @@ function renderStatsDashboard() {
 
   threeYearHtml += '</tbody></table></div>';
 
-  // 3개년 추이 차트 (접기/펼치기 토글)
-  threeYearHtml += `<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:16px;" onclick="toggleSection('yearCompareChart')">`;
-  threeYearHtml += `<span style="font-size:14px;font-weight:600;color:#565A5B;">3개년 추이 그래프</span>`;
-  threeYearHtml += `<span id="yearCompareChartArrow" style="color:#9EA2A1;">\u25BE</span>`;
-  threeYearHtml += `</div>`;
-  threeYearHtml += `<div id="yearCompareChart" style="margin-top:8px;height:${getChartHeight()}px;"><canvas id="threeYearChart"></canvas></div>`;
+  // 3개년 추이 차트
+  threeYearHtml += `<div style="margin-top:16px;height:${getChartHeight()}px;"><canvas id="threeYearChart"></canvas></div>`;
+  threeYearHtml += `</div>`; // threeYearDetail 닫기
 
   document.getElementById('threeYearComparison').innerHTML = threeYearHtml;
 
-  // Render 3-year trend chart
+  // Render 3-year trend chart (합집합 사용, 협력사 제외)
   destroyChart('threeYearChart');
   const ctx3y = document.getElementById('threeYearChart')?.getContext('2d');
   if (ctx3y) {
-    const commonStations3y = [...allStations].filter(station => {
-      return years.every(y => allData.some(d => d.year == y && d.station === station && getScoringMethod(d.type) === 'grade'));
-    }).sort((a, b) => a.localeCompare(b, 'ko'));
+    const chartStations3y = [...allStations].sort((a, b) => a.localeCompare(b, 'ko'));
 
     const datasets3y = years.map((y, i) => {
       const colors = ['#9EA2A1', '#565A5B', '#D20015'];
       return {
         label: `${y}년`,
-        data: commonStations3y.map(station => {
-          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
+        data: chartStations3y.map(station => {
+          const stData = allData.filter(d => d.year == y && d.station === station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
           if (stData.length === 0) return null;
-          return stData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / stData.length;
+          const validData = stData.filter(d => calculateScores(d.scores, getChecklist(d.type)).totalItems > 0);
+          if (validData.length === 0) return null;
+          return validData.reduce((s, d) => s + calculateScores(d.scores, getChecklist(d.type)).overallAverage, 0) / validData.length;
         }),
         backgroundColor: colors[i] + 'CC',
         borderRadius: 4
@@ -5897,7 +5957,7 @@ function renderStatsDashboard() {
 
     chartInstances['threeYearChart'] = new Chart(ctx3y, {
       type: 'bar',
-      data: { labels: commonStations3y, datasets: datasets3y },
+      data: { labels: chartStations3y, datasets: datasets3y },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
@@ -7870,6 +7930,18 @@ function showScheduleStation(scheduleId) {
   if (item.cycleReason) html += `<div style="font-size:12px;color:#D20015;margin-top:4px;">사유: ${item.cycleReason}</div>`;
   html += '</div>';
 
+  // 구분 (auditTarget) — 수정 가능
+  const targetLabels = { branch: '지점', division: '실/본부', outsourcing: '외주협력업체' };
+  const currentTarget = item.auditTarget || (isDivisionSchedule ? 'division' : 'branch');
+  html += '<div class="mb-4">';
+  html += '<label class="apple-label">구분</label>';
+  html += `<select id="scheduleAuditTarget" class="apple-input" style="width:auto;min-width:160px;">`;
+  ['branch', 'division', 'outsourcing'].forEach(t => {
+    html += `<option value="${t}" ${currentTarget === t ? 'selected' : ''}>${targetLabels[t]}</option>`;
+  });
+  html += '</select>';
+  html += '</div>';
+
   // Note
   html += '<div class="mb-4">';
   html += '<label class="apple-label">비고</label>';
@@ -7998,6 +8070,31 @@ function saveScheduleItem(scheduleId) {
 
   const note = document.getElementById('scheduleNote');
   if (note) item.note = note.value;
+
+  // 구분 (auditTarget) 저장
+  const targetEl = document.getElementById('scheduleAuditTarget');
+  if (targetEl) {
+    const newTarget = targetEl.value;
+    const oldTarget = item.auditTarget;
+    item.auditTarget = newTarget;
+    // customStations의 region도 연동 업데이트
+    if (oldTarget !== newTarget) {
+      const cs = customStations.find(c => c.station === item.station);
+      if (cs) {
+        if (newTarget === 'outsourcing') cs.region = '협력사(본사)';
+        else if (newTarget === 'branch') {
+          // 기존 REGIONS에서 찾기, 없으면 '기타'
+          let found = '기타';
+          for (const [region, data] of Object.entries(REGIONS)) {
+            if (region !== '협력사(본사)' && data.stations.includes(item.station)) { found = region; break; }
+          }
+          cs.region = found;
+        }
+        saveCustomStations();
+        mergeCustomStations();
+      }
+    }
+  }
 
   // 심사 시작일 기준으로 월 자동 업데이트
   if (item.dateStart) {
@@ -8615,12 +8712,10 @@ function renderAuditorList() {
   html += '<th style="text-align:left;">권한그룹</th>';
   html += '<th style="text-align:center;">보수교육</th>';
   html += '<th style="text-align:center;">교육 유효</th>';
-  html += '<th style="text-align:center;">' + currentYear + '년 실적</th>';
   html += '<th style="text-align:center;">관리</th>';
   html += '</tr></thead><tbody>';
 
   auditorList.forEach((a, i) => {
-    const count = getAuditorActivityCount(a.name, currentYear);
     const ts = getTrainingStatus(a.trainingExpiry);
     html += `<tr>`;
     html += `<td style="font-weight:600;">${a.name}<div style="font-size:11px;color:#9EA2A1;">${a.empNo}</div></td>`;
@@ -8628,7 +8723,6 @@ function renderAuditorList() {
     html += `<td style="font-size:13px;">${a.role}</td>`;
     html += `<td style="text-align:center;font-size:13px;">${a.refreshTraining || '-'}</td>`;
     html += `<td style="text-align:center;"><span class="badge-pill" style="${ts.style}">${ts.label}</span></td>`;
-    html += `<td style="text-align:center;font-weight:600;font-size:15px;">${count}건</td>`;
     html += `<td style="text-align:center;">`;
     html += `<button onclick="editAuditor(${i})" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:4px 8px;">수정</button>`;
     html += `<button onclick="deleteAuditor(${i})" style="background:none;border:none;color:#565A5B;font-size:13px;cursor:pointer;padding:4px 8px;">삭제</button>`;
@@ -8636,7 +8730,7 @@ function renderAuditorList() {
   });
 
   if (auditorList.length === 0) {
-    html += '<tr><td colspan="7" style="text-align:center;color:#9EA2A1;padding:24px;">등록된 심사원이 없습니다.</td></tr>';
+    html += '<tr><td colspan="6" style="text-align:center;color:#9EA2A1;padding:24px;">등록된 심사원이 없습니다.</td></tr>';
   }
   html += '</tbody></table>';
   container.innerHTML = html;
@@ -9134,16 +9228,20 @@ function renderHome() {
   const currentYear = new Date().getFullYear();
   const yearData = allData.filter(d => d.year == currentYear);
 
-  // Unique stations with data
-  const completedStations = new Set(yearData.map(d => d.station));
-  const totalStations = Object.values(REGIONS).reduce((sum, r) => sum + r.stations.length, 0);
-  const completionRate = totalStations > 0 ? ((completedStations.size / totalStations) * 100).toFixed(0) : '0';
+  // 진행률: scheduleData 등록 기준 (지점만, 협력사 제외)
+  const completedStations = new Set(yearData.filter(d => d.auditCategory === 'branch' && d.region !== '협력사(본사)').map(d => d.station));
+  const scheduledBranchHome = new Set(scheduleData.filter(s => s.year == currentYear && s.auditTarget === 'branch').map(s => s.station));
+  const totalStations = scheduledBranchHome.size;
+  const completedScheduledHome = [...completedStations].filter(s => scheduledBranchHome.has(s)).length;
+  const completionRate = totalStations > 0 ? ((completedScheduledHome / totalStations) * 100).toFixed(0) : '0';
 
-  // Overall average (grade 방식만 집계, binary 방식 제외)
+  // Overall average (grade 방식만 집계, binary 방식 제외, 협력사 제외, 전항목 N/A 제외)
   let totalAvg = 0, totalCount = 0;
   yearData.forEach(d => {
     if (getScoringMethod(d.type) === 'binary') return;
+    if (d.region === '협력사(본사)') return;
     const result = calculateScores(d.scores, getChecklist(d.type));
+    if (result.totalItems === 0) return;
     if (!isNaN(result.overallAverage)) {
       totalAvg += result.overallAverage;
       totalCount++;
@@ -9158,11 +9256,13 @@ function renderHome() {
     return diff < 90;
   });
 
-  // 실/본부 진행률 계산
+  // 실/본부 진행률 계산 — scheduleData 등록 기준
   const divisionData = yearData.filter(d => d.auditCategory === 'division');
   const completedDivisions = new Set(divisionData.map(d => d.division || d.station));
-  const totalDivisions = DIVISION_NAMES.length;
-  const divCompletionRate = totalDivisions > 0 ? ((completedDivisions.size / totalDivisions) * 100).toFixed(0) : '0';
+  const scheduledDivHome = new Set(scheduleData.filter(s => s.year == currentYear && s.auditTarget === 'division').map(s => s.station));
+  const totalDivisions = scheduledDivHome.size || DIVISION_NAMES.length;
+  const completedDivScheduled = [...completedDivisions].filter(s => scheduledDivHome.size > 0 ? scheduledDivHome.has(s) : true).length;
+  const divCompletionRate = totalDivisions > 0 ? ((completedDivScheduled / totalDivisions) * 100).toFixed(0) : '0';
 
   // 실/본부 평균 적합률 계산
   let divTotalRate = 0, divRateCount = 0;
@@ -9184,7 +9284,7 @@ function renderHome() {
         <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">심사 진행률</div>
           <div style="font-size:28px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${completionRate}%</div>
-          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${completedStations.size} / ${totalStations} 지점</div>
+          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${completedScheduledHome} / ${totalStations} 지점</div>
         </div>
         <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">전체 평균</div>
@@ -9199,7 +9299,7 @@ function renderHome() {
         <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">심사 진행률</div>
           <div style="font-size:28px;font-weight:600;color:#D20015;letter-spacing:-0.28px;">${divCompletionRate}%</div>
-          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${completedDivisions.size} / ${totalDivisions} 본부</div>
+          <div style="font-size:11px;color:#9EA2A1;margin-top:4px;">${completedDivScheduled} / ${totalDivisions} 본부</div>
         </div>
         <div class="apple-card" style="padding:16px;text-align:center;">
           <div style="font-size:12px;color:#9EA2A1;">평균 적합률</div>
