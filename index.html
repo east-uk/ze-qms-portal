@@ -6976,7 +6976,7 @@ function renderAnalysis() {
     html += `<div class="heatmap-header">`;
     html += `<div>지점</div>`;
     heatmapCats.forEach(cat => {
-      const shortCat = cat.replace(/^\d+\.\s*/, '').substring(0, 8);
+      const shortCat = cat.replace(/^\d+\.\s*/, '');
       html += `<div>${shortCat}</div>`;
     });
     html += `<div>전체</div>`;
