@@ -714,13 +714,14 @@ select.apple-input {
         <p class="section-subtitle mt-1">심사 대상 지점을 선택하고 조회합니다</p>
       </div>
       <div class="apple-card p-6">
-        <!-- 심사 유형 토글 (조회 탭과 동일 패턴) -->
+        <!-- 심사 유형 토글 -->
         <div class="mb-5">
           <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">심사 유형</label>
-          <div class="flex gap-2">
-            <button id="catBtnAll" onclick="switchAuditCategory('all')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;">전체</button>
-            <button id="catBtnBranch" onclick="switchAuditCategory('branch')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">지점 심사</button>
-            <button id="catBtnDivision" onclick="switchAuditCategory('division')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">실/본부 심사</button>
+          <div class="flex gap-2 flex-wrap">
+            <button id="catBtnAll" onclick="switchAuditCategory('all')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;min-width:0;">전체</button>
+            <button id="catBtnBranch" onclick="switchAuditCategory('branch')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;min-width:0;">지점</button>
+            <button id="catBtnDivision" onclick="switchAuditCategory('division')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;min-width:0;">실/본부</button>
+            <button id="catBtnOutsourcing" onclick="switchAuditCategory('outsourcing')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;min-width:0;">외주협력</button>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
@@ -829,13 +830,14 @@ select.apple-input {
         <p class="section-subtitle mt-1">조건을 선택하여 심사 결과를 조회합니다</p>
       </div>
       <div class="apple-card p-6">
-        <!-- 심사 유형 토글 (입력 탭과 동일 패턴) -->
+        <!-- 심사 유형 토글 -->
         <div class="mb-5">
           <label style="display:block;font-size:13px;font-weight:600;color:#565A5B;margin-bottom:8px;">심사 유형</label>
-          <div class="flex gap-2">
-            <button id="viewCatBtnAll" onclick="switchViewCategory('all')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;">전체</button>
-            <button id="viewCatBtnBranch" onclick="switchViewCategory('branch')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">지점 심사</button>
-            <button id="viewCatBtnDivision" onclick="switchViewCategory('division')" class="flex-1 py-3 px-4 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">실/본부 심사</button>
+          <div class="flex gap-2 flex-wrap">
+            <button id="viewCatBtnAll" onclick="switchViewCategory('all')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:#D20015;color:#fff;min-width:0;">전체</button>
+            <button id="viewCatBtnBranch" onclick="switchViewCategory('branch')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;min-width:0;">지점</button>
+            <button id="viewCatBtnDivision" onclick="switchViewCategory('division')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;min-width:0;">실/본부</button>
+            <button id="viewCatBtnOutsourcing" onclick="switchViewCategory('outsourcing')" class="flex-1 py-3 px-3 rounded-xl text-center font-semibold text-sm transition-all" style="background:rgba(158,162,161,0.15);color:#9EA2A1;min-width:0;">외주협력</button>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
@@ -3700,44 +3702,50 @@ function populateInputTargetDropdown() {
   emptyOpt.value = '';
   emptyOpt.textContent = '선택하세요';
   sel.appendChild(emptyOpt);
-  // Stations by region
-  for (const [region, data] of Object.entries(REGIONS)) {
-    if (region === '협력사(본사)') continue; // 별도 그룹으로 처리
-    const optgroup = document.createElement('optgroup');
-    optgroup.label = region;
-    for (const station of data.stations) {
-      const opt = document.createElement('option');
-      opt.value = station;
-      opt.textContent = station;
-      opt.dataset.category = 'branch';
-      optgroup.appendChild(opt);
+  const cat = selectedAuditCategory || 'all';
+
+  // 지점 (all 또는 branch)
+  if (cat === 'all' || cat === 'branch') {
+    for (const [region, data] of Object.entries(REGIONS)) {
+      if (region === '협력사(본사)') continue;
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = region;
+      for (const station of data.stations) {
+        const opt = document.createElement('option');
+        opt.value = station;
+        opt.textContent = station;
+        opt.dataset.category = 'branch';
+        optgroup.appendChild(opt);
+      }
+      sel.appendChild(optgroup);
     }
-    sel.appendChild(optgroup);
   }
-  // 협력사(본사) stations
-  if (REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.length > 0) {
+  // 외주협력업체 (all 또는 outsourcing)
+  if ((cat === 'all' || cat === 'outsourcing') && REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.length > 0) {
     const osGroup = document.createElement('optgroup');
-    osGroup.label = '협력사(본사)';
+    osGroup.label = '외주협력업체';
     for (const station of REGIONS['협력사(본사)'].stations) {
       const opt = document.createElement('option');
       opt.value = station;
       opt.textContent = station;
-      opt.dataset.category = 'branch';
+      opt.dataset.category = 'outsourcing';
       osGroup.appendChild(opt);
     }
     sel.appendChild(osGroup);
   }
-  // Divisions
-  const divGroup = document.createElement('optgroup');
-  divGroup.label = '실/본부';
-  for (const divName of DIVISION_NAMES) {
-    const opt = document.createElement('option');
-    opt.value = divName;
-    opt.textContent = divName;
-    opt.dataset.category = 'division';
-    divGroup.appendChild(opt);
+  // 실/본부 (all 또는 division)
+  if (cat === 'all' || cat === 'division') {
+    const divGroup = document.createElement('optgroup');
+    divGroup.label = '실/본부';
+    for (const divName of DIVISION_NAMES) {
+      const opt = document.createElement('option');
+      opt.value = divName;
+      opt.textContent = divName;
+      opt.dataset.category = 'division';
+      divGroup.appendChild(opt);
+    }
+    sel.appendChild(divGroup);
   }
-  sel.appendChild(divGroup);
   if (sel._comboRefresh) sel._comboRefresh();
 }
 // backward compat alias
@@ -3793,12 +3801,13 @@ function switchAuditCategory(cat) {
   const allBtn = document.getElementById('catBtnAll');
   const branchBtn = document.getElementById('catBtnBranch');
   const divBtn = document.getElementById('catBtnDivision');
+  const outBtn = document.getElementById('catBtnOutsourcing');
 
   // 카테고리 전환 시 필드 초기화
   clearAllInputFields();
 
   // 모든 버튼 비활성
-  [allBtn, branchBtn, divBtn].forEach(btn => {
+  [allBtn, branchBtn, divBtn, outBtn].forEach(btn => {
     if (btn) btn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
   });
 
@@ -3806,9 +3815,12 @@ function switchAuditCategory(cat) {
     if (allBtn) allBtn.style.cssText = 'background:#D20015;color:#fff;';
   } else if (cat === 'branch') {
     if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
+  } else if (cat === 'outsourcing') {
+    if (outBtn) outBtn.style.cssText = 'background:#F59E0B;color:#fff;';
   } else {
     if (divBtn) divBtn.style.cssText = 'background:#6366F1;color:#fff;';
   }
+  populateInputTargetDropdown();
   renderInputPendingStations();
 }
 
@@ -3822,6 +3834,10 @@ function inputSearch() {
     selectedAuditCategory = 'division';
     selectedDivision = targetVal;
     selectedStation = targetVal;
+  } else if (REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.includes(targetVal)) {
+    selectedAuditCategory = 'outsourcing';
+    selectedStation = targetVal;
+    selectedDivision = '';
   } else {
     selectedAuditCategory = 'branch';
     selectedStation = targetVal;
@@ -4440,37 +4456,40 @@ function viewGoHome() {
 function populateViewTargetDropdown() {
   const sel = document.getElementById('viewTarget');
   const region = document.getElementById('viewRegion').value;
+  const cat = selectedViewCategory || 'all';
   sel.innerHTML = '<option value="">전체</option>';
-  // Stations by region
-  const regionsToShow = region === '전체' ? Object.keys(REGIONS) : (REGIONS[region] ? [region] : []);
-  for (const reg of regionsToShow) {
-    if (reg === '협력사(본사)') continue; // 별도 그룹으로 처리
-    const optgroup = document.createElement('optgroup');
-    optgroup.label = reg;
-    for (const station of REGIONS[reg].stations) {
-      const opt = document.createElement('option');
-      opt.value = station;
-      opt.textContent = station;
-      opt.dataset.category = 'branch';
-      optgroup.appendChild(opt);
+
+  // 지점 (all 또는 branch)
+  if (cat === 'all' || cat === 'branch') {
+    const regionsToShow = region === '전체' ? Object.keys(REGIONS).filter(r => r !== '협력사(본사)') : (REGIONS[region] && region !== '협력사(본사)' ? [region] : []);
+    for (const reg of regionsToShow) {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = reg;
+      for (const station of REGIONS[reg].stations) {
+        const opt = document.createElement('option');
+        opt.value = station;
+        opt.textContent = station;
+        opt.dataset.category = 'branch';
+        optgroup.appendChild(opt);
+      }
+      sel.appendChild(optgroup);
     }
-    sel.appendChild(optgroup);
   }
-  // 협력사(본사) stations
-  if ((region === '전체' || region === '협력사(본사)') && REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.length > 0) {
+  // 외주협력업체 (all 또는 outsourcing)
+  if ((cat === 'all' || cat === 'outsourcing') && REGIONS['협력사(본사)'] && REGIONS['협력사(본사)'].stations.length > 0) {
     const osGroup = document.createElement('optgroup');
-    osGroup.label = '협력사(본사)';
+    osGroup.label = '외주협력업체';
     for (const station of REGIONS['협력사(본사)'].stations) {
       const opt = document.createElement('option');
       opt.value = station;
       opt.textContent = station;
-      opt.dataset.category = 'branch';
+      opt.dataset.category = 'outsourcing';
       osGroup.appendChild(opt);
     }
     sel.appendChild(osGroup);
   }
-  // Divisions (only when region is 전체)
-  if (region === '전체') {
+  // 실/본부 (all 또는 division)
+  if (cat === 'all' || cat === 'division') {
     const divGroup = document.createElement('optgroup');
     divGroup.label = '실/본부';
     for (const divName of DIVISION_NAMES) {
@@ -4492,6 +4511,7 @@ function switchViewCategory(cat) {
   const allBtn = document.getElementById('viewCatBtnAll');
   const branchBtn = document.getElementById('viewCatBtnBranch');
   const divBtn = document.getElementById('viewCatBtnDivision');
+  const outBtn = document.getElementById('viewCatBtnOutsourcing');
   const regionArea = document.getElementById('viewRegionArea');
   const typeArea = document.getElementById('viewTypeArea');
 
@@ -4504,12 +4524,14 @@ function switchViewCategory(cat) {
     document.getElementById('viewType').value = 'branch';
   } else if (cat === 'division') {
     document.getElementById('viewType').value = 'division';
+  } else if (cat === 'outsourcing') {
+    document.getElementById('viewType').value = 'outsourcing';
   } else {
     document.getElementById('viewType').value = '전체';
   }
 
   // 모든 버튼 비활성 스타일로 초기화
-  [allBtn, branchBtn, divBtn].forEach(btn => {
+  [allBtn, branchBtn, divBtn, outBtn].forEach(btn => {
     if (btn) btn.style.cssText = 'background:rgba(158,162,161,0.15);color:#9EA2A1;';
   });
 
@@ -4521,6 +4543,10 @@ function switchViewCategory(cat) {
   } else if (cat === 'branch') {
     if (branchBtn) branchBtn.style.cssText = 'background:#D20015;color:#fff;';
     if (regionArea) regionArea.classList.remove('hidden');
+    if (typeArea) typeArea.classList.add('hidden');
+  } else if (cat === 'outsourcing') {
+    if (outBtn) outBtn.style.cssText = 'background:#F59E0B;color:#fff;';
+    if (regionArea) regionArea.classList.add('hidden');
     if (typeArea) typeArea.classList.add('hidden');
   } else {
     // division
