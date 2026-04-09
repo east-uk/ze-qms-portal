@@ -389,6 +389,12 @@ select.apple-input {
   .compact-mobile th { font-size: 10px !important; padding: 6px 4px !important; letter-spacing: 0; }
   .compact-mobile td { font-size: 11px !important; padding: 6px 4px !important; }
   .compact-mobile .badge-pill { font-size: 10px !important; padding: 1px 5px !important; }
+
+  /* Heatmap mobile */
+  .heatmap-grid { gap: 2px; font-size: 11px; }
+  .heatmap-header > div { padding: 8px 4px; font-size: 9px; }
+  .heatmap-cell { padding: 8px 4px; border-radius: 4px; }
+  .heatmap-label { padding: 8px 4px; font-size: 12px; }
 }
 @media (min-width: 769px) {
   .desktop-tabs { display: flex; }
@@ -443,6 +449,61 @@ select.apple-input {
 }
 .apple-table tbody tr:hover {
   background-color: rgba(210,0,21,0.04);
+}
+
+/* Heatmap Grid */
+.heatmap-grid {
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+  overflow-x: auto;
+}
+.heatmap-header {
+  display: contents;
+}
+.heatmap-header > div {
+  background: #303A3C;
+  color: #fff;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: 10px 8px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.heatmap-header > div:first-child {
+  border-radius: 8px 0 0 0;
+  text-align: left;
+}
+.heatmap-header > div:last-child {
+  border-radius: 0 8px 0 0;
+}
+.heatmap-row {
+  display: contents;
+}
+.heatmap-cell {
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: default;
+  position: relative;
+}
+.heatmap-cell:hover {
+  transform: scale(1.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  z-index: 1;
+}
+.heatmap-label {
+  padding: 10px 8px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: #303A3C;
 }
 
 /* Bottom glass bar */
@@ -6910,16 +6971,19 @@ function renderAnalysis() {
     html += `<div style="color:#9EA2A1;text-align:center;padding:20px;">지점 데이터가 없습니다.</div>`;
   } else {
     const heatmapCats = Object.keys(heatmapData[0].categories);
-    html += `<div class="overflow-x-auto"><table class="apple-table compact-mobile" style="font-size:13px;"><thead><tr>`;
-    html += `<th style="text-align:left;min-width:80px;">지점</th>`;
+    const colCount = heatmapCats.length + 2;
+    html += `<div class="overflow-x-auto"><div class="heatmap-grid" style="grid-template-columns: minmax(80px, auto) repeat(${heatmapCats.length}, minmax(70px, 1fr)) minmax(60px, 1fr); min-width: ${colCount * 75}px;">`;
+    html += `<div class="heatmap-header">`;
+    html += `<div>지점</div>`;
     heatmapCats.forEach(cat => {
       const shortCat = cat.replace(/^\d+\.\s*/, '').substring(0, 8);
-      html += `<th style="text-align:center;min-width:70px;font-size:11px;">${shortCat}</th>`;
+      html += `<div>${shortCat}</div>`;
     });
-    html += `<th style="text-align:center;min-width:60px;">전체</th>`;
-    html += `</tr></thead><tbody>`;
+    html += `<div>전체</div>`;
+    html += `</div>`;
     heatmapData.forEach(d => {
-      html += `<tr><td style="font-weight:600;white-space:nowrap;">${d.station}</td>`;
+      html += `<div class="heatmap-row">`;
+      html += `<div class="heatmap-label">${d.station}</div>`;
       heatmapCats.forEach(cat => {
         const val = d.categories[cat];
         let bgColor, textColor;
@@ -6928,7 +6992,7 @@ function renderAnalysis() {
         else if (val <= 3.0) { bgColor = '#FCD34D'; textColor = '#303A3C'; }
         else if (val <= 3.5) { bgColor = '#86EFAC'; textColor = '#303A3C'; }
         else { bgColor = '#22C55E'; textColor = '#ffffff'; }
-        html += `<td style="text-align:center;background:${bgColor};color:${textColor};font-weight:600;border-radius:4px;">${val.toFixed(2)}</td>`;
+        html += `<div class="heatmap-cell" style="background:${bgColor};color:${textColor};">${val.toFixed(2)}</div>`;
       });
       let ovBg, ovText;
       if (d.overall <= 2.0) { ovBg = '#D20015'; ovText = '#ffffff'; }
@@ -6936,16 +7000,16 @@ function renderAnalysis() {
       else if (d.overall <= 3.0) { ovBg = '#FCD34D'; ovText = '#303A3C'; }
       else if (d.overall <= 3.5) { ovBg = '#86EFAC'; ovText = '#303A3C'; }
       else { ovBg = '#22C55E'; ovText = '#ffffff'; }
-      html += `<td style="text-align:center;background:${ovBg};color:${ovText};font-weight:600;border-radius:4px;">${d.overall.toFixed(2)}</td>`;
-      html += `</tr>`;
+      html += `<div class="heatmap-cell" style="background:${ovBg};color:${ovText};">${d.overall.toFixed(2)}</div>`;
+      html += `</div>`;
     });
-    html += `</tbody></table></div>`;
+    html += `</div></div>`;
     html += `<div class="flex flex-wrap gap-3 mt-4" style="font-size:11px;">`;
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:3px;background:#D20015;display:inline-block;"></span> ≤2.0</span>`;
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:3px;background:#F59E0B;display:inline-block;"></span> ≤2.5</span>`;
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:3px;background:#FCD34D;display:inline-block;"></span> ≤3.0</span>`;
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:3px;background:#86EFAC;display:inline-block;"></span> ≤3.5</span>`;
-    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:3px;background:#22C55E;display:inline-block;"></span> >3.5</span>`;
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:4px;background:#D20015;display:inline-block;"></span> ≤2.0</span>`;
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:4px;background:#F59E0B;display:inline-block;"></span> ≤2.5</span>`;
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:4px;background:#FCD34D;display:inline-block;"></span> ≤3.0</span>`;
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:4px;background:#86EFAC;display:inline-block;"></span> ≤3.5</span>`;
+    html += `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:16px;height:16px;border-radius:4px;background:#22C55E;display:inline-block;"></span> >3.5</span>`;
     html += `</div>`;
   }
   html += `</div>`;
