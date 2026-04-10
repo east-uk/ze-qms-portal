@@ -1292,6 +1292,83 @@ select.apple-input {
       </div>
     </div>
   </div>
+
+  <!-- ================================================================== -->
+  <!-- STATION DETAIL PAGE (단일 상세 페이지 — 어디서든 지점 클릭 시 표시) -->
+  <!-- ================================================================== -->
+  <div id="tabStationDetail" class="tab-content hidden fade-in">
+    <!-- 뒤로 버튼 + 제목 -->
+    <div class="flex items-center gap-3 mb-6">
+      <button onclick="closeStationDetail()" class="pill-btn pill-btn-outline" style="padding:6px 14px;font-size:13px;">
+        <svg class="w-4 h-4 inline-block mr-1" style="vertical-align:-2px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>뒤로
+      </button>
+      <div>
+        <h2 id="sdTitle" class="section-title" style="margin:0;"></h2>
+        <p id="sdSubtitle" class="section-subtitle" style="margin:2px 0 0;"></p>
+      </div>
+    </div>
+
+    <!-- 심사 정보 카드 -->
+    <div id="sdAuditInfo" class="apple-card p-6 mb-6"></div>
+
+    <!-- 점검표별 평균 + 종합 평균 -->
+    <div id="sdChecklistOverview" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+
+    <!-- 2x2 그래프 그리드 (캡쳐용 — 데스크톱에서 항상 2열) -->
+    <div id="sdChartGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" style="page-break-inside:avoid;">
+      <!-- 좌상: 성숙도 평가 결과 -->
+      <div class="apple-card p-6">
+        <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">성숙도 평가 결과</h3>
+        <div style="position:relative;height:320px;"><canvas id="sdBarChart"></canvas></div>
+      </div>
+      <!-- 우상: 개선조치요구서 현황 -->
+      <div class="apple-card p-6">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin:0;">개선조치요구서 현황</h3>
+          <button id="sdCarEditBtn" onclick="toggleCarEdit()" style="background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;color:#9EA2A1;font-size:16px;transition:all 0.15s;" onmouseover="this.style.background='rgba(210,0,21,0.08)';this.style.color='#D20015'" onmouseout="this.style.background='none';this.style.color='#9EA2A1'" title="편집">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+        <!-- 차트 뷰 -->
+        <div id="sdCarChartArea" style="position:relative;height:320px;"><canvas id="sdCarChart"></canvas></div>
+        <!-- 편집 뷰 (숨김) -->
+        <div id="sdCarEditArea" class="hidden">
+          <div style="font-size:12px;color:#9EA2A1;margin-bottom:12px;">각 분야별 개선조치요구서(CAR) 건수를 입력하세요</div>
+          <div class="overflow-x-auto">
+            <table style="width:100%;font-size:13px;border-collapse:collapse;">
+              <thead><tr style="border-bottom:1px solid #C0CED1;">
+                <th style="text-align:left;padding:8px 6px;font-weight:600;color:#565A5B;">항목</th>
+                <th style="text-align:center;padding:8px 6px;font-weight:600;color:#565A5B;width:80px;">직전심사</th>
+                <th style="text-align:center;padding:8px 6px;font-weight:600;color:#D20015;width:80px;">금번심사</th>
+              </tr></thead>
+              <tbody id="sdCarInputRows"></tbody>
+            </table>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button onclick="saveCarInputs()" class="pill-btn pill-btn-primary" style="font-size:13px;padding:8px 20px;">저장</button>
+            <button onclick="toggleCarEdit()" class="pill-btn pill-btn-outline" style="font-size:13px;padding:8px 20px;">취소</button>
+          </div>
+        </div>
+      </div>
+      <!-- 좌하: 6개 항목별 평가 결과 -->
+      <div class="apple-card p-6">
+        <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">6개 항목별 평가 결과</h3>
+        <div style="position:relative;height:320px;"><canvas id="sdRadarChart"></canvas></div>
+      </div>
+      <!-- 우하: 성숙도 등급별 비중 -->
+      <div class="apple-card p-6">
+        <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">성숙도 등급별 비중</h3>
+        <div style="position:relative;height:320px;"><canvas id="sdDoughnutChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 분야별 성숙도 평점 표 -->
+    <div class="apple-card p-6 mb-6">
+      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">분야별 성숙도 평점</h3>
+      <div class="overflow-x-auto" id="sdCategoryTable"></div>
+    </div>
+  </div>
+
 </main>
 
 <!-- Mobile Bottom Tab Bar - Glass (5탭: 홈/입력/조회/인사이트/일정) -->
@@ -2662,6 +2739,12 @@ function scheduleGoBack() {
 }
 
 const CUSTOM_STATIONS_KEY = 'eastar_' + APP_ENV + '_custom_stations';
+const CAR_STORAGE_KEY = 'eastar_' + APP_ENV + '_car_data';
+
+// Station Detail state
+let stationDetailPreviousTab = 0;
+let stationDetailYear = null;
+let stationDetailStation = null;
 let customStations = [];
 
 // ============================================================================
@@ -4951,7 +5034,7 @@ function renderScoreViewTable() {
       const borderColor = completedTypes.length === Object.values(group.types).length ? '#22C55E' : completedTypes.length > 0 ? '#F59E0B' : '#C0CED1';
       mhtml += `<div class="apple-card" style="padding:14px;margin-bottom:10px;cursor:pointer;border-left:3px solid ${isDivision ? '#6366F1' : borderColor};" onclick="toggleViewDetail('${rowId}')">`;
       mhtml += `<div class="flex justify-between items-center" style="margin-bottom:8px;">`;
-      mhtml += `<div><span style="font-weight:600;font-size:15px;color:#303A3C;">${group.station}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${isDivision ? '실/본부' : group.region}</span></div>`;
+      mhtml += `<div><span style="font-size:15px;">${isDivision ? `<span style="font-weight:600;color:#303A3C;">${group.station}</span>` : stationLink(group.year, group.station)}</span><span style="font-size:11px;color:#9EA2A1;margin-left:6px;">${isDivision ? '실/본부' : group.region}</span></div>`;
       mhtml += `<span class="badge-pill" style="${status.html.match(/style="([^"]*)"/)?.[1] || ''};font-size:11px;">${status.html.match(/>([^<]*)</)?.[1] || ''}</span>`;
       mhtml += `</div>`;
       // 점수 미니 바
@@ -5032,7 +5115,7 @@ function renderScoreViewTable() {
         : (anyRecord?.auditDate || '-');
 
       html += `<tr style="cursor:pointer;" onclick="toggleViewDetail('${rowId}')">`;
-      html += `<td style="font-weight:600;">${group.station}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
+      html += `<td>${stationLink(group.year, group.station)}<div style="font-size:11px;color:#9EA2A1;">${group.region}</div></td>`;
       html += `<td style="font-size:13px;">${dateDisplay}</td>`;
       html += `<td style="font-size:13px;">${auditorVal}</td>`;
       html += `<td style="text-align:center;">${makeTypeBadge(group.types['branch'], 'branch')}</td>`;
@@ -5857,7 +5940,7 @@ function renderStatsDashboard() {
     const rankBadge = i < 3
       ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:980px;background:#D20015;color:#fff;font-size:11px;font-weight:600;">${i+1}</span>`
       : `<span style="font-weight:600;color:#565A5B;">${i+1}</span>`;
-    rankHtml += `<tr><td style="text-align:center;">${rankBadge}</td><td style="font-weight:600;">${r.station}</td><td style="color:#565A5B;">${r.region}</td><td style="text-align:center;">${r.count}</td><td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td></tr>`;
+    rankHtml += `<tr><td style="text-align:center;">${rankBadge}</td><td>${stationLink(year, r.station)}</td><td style="color:#565A5B;">${r.region}</td><td style="text-align:center;">${r.count}</td><td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td></tr>`;
   });
   rankHtml += '</tbody></table>';
   document.getElementById('rankingTable').innerHTML = rankHtml;
@@ -6080,7 +6163,7 @@ function renderStatsDashboard() {
     // 모든 연도가 null이면 표시하지 않음
     if (yearAvgs.every(a => a === null)) return;
 
-    threeYearHtml += `<tr><td style="font-weight:600;">${station}</td>`;
+    threeYearHtml += `<tr><td>${stationLink(years[2] || new Date().getFullYear(), station)}</td>`;
     yearAvgs.forEach(avg => {
       if (avg !== null) {
         threeYearHtml += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span></td>`;
@@ -7968,7 +8051,8 @@ function renderSchedule() {
         const dotHtml = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dotColor};margin-right:6px;vertical-align:middle;"></span>`;
         html += `<tr style="cursor:pointer;${rowBg}" onclick="setSchedulePhase(2,'${item.id}')">`;
         if (i === 0) html += `<td data-label="월" style="text-align:center;font-weight:600;${isCurrentMonth?'color:#D20015;':''}" rowspan="${items.length}">${m}월</td>`;
-        html += `<td data-label="대상" style="font-weight:500;${nameColor}">${dotHtml}${item.displayName || item.station}</td>`;
+        const sdIcon = (!isDivision && !isOutsourcing) ? ` <span onclick="event.stopPropagation();openStationDetail(${scheduleYear},'${item.station}')" style="cursor:pointer;color:#C0CED1;font-size:12px;vertical-align:middle;" title="상세 보기">&#9654;</span>` : '';
+        html += `<td data-label="대상" style="font-weight:500;${nameColor}">${dotHtml}${item.displayName || item.station}${sdIcon}</td>`;
         html += `<td data-label="심사원" style="font-size:12px;color:#565A5B;">${item.auditors || '-'}</td>`;
         html += `<td data-label="심사 기간" style="text-align:center;font-size:12px;">${dateStr}</td>`;
         html += `<td data-label="상태" style="text-align:center;"><span class="badge-pill" style="${getScheduleStatusBadgeStyle(statusResult.status)}">${statusResult.label}</span></td>`;
@@ -9618,8 +9702,8 @@ function renderHome() {
           scoreBadge = `<span class="badge-pill" style="background:rgba(158,162,161,0.15);color:#9EA2A1;">-</span>`;
         }
       }
-      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="switchTab(2);setTimeout(()=>{document.getElementById('viewType').value='전체';document.getElementById('viewRegion').value='전체';document.getElementById('viewTarget').value='${station}';if(document.getElementById('viewTarget')._comboRefresh)document.getElementById('viewTarget')._comboRefresh();viewSearch();},100)">`;
-      recentHtml += `<div><span style="font-weight:600;color:#303A3C;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
+      recentHtml += `<div class="flex justify-between items-center" style="padding:10px 0;border-bottom:1px solid rgba(192,206,209,0.2);cursor:pointer;" onclick="openStationDetail(${currentYear},'${station}')">`;
+      recentHtml += `<div><span style="font-weight:600;color:#D20015;">${station}</span><div style="font-size:12px;color:#9EA2A1;">${types} · ${dateDisplay}</div></div>`;
       recentHtml += `<div style="display:flex;align-items:center;gap:6px;">${scoreBadge}<svg style="width:12px;height:12px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>`;
       recentHtml += `</div>`;
     });
@@ -10054,6 +10138,466 @@ window.addEventListener('online', () => {
 });
 
 // ============================================================================
+// STATION DETAIL PAGE (v17.0.0)
+// ============================================================================
+
+const CAR_CATEGORIES = [
+  '교육 및 훈련/매뉴얼', '조직관리', '안전 및 품질관리',
+  '현장관리', '여객 협력업체 관리', '램프 협력업체 관리'
+];
+
+// --- Navigation ---
+function openStationDetail(year, station) {
+  stationDetailPreviousTab = activeTab;
+  stationDetailYear = year;
+  stationDetailStation = station;
+  // 모든 탭 숨기기
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tabStationDetail').classList.remove('hidden');
+  // 탭 스타일 비활성화
+  document.querySelectorAll('.desktop-tab').forEach(b => { b.classList.remove('tab-active'); b.classList.add('tab-inactive'); });
+  document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('mobile-tab-active'));
+  // 모바일 탭바 숨김
+  const mobileBar = document.getElementById('mobileTabBar');
+  if (mobileBar) mobileBar.style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  renderStationDetail(year, station);
+}
+
+function closeStationDetail() {
+  document.getElementById('tabStationDetail').classList.add('hidden');
+  const mobileBar = document.getElementById('mobileTabBar');
+  if (mobileBar) mobileBar.style.display = '';
+  switchTab(stationDetailPreviousTab);
+}
+
+function stationLink(year, station, displayName) {
+  const dn = displayName || station;
+  return `<span style="cursor:pointer;color:#D20015;font-weight:600;border-bottom:1px solid transparent;transition:border-color 0.15s;" onmouseover="this.style.borderBottomColor='#D20015'" onmouseout="this.style.borderBottomColor='transparent'" onclick="event.stopPropagation();openStationDetail(${year},'${station}')">${dn}</span>`;
+}
+
+// --- CAR Data ---
+function loadCarData(year, station) {
+  const all = SafeStorage.get(CAR_STORAGE_KEY, {});
+  const key = year + '_' + station;
+  if (!all[key]) {
+    const empty = {};
+    CAR_CATEGORIES.forEach(c => empty[c] = 0);
+    return { current: { ...empty }, previous: { ...empty } };
+  }
+  return all[key];
+}
+
+function saveCarData(year, station, data) {
+  const all = SafeStorage.get(CAR_STORAGE_KEY, {});
+  all[year + '_' + station] = data;
+  SafeStorage.set(CAR_STORAGE_KEY, all);
+}
+
+function toggleCarEdit() {
+  const chartArea = document.getElementById('sdCarChartArea');
+  const editArea = document.getElementById('sdCarEditArea');
+  const isEditing = !editArea.classList.contains('hidden');
+  if (isEditing) {
+    editArea.classList.add('hidden');
+    chartArea.classList.remove('hidden');
+  } else {
+    // 입력 폼 채우기
+    const carData = loadCarData(stationDetailYear, stationDetailStation);
+    let rows = '';
+    CAR_CATEGORIES.forEach(cat => {
+      rows += `<tr style="border-bottom:1px solid rgba(192,206,209,0.3);">
+        <td style="padding:8px 6px;color:#303A3C;">${cat}</td>
+        <td style="padding:8px 6px;text-align:center;"><input type="number" min="0" class="apple-input" style="width:60px;text-align:center;padding:6px;" value="${carData.previous[cat] || 0}" data-car-cat="${cat}" data-car-period="previous"></td>
+        <td style="padding:8px 6px;text-align:center;"><input type="number" min="0" class="apple-input" style="width:60px;text-align:center;padding:6px;" value="${carData.current[cat] || 0}" data-car-cat="${cat}" data-car-period="current"></td>
+      </tr>`;
+    });
+    document.getElementById('sdCarInputRows').innerHTML = rows;
+    chartArea.classList.add('hidden');
+    editArea.classList.remove('hidden');
+  }
+}
+
+function saveCarInputs() {
+  const carData = { current: {}, previous: {} };
+  document.querySelectorAll('#sdCarInputRows input').forEach(inp => {
+    const cat = inp.dataset.carCat;
+    const period = inp.dataset.carPeriod;
+    carData[period][cat] = parseInt(inp.value) || 0;
+  });
+  saveCarData(stationDetailYear, stationDetailStation, carData);
+  toggleCarEdit(); // 폼 닫기
+  // 차트 재렌더
+  renderSDCarChart(carData);
+  showToast('개선조치요구서 데이터 저장 완료', 'success');
+}
+
+// --- Data Gathering ---
+function gatherStationData(year, station) {
+  const stationRecords = allData.filter(d => d.year == year && d.station === station);
+  const branchRecord = stationRecords.find(d => d.type === 'branch');
+  const paxRecord = stationRecords.find(d => d.type === 'pax');
+  const rampRecord = stationRecords.find(d => d.type === 'ramp');
+
+  const branchResult = branchRecord ? calculateScores(branchRecord.scores, CHECKLIST_BRANCH) : null;
+  const paxResult = paxRecord ? calculateScores(paxRecord.scores, CHECKLIST_PAX) : null;
+  const rampResult = rampRecord ? calculateScores(rampRecord.scores, CHECKLIST_RAMP) : null;
+
+  // 직전 심사 데이터 탐색
+  let prevYear = null;
+  let prevBranchResult = null, prevPaxResult = null, prevRampResult = null;
+  for (let y = year - 1; y >= year - 3; y--) {
+    const prev = allData.filter(d => d.year == y && d.station === station);
+    if (prev.length > 0) {
+      prevYear = y;
+      const pb = prev.find(d => d.type === 'branch');
+      const pp = prev.find(d => d.type === 'pax');
+      const pr = prev.find(d => d.type === 'ramp');
+      prevBranchResult = pb ? calculateScores(pb.scores, CHECKLIST_BRANCH) : null;
+      prevPaxResult = pp ? calculateScores(pp.scores, CHECKLIST_PAX) : null;
+      prevRampResult = pr ? calculateScores(pr.scores, CHECKLIST_RAMP) : null;
+      break;
+    }
+  }
+
+  // 종합 평균 계산
+  const avgOf = (...vals) => {
+    const valid = vals.filter(v => v !== null && v !== undefined && !isNaN(v));
+    return valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
+  };
+
+  const currentOverall = avgOf(
+    branchResult?.overallAverage,
+    paxResult?.overallAverage,
+    rampResult?.overallAverage
+  );
+  const prevOverall = avgOf(
+    prevBranchResult?.overallAverage,
+    prevPaxResult?.overallAverage,
+    prevRampResult?.overallAverage
+  );
+
+  // 레이더 데이터 (6축)
+  const branchCats = CHECKLIST_BRANCH ? Object.keys(CHECKLIST_BRANCH) : [];
+  const radarCurrent = [
+    branchResult?.categoryAverages?.[branchCats[0]] || 0,
+    branchResult?.categoryAverages?.[branchCats[1]] || 0,
+    branchResult?.categoryAverages?.[branchCats[2]] || 0,
+    branchResult?.categoryAverages?.[branchCats[3]] || 0,
+    paxResult?.overallAverage || 0,
+    rampResult?.overallAverage || 0
+  ];
+  const radarPrev = [
+    prevBranchResult?.categoryAverages?.[branchCats[0]] || 0,
+    prevBranchResult?.categoryAverages?.[branchCats[1]] || 0,
+    prevBranchResult?.categoryAverages?.[branchCats[2]] || 0,
+    prevBranchResult?.categoryAverages?.[branchCats[3]] || 0,
+    prevPaxResult?.overallAverage || 0,
+    prevRampResult?.overallAverage || 0
+  ];
+
+  // 등급별 비중 (1~4점 분포)
+  const gradeCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+  [branchRecord, paxRecord, rampRecord].forEach(rec => {
+    if (!rec) return;
+    Object.values(rec.scores).forEach(s => {
+      const n = Number(s);
+      if ([1, 2, 3, 4].includes(n)) gradeCounts[n]++;
+    });
+  });
+  const gradeTotal = Object.values(gradeCounts).reduce((a, b) => a + b, 0);
+
+  // 심사 정보
+  const auditor = branchRecord?.auditor || paxRecord?.auditor || rampRecord?.auditor || '-';
+  const dateStart = branchRecord?.auditDateStart || paxRecord?.auditDateStart || '';
+  const dateEnd = branchRecord?.auditDateEnd || paxRecord?.auditDateEnd || '';
+  const region = branchRecord?.region || paxRecord?.region || '';
+  const paxCompany = HANDLING_COMPANIES?.pax?.[station] || paxRecord?.company || '';
+  const rampCompany = HANDLING_COMPANIES?.ramp?.[station] || rampRecord?.company || '';
+
+  return {
+    year, station, region, auditor, dateStart, dateEnd,
+    paxCompany, rampCompany,
+    branchResult, paxResult, rampResult,
+    prevYear,
+    prevBranchResult, prevPaxResult, prevRampResult,
+    currentOverall, prevOverall,
+    radarCurrent, radarPrev,
+    gradeCounts, gradeTotal,
+    carData: loadCarData(year, station)
+  };
+}
+
+// --- Main Render ---
+function renderStationDetail(year, station) {
+  const d = gatherStationData(year, station);
+
+  // 제목
+  document.getElementById('sdTitle').textContent = `${station}`;
+  document.getElementById('sdSubtitle').textContent = `${year}년 ${d.region ? '· ' + d.region : ''} 품질심사 성숙도 평가`;
+
+  // 심사 정보
+  const dateStr = d.dateStart && d.dateEnd ? `${d.dateStart} ~ ${d.dateEnd}` : (d.dateStart || '-');
+  document.getElementById('sdAuditInfo').innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">심사원</div><div style="font-size:14px;font-weight:600;color:#303A3C;">${d.auditor}</div></div>
+      <div><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">심사 기간</div><div style="font-size:14px;font-weight:600;color:#303A3C;">${dateStr}</div></div>
+      <div><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">여객 협력사</div><div style="font-size:14px;font-weight:600;color:#303A3C;">${d.paxCompany || '-'}</div></div>
+      <div><div style="font-size:12px;color:#9EA2A1;margin-bottom:4px;">램프 협력사</div><div style="font-size:14px;font-weight:600;color:#303A3C;">${d.rampCompany || '-'}</div></div>
+    </div>`;
+
+  // 점검표별 평균 카드
+  const fmtAvg = (r) => r ? r.overallAverage.toFixed(2) : '-';
+  const fmtStyle = (r) => r ? avgBadgeStyle(r.overallAverage) : 'color:#9EA2A1;';
+  const overallStr = d.currentOverall !== null ? d.currentOverall.toFixed(2) : '-';
+  const overallStyle = d.currentOverall !== null ? avgBadgeStyle(d.currentOverall) : 'color:#9EA2A1;';
+  document.getElementById('sdChecklistOverview').innerHTML = `
+    <div class="apple-card" style="padding:16px;text-align:center;">
+      <div style="font-size:12px;color:#9EA2A1;">종합 평균</div>
+      <div style="font-size:32px;font-weight:700;letter-spacing:-0.5px;${overallStyle}">${overallStr}</div>
+      <div style="font-size:11px;color:#9EA2A1;">${d.prevYear ? '직전(' + d.prevYear + ') ' + (d.prevOverall !== null ? d.prevOverall.toFixed(2) : '-') : ''}</div>
+    </div>
+    <div class="apple-card" style="padding:16px;text-align:center;">
+      <div style="font-size:12px;color:#9EA2A1;">항공사</div>
+      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.branchResult)}">${fmtAvg(d.branchResult)}</div>
+    </div>
+    <div class="apple-card" style="padding:16px;text-align:center;">
+      <div style="font-size:12px;color:#9EA2A1;">여객 협력사</div>
+      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.paxResult)}">${fmtAvg(d.paxResult)}</div>
+    </div>
+    <div class="apple-card" style="padding:16px;text-align:center;">
+      <div style="font-size:12px;color:#9EA2A1;">램프 협력사</div>
+      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.rampResult)}">${fmtAvg(d.rampResult)}</div>
+    </div>`;
+
+  // 차트 렌더
+  renderSDBarChart(d);
+  renderSDCarChart(d.carData);
+  renderSDRadarChart(d);
+  renderSDDoughnutChart(d);
+  renderSDCategoryTable(d);
+}
+
+// --- Charts ---
+function renderSDBarChart(d) {
+  ChartUtil.destroy('sdBarChart');
+  const ctx = document.getElementById('sdBarChart');
+  if (!ctx) return;
+  const hasPrev = d.prevYear !== null;
+  const datasets = [];
+  if (hasPrev) {
+    datasets.push({
+      label: `직전 심사(${d.prevYear || ''})`,
+      data: [
+        d.prevOverall !== null ? +d.prevOverall.toFixed(2) : 0,
+        d.prevBranchResult ? +d.prevBranchResult.overallAverage.toFixed(2) : 0,
+        d.prevPaxResult ? +d.prevPaxResult.overallAverage.toFixed(2) : 0,
+        d.prevRampResult ? +d.prevRampResult.overallAverage.toFixed(2) : 0
+      ],
+      backgroundColor: 'rgba(86,90,91,0.7)',
+      borderRadius: 4, barPercentage: 0.7
+    });
+  }
+  datasets.push({
+    label: `금번 심사(${d.year})`,
+    data: [
+      d.currentOverall !== null ? +d.currentOverall.toFixed(2) : 0,
+      d.branchResult ? +d.branchResult.overallAverage.toFixed(2) : 0,
+      d.paxResult ? +d.paxResult.overallAverage.toFixed(2) : 0,
+      d.rampResult ? +d.rampResult.overallAverage.toFixed(2) : 0
+    ],
+    backgroundColor: 'rgba(210,0,21,0.8)',
+    borderRadius: 4, barPercentage: 0.7
+  });
+  chartInstances['sdBarChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: ['총 평균', '항공사', '여객 협력사', '램프 협력사'], datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { min: 0, max: 4, ticks: { stepSize: 0.5, font: { size: 11 } }, grid: { color: 'rgba(192,206,209,0.3)' } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(2) || '-'}` } },
+        datalabels: false
+      }
+    }
+  });
+}
+
+function renderSDCarChart(carData) {
+  ChartUtil.destroy('sdCarChart');
+  const ctx = document.getElementById('sdCarChart');
+  if (!ctx) return;
+  const prevData = CAR_CATEGORIES.map(c => carData.previous?.[c] || 0);
+  const currData = CAR_CATEGORIES.map(c => carData.current?.[c] || 0);
+  const maxVal = Math.max(...prevData, ...currData, 3);
+  chartInstances['sdCarChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: CAR_CATEGORIES,
+      datasets: [
+        { label: '금번심사', data: currData, backgroundColor: 'rgba(210,0,21,0.8)', borderRadius: 4, barPercentage: 0.7 },
+        { label: '직전심사', data: prevData, backgroundColor: 'rgba(86,90,91,0.5)', borderRadius: 4, barPercentage: 0.7 }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { beginAtZero: true, max: maxVal + 1, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: 'rgba(192,206,209,0.3)' } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        datalabels: false
+      }
+    }
+  });
+}
+
+function renderSDRadarChart(d) {
+  ChartUtil.destroy('sdRadarChart');
+  const ctx = document.getElementById('sdRadarChart');
+  if (!ctx) return;
+  const labels = ['교육 및 훈련/매뉴얼', '조직관리', '안전 및 품질관리', '현장관리', '여객 협력업체 관리', '램프 협력업체 관리'];
+  const hasPrev = d.prevYear !== null;
+  const datasets = [{
+    label: `금번 심사(${d.year})`, data: d.radarCurrent.map(v => +v.toFixed(2)),
+    backgroundColor: 'rgba(210,0,21,0.12)', borderColor: '#D20015',
+    pointBackgroundColor: '#D20015', pointRadius: 4, borderWidth: 2, fill: true
+  }];
+  if (hasPrev) {
+    datasets.push({
+      label: `직전 심사(${d.prevYear})`, data: d.radarPrev.map(v => +v.toFixed(2)),
+      backgroundColor: 'rgba(86,90,91,0.08)', borderColor: '#9EA2A1',
+      pointBackgroundColor: '#9EA2A1', pointRadius: 3, borderWidth: 1.5, fill: true, borderDash: [4, 4]
+    });
+  }
+  chartInstances['sdRadarChart'] = new Chart(ctx, {
+    type: 'radar',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: { min: 0, max: 4, ticks: { stepSize: 1, backdropColor: 'transparent', font: { size: 9 } },
+          grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' } } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(2) || '-'}` } },
+        datalabels: false
+      }
+    }
+  });
+}
+
+function renderSDDoughnutChart(d) {
+  ChartUtil.destroy('sdDoughnutChart');
+  const ctx = document.getElementById('sdDoughnutChart');
+  if (!ctx) return;
+  const counts = [d.gradeCounts[1], d.gradeCounts[2], d.gradeCounts[3], d.gradeCounts[4]];
+  const total = d.gradeTotal || 1;
+  chartInstances['sdDoughnutChart'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['1단계', '2단계', '3단계', '4단계'],
+      datasets: [{
+        data: counts,
+        backgroundColor: ['#D20015', '#F59E0B', '#22C55E', '#3B82F6'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '50%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12,
+          generateLabels: (chart) => {
+            const data = chart.data;
+            return data.labels.map((label, i) => {
+              const val = data.datasets[0].data[i];
+              const pct = total > 0 ? ((val / total) * 100).toFixed(0) : 0;
+              return { text: `${label}: ${val}건 (${pct}%)`, fillStyle: data.datasets[0].backgroundColor[i], strokeStyle: 'transparent', lineWidth: 0, index: i };
+            });
+          }
+        }},
+        tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0; return `${ctx.label}: ${ctx.raw}건 (${pct}%)`; } } },
+        datalabels: false
+      }
+    }
+  });
+}
+
+// --- Category Table (9행) ---
+function renderSDCategoryTable(d) {
+  const branchCats = Object.keys(CHECKLIST_BRANCH);
+  const paxCats = Object.keys(CHECKLIST_PAX);
+  const rampCats = Object.keys(CHECKLIST_RAMP);
+
+  // 9행 정의: [표시명, branch카테고리키, pax카테고리키, ramp카테고리키]
+  const rows = [
+    ['교육 및 훈련, 매뉴얼', branchCats[0], paxCats[0], rampCats[0]],
+    ['조직관리', branchCats[1], paxCats[1], rampCats[1]],
+    ['안전 및 품질관리', branchCats[2], paxCats[2], rampCats[2]],
+    ['현장관리', branchCats[3], paxCats[3], null],
+    ['카운터 운영', null, paxCats[4] || null, null],
+    ['탑승구 운영', null, paxCats[5] || null, null],
+    ['도착장 운영', null, paxCats[6] || null, null],
+    ['장비관리 및 운영', null, null, rampCats[3] || null],
+    ['램프 운영', null, null, rampCats[4] || null]
+  ];
+
+  const fmt = (result, catKey) => {
+    if (!result || !catKey) return '<td style="text-align:center;color:#C0CED1;">-</td>';
+    const val = result.categoryAverages?.[catKey];
+    if (val === undefined || val === null || isNaN(val)) return '<td style="text-align:center;color:#C0CED1;">-</td>';
+    return `<td style="text-align:center;"><span style="display:inline-block;padding:2px 10px;border-radius:8px;font-weight:600;font-size:13px;${avgBadgeStyle(val)}">${val.toFixed(2)}</span></td>`;
+  };
+
+  const fmtOverall = (result) => {
+    if (!result) return '<td style="text-align:center;color:#C0CED1;">-</td>';
+    const val = result.overallAverage;
+    return `<td style="text-align:center;"><span style="display:inline-block;padding:2px 10px;border-radius:8px;font-weight:700;font-size:13px;${avgBadgeStyle(val)}">${val.toFixed(2)}</span></td>`;
+  };
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f5f5f7;border-bottom:2px solid #C0CED1;">
+      <th style="text-align:left;padding:10px 8px;font-weight:600;color:#303A3C;">항목</th>
+      <th style="text-align:center;padding:10px 8px;font-weight:600;color:#303A3C;">항공사</th>
+      <th style="text-align:center;padding:10px 8px;font-weight:600;color:#303A3C;">여객협력사</th>
+      <th style="text-align:center;padding:10px 8px;font-weight:600;color:#303A3C;">램프협력사</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach((row, idx) => {
+    const [label, bKey, pKey, rKey] = row;
+    const bVal = d.branchResult?.categoryAverages?.[bKey];
+    const pVal = d.paxResult?.categoryAverages?.[pKey];
+    const rVal = d.rampResult?.categoryAverages?.[rKey];
+    // 평균 계산 (해당 값만)
+    const vals = [bKey ? bVal : null, pKey ? pVal : null, rKey ? rVal : null].filter(v => v !== null && v !== undefined && !isNaN(v));
+    html += `<tr style="border-bottom:1px solid rgba(192,206,209,0.3);">
+      <td style="padding:10px 8px;font-weight:500;color:#303A3C;">${idx + 1}. ${label}</td>
+      ${fmt(d.branchResult, bKey)}
+      ${fmt(d.paxResult, pKey)}
+      ${fmt(d.rampResult, rKey)}
+    </tr>`;
+  });
+
+  // 평균 평점 행
+  html += `<tr style="border-top:2px solid #303A3C;background:#f5f5f7;">
+    <td style="padding:10px 8px;font-weight:700;color:#D20015;">평균 평점</td>
+    ${fmtOverall(d.branchResult)}
+    ${fmtOverall(d.paxResult)}
+    ${fmtOverall(d.rampResult)}
+  </tr>`;
+
+  html += '</tbody></table>';
+  document.getElementById('sdCategoryTable').innerHTML = html;
+}
+
+// ============================================================================
 // PUBLIC API - onclick 핸들러에서 접근 가능한 함수 노출
 // ============================================================================
 Object.assign(window, {
@@ -10101,6 +10645,9 @@ Object.assign(window, {
   showToast, showLoading, hideLoading,
   // Schedule helpers exposed for onclick in dynamic HTML
   updateScheduleStatuses, calcScheduleStatus,
+  // Station Detail
+  openStationDetail, closeStationDetail, stationLink,
+  toggleCarEdit, saveCarInputs,
   // Scoring/Utils (for dynamic HTML)
   getTypeLabel, getChecklistName, avgColor, avgBadgeStyle,
   getScheduleStatusLabels, getScheduleStatusBadgeStyle,
