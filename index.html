@@ -5070,7 +5070,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
             : catRate >= 70 ? 'background:rgba(245,158,11,0.15);color:#F59E0B'
             : 'background:rgba(210,0,21,0.15);color:#D20015';
           html += `<div class="flex justify-between" style="font-size:12px;padding:2px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
-          html += `<span style="color:#565A5B;">${shortName.substring(0, 12)}${shortName.length > 12 ? '..' : ''}</span>`;
+          html += `<span style="color:#565A5B;word-break:keep-all;">${shortName}</span>`;
           html += `<span class="badge-pill" style="${catStyle};font-size:11px;">${catRate.toFixed(0)}%</span>`;
           html += `</div>`;
         }
@@ -5092,7 +5092,7 @@ function renderGroupReadOnlyDetail(gIdx, group) {
         for (const [catName, catAvg] of Object.entries(result.categoryAverages)) {
           const shortName = catName.match(/^\d+\.\s*(.+)/)?.[1] || catName;
           html += `<div class="flex justify-between" style="font-size:12px;padding:2px 0;border-bottom:1px solid rgba(192,206,209,0.15);">`;
-          html += `<span style="color:#565A5B;">${shortName.substring(0, 15)}${shortName.length > 15 ? '...' : ''}</span>`;
+          html += `<span style="color:#565A5B;word-break:keep-all;">${shortName}</span>`;
           html += `<span class="badge-pill" style="${avgBadgeStyle(catAvg)};font-size:11px;">${catAvg.toFixed(2)}</span>`;
           html += `</div>`;
         }
@@ -5439,7 +5439,7 @@ function renderReadOnlyDetail(idx, entry) {
       const scoreText = (s === 'N/A' || s === undefined || s === null) ? 'N/A' : s;
       const scoreColor = s === 'N/A' || s === undefined ? '#9EA2A1' : (Number(s) <= 2 ? '#D20015' : '#22C55E');
       html += `<div class="flex justify-between" style="font-size:12px;padding:3px 0;border-bottom:1px solid rgba(192,206,209,0.2);">`;
-      html += `<span style="color:#565A5B;">${item.id}. ${item.text.substring(0,40)}${item.text.length > 40 ? '...' : ''}</span>`;
+      html += `<span style="color:#565A5B;word-break:keep-all;">${item.id}. ${item.text}</span>`;
       html += `<span style="font-weight:600;color:${scoreColor};margin-left:8px;flex-shrink:0;">${scoreText}</span>`;
       html += `</div>`;
     }
@@ -5858,7 +5858,7 @@ function renderStatsDashboard() {
       const itemBarW = (item.avg / 4 * 100).toFixed(0);
       weakHtml += `<div style="padding:6px 0;border-bottom:1px solid rgba(192,206,209,0.1);">`;
       weakHtml += `<div class="flex justify-between items-center">`;
-      weakHtml += `<span style="font-size:12px;color:#303A3C;flex:1;"><strong>${item.id}</strong> ${item.text.substring(0, 50)}${item.text.length > 50 ? '...' : ''}</span>`;
+      weakHtml += `<span style="font-size:12px;color:#303A3C;flex:1;word-break:keep-all;"><strong>${item.id}</strong> ${item.text}</span>`;
       weakHtml += `<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">`;
       weakHtml += `<div style="width:50px;background:#f5f5f7;border-radius:3px;height:4px;"><div style="height:4px;border-radius:3px;width:${itemBarW}%;background:${itemColor};"></div></div>`;
       weakHtml += `<span style="font-size:12px;font-weight:600;color:${itemColor};min-width:32px;text-align:right;">${item.avg.toFixed(2)}</span>`;
@@ -6183,7 +6183,7 @@ function renderDivisionStats() {
         const catRate = catRes.complianceRate;
         const catColor = catRate >= 90 ? '#22C55E' : catRate >= 70 ? '#F59E0B' : '#D20015';
         html += `<div class="flex items-center gap-2" style="margin-left:12px;margin-bottom:4px;">`;
-        html += `<div style="flex:1;font-size:12px;color:#565A5B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${catName}</div>`;
+        html += `<div style="flex:1;font-size:12px;color:#565A5B;word-break:keep-all;">${catName}</div>`;
         html += `<div style="width:60px;height:3px;background:#f0f0f0;border-radius:2px;flex-shrink:0;"><div style="height:3px;width:${catRate.toFixed(0)}%;background:${catColor};border-radius:2px;"></div></div>`;
         html += `<span style="font-size:11px;color:${catColor};min-width:36px;text-align:right;">${catRate.toFixed(0)}%</span>`;
         html += `</div>`;
@@ -6205,7 +6205,7 @@ function renderDivisionStats() {
       html += `<div style="font-size:12px;font-weight:600;color:#D20015;margin-bottom:6px;">부적합 항목 (${divUItems.length}건)</div>`;
       divUItems.forEach(u => {
         html += `<div style="font-size:12px;color:#565A5B;margin-bottom:3px;padding-left:8px;border-left:2px solid #D20015;">`;
-        html += `<span style="color:#9EA2A1;">[${getChecklistName(u.type)}]</span> ${u.item.id}. ${u.item.text.substring(0, 60)}${u.item.text.length > 60 ? '...' : ''}`;
+        html += `<span style="color:#9EA2A1;">[${getChecklistName(u.type)}]</span> <span style="word-break:keep-all;">${u.item.id}. ${u.item.text}</span>`;
         html += `</div>`;
       });
       html += `</div>`;
@@ -6873,7 +6873,7 @@ function renderAnalysis() {
     html += `<h4 style="font-size:14px;font-weight:600;color:#D20015;margin-bottom:8px;">고위험 항목 목록</h4>`;
     html += `<table class="apple-table compact-mobile"><thead><tr><th>항목</th><th style="text-align:center;">평균</th><th style="text-align:center;">2점이하 빈도</th></tr></thead><tbody>`;
     highRiskItems.forEach(r => {
-      html += `<tr><td style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 40)}${r.text.length > 40 ? '...' : ''}</td>`;
+      html += `<tr><td style="font-size:13px;word-break:keep-all;"><strong>${r.id}</strong> ${r.text}</td>`;
       html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.avg)}">${r.avg.toFixed(2)}</span></td>`;
       html += `<td style="text-align:center;font-weight:600;color:#D20015;">${r.lowCount}건 (${(r.freq * 100).toFixed(0)}%)</td></tr>`;
     });
@@ -6924,7 +6924,7 @@ function renderAnalysis() {
       const deltaColor = r.delta > 0.01 ? '#22C55E' : r.delta < -0.01 ? '#D20015' : '#9EA2A1';
       const verdict = r.delta > 0.01 ? '소폭 개선' : r.delta < -0.01 ? '악화' : '정체';
       const verdictColor = r.delta > 0.01 ? '#22C55E' : r.delta < -0.01 ? '#D20015' : '#F59E0B';
-      html += `<tr><td style="font-size:13px;"><strong>${r.id}</strong> ${r.text.substring(0, 35)}${r.text.length > 35 ? '...' : ''}</td>`;
+      html += `<tr><td style="font-size:13px;word-break:keep-all;"><strong>${r.id}</strong> ${r.text}</td>`;
       html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.prevAvg)}">${r.prevAvg.toFixed(2)}</span></td>`;
       html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(r.currAvg)}">${r.currAvg.toFixed(2)}</span></td>`;
       html += `<td style="text-align:center;color:${deltaColor};font-weight:600;">${r.delta > 0 ? '+' : ''}${r.delta.toFixed(2)}</td>`;
@@ -7052,7 +7052,7 @@ function renderAnalysis() {
   priorityItems.forEach(p => {
     const urgentColor = p.avg < 3.0 ? '#D20015' : '#303A3C';
     html += `<tr>`;
-    html += `<td style="font-size:13px;color:${urgentColor};font-weight:${p.avg < 3.0 ? '600' : '400'};">${p.cat.replace(/^\d+\.\s*/, '').substring(0, 25)}</td>`;
+    html += `<td style="font-size:13px;color:${urgentColor};font-weight:${p.avg < 3.0 ? '600' : '400'};word-break:keep-all;">${p.cat.replace(/^\d+\.\s*/, '')}</td>`;
     html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(p.avg)}">${p.avg.toFixed(2)}</span></td>`;
     html += `<td style="text-align:center;">${p.maxPoints}</td>`;
     html += `<td style="text-align:center;">${p.gap.toFixed(2)}</td>`;
@@ -7080,7 +7080,7 @@ function renderAnalysis() {
       const regionAvg = entries.reduce((s, [, v]) => s + v, 0) / entries.length;
       html += `<tr>`;
       html += `<td style="font-weight:600;">${region}</td>`;
-      html += `<td style="font-size:13px;">${weakest[0].replace(/^\d+\.\s*/, '').substring(0, 20)}</td>`;
+      html += `<td style="font-size:13px;word-break:keep-all;">${weakest[0].replace(/^\d+\.\s*/, '')}</td>`;
       html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(weakest[1])}">${weakest[1].toFixed(2)}</span></td>`;
       html += `<td style="text-align:center;"><span class="badge-pill" style="${avgBadgeStyle(regionAvg)}">${regionAvg.toFixed(2)}</span></td>`;
       html += `</tr>`;
@@ -7185,7 +7185,7 @@ function renderDivisionAnalysis() {
           const catRate = catRes.complianceRate;
           const catColor = catRate >= 90 ? '#22C55E' : catRate >= 70 ? '#F59E0B' : '#D20015';
           html += `<div class="flex items-center gap-2" style="margin-left:8px;margin-bottom:3px;">`;
-          html += `<div style="flex:1;font-size:12px;color:#565A5B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${catName}</div>`;
+          html += `<div style="flex:1;font-size:12px;color:#565A5B;word-break:keep-all;">${catName}</div>`;
           html += `<div style="width:50px;height:3px;background:#f0f0f0;border-radius:2px;flex-shrink:0;"><div style="height:3px;width:${catRate.toFixed(0)}%;background:${catColor};border-radius:2px;"></div></div>`;
           html += `<span style="font-size:11px;color:${catColor};min-width:32px;text-align:right;">${catRate.toFixed(0)}%</span>`;
           html += `</div>`;
@@ -7388,7 +7388,7 @@ function renderOutsourcingAnalysis() {
         chartInstances['outCategoryChart'] = new Chart(ctxCat, {
           type: 'bar',
           data: {
-            labels: catNames.map(c => c.length > 15 ? c.substring(0, 15) + '...' : c),
+            labels: catNames.map(c => c.length > 30 ? c.substring(0, 30) + '...' : c),
             datasets: [{ label: '적합률 (%)', data: catRates, backgroundColor: ['#D2001588', '#22C55E88', '#F59E0B88'], borderRadius: 4 }]
           },
           options: {
@@ -7589,7 +7589,7 @@ function renderPriorityChart(data) {
   const points = items.map(p => ({
     x: p.avg,
     y: p.maxPoints,
-    label: p.cat.replace(/^\d+\.\s*/, '').substring(0, 20)
+    label: p.cat.replace(/^\d+\.\s*/, '').substring(0, 30)
   }));
   chartInstances['priorityChart'] = new Chart(ctx, {
     type: 'scatter',
@@ -7623,7 +7623,7 @@ function renderRegionalRadarChart(data) {
   const regionEntries = Object.entries(data.regionCatAvgs);
   if (regionEntries.length === 0) return;
   // Get category labels from first region
-  const catLabels = Object.keys(regionEntries[0][1]).map(c => c.replace(/^\d+\.\s*/, '').substring(0, 10));
+  const catLabels = Object.keys(regionEntries[0][1]).map(c => c.replace(/^\d+\.\s*/, '').substring(0, 30));
   const regionColors = { '국내': '#D20015', '일본': '#565A5B', '동남아/중앙아시아': '#22C55E', '동북아': '#F59E0B' };
   const datasets = regionEntries.map(([region, cats]) => ({
     label: region,
