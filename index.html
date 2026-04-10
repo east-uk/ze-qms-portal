@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -575,6 +576,10 @@ select.apple-input {
 .sub-tab-active { background: #303A3C; color: #fff; }
 .sub-tab-inactive { background: rgba(158,162,161,0.12); color: #6E7273; }
 .sub-tab-inactive:hover { background: rgba(158,162,161,0.2); color: #565A5B; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.maturity-card { opacity: 0; animation: fadeSlideUp 0.3s ease forwards; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.maturity-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
+.maturity-card:active { transform: scale(0.98); }
 
 /* Compliance rate badge */
 .compliance-badge { display:inline-flex;align-items:center;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600; }
@@ -699,7 +704,7 @@ select.apple-input {
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span>v16.0</span>
+      <span>v17.1</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
@@ -725,7 +730,7 @@ select.apple-input {
         <div id="mobileUserMenu" class="hidden" style="position:absolute;right:0;top:38px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:12px 16px;min-width:180px;z-index:100;">
           <div style="font-size:13px;font-weight:600;color:#303A3C;" id="headerUserNameMobile"></div>
           <div style="font-size:11px;color:#D20015;font-weight:600;margin-top:2px;">안전기획팀</div>
-          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v16.0</div>
+          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v17.1</div>
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:8px 0;">
           <button onclick="doLogout()" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:0;">로그아웃</button>
         </div>
@@ -1087,6 +1092,7 @@ select.apple-input {
       <div id="analysisYearSegment" style="display:inline-flex;background:#f5f5f7;border-radius:980px;padding:3px;margin-top:10px;"></div>
       <div id="analysisSubTabBar" class="flex gap-2 mt-3">
         <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
+        <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('maturityResult')" id="analysisSubMaturityResult">성숙도 평가 결과</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('division')" id="analysisSubDivision">실/본부 심사</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('outsourcing')" id="analysisSubOutsourcing">외주협력업체</button>
       </div>
@@ -1117,6 +1123,7 @@ select.apple-input {
       </script>
     </div>
     <div id="branchAnalysisContent"><div id="analysisContainer"></div></div>
+    <div id="maturityResultAnalysisContent" class="hidden"></div>
     <div id="divisionAnalysisContent" class="hidden"></div>
     <div id="outsourcingAnalysisContent" class="hidden"></div>
   </div>
@@ -1397,7 +1404,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v16.0 &middot; 2026
+  안전기획팀 &middot; v17.1 &middot; 2026
 </footer>
 
 <script>
@@ -1408,7 +1415,7 @@ select.apple-input {
 // CONFIG
 // ============================================================================
 const CONFIG = {
-  version: '13.0.0',
+  version: '17.1.0',
   storage: {
     data: 'eastar_maturity_data',
     auditors: 'eastar_auditors',
@@ -6664,8 +6671,132 @@ function destroyChart(id) {
 // TAB 4: ANALYSIS (QMS/SMS)
 // ============================================================================
 
+function renderMaturityResultList() {
+  const year = parseInt(document.getElementById('analysisYear').value);
+  const container = document.getElementById('maturityResultAnalysisContent');
+  if (!container) return;
+  
+  // 해당 연도 지점 심사 데이터 수집 (branch 카테고리, grade 방식만)
+  const yearData = allData.filter(d => d.year == year && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade' && d.region !== '협력사(본사)');
+  const stationSet = new Set();
+  yearData.forEach(d => stationSet.add(d.station));
+  const stations = [...stationSet];
+  
+  if (stations.length === 0) {
+    container.innerHTML = '<div class="apple-card" style="padding:48px;text-align:center;"><svg style="width:48px;height:48px;margin:0 auto 12px;opacity:0.3;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><div style="font-size:15px;font-weight:600;color:#9EA2A1;">해당 연도에 작성된 점검표가 없습니다</div><div style="font-size:13px;color:#C0CED1;margin-top:4px;">' + year + '년 데이터가 존재하지 않습니다</div></div>';
+    return;
+  }
+  
+  // 지점별 데이터 수집
+  const stationDataList = stations.map(station => {
+    const d = gatherStationData(year, station);
+    // 지역 찾기
+    let regionName = '';
+    for (const [rn, rd] of Object.entries(REGIONS)) {
+      if (rd.stations && rd.stations.includes(station)) { regionName = rn; break; }
+    }
+    return { ...d, regionName };
+  });
+  
+  // 지역별 그룹핑 (국내 → 일본 → 동남아 → 동북아 → 기타)
+  const regionOrder = ['국내', '일본', '동남아/중앙아시아', '동북아'];
+  const grouped = {};
+  stationDataList.forEach(sd => {
+    const rn = sd.regionName || '기타';
+    if (!grouped[rn]) grouped[rn] = [];
+    grouped[rn].push(sd);
+  });
+  
+  const regionColors = { '국내': { bg: 'rgba(210,0,21,0.08)', color: '#D20015' }, '일본': { bg: 'rgba(59,130,246,0.08)', color: '#3B82F6' }, '동남아/중앙아시아': { bg: 'rgba(245,158,11,0.08)', color: '#F59E0B' }, '동북아': { bg: 'rgba(34,197,94,0.08)', color: '#22C55E' } };
+  
+  let html = '<div style="font-size:13px;color:#9EA2A1;margin-bottom:12px;">' + year + '년 · 점검 완료 지점 ' + stations.length + '개</div>';
+  let cardIdx = 0;
+  
+  const sortedRegions = [...regionOrder.filter(r => grouped[r]), ...Object.keys(grouped).filter(r => !regionOrder.includes(r))];
+  
+  sortedRegions.forEach(regionName => {
+    const items = grouped[regionName];
+    const rc = regionColors[regionName] || { bg: 'rgba(158,162,161,0.08)', color: '#9EA2A1' };
+    
+    html += '<div style="margin-bottom:8px;margin-top:16px;"><span style="font-size:12px;font-weight:600;color:#9EA2A1;letter-spacing:0.5px;text-transform:uppercase;">' + regionName + '</span></div>';
+    html += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+    
+    items.forEach(sd => {
+      const delay = cardIdx * 60;
+      const overallStr = sd.currentOverall !== null ? sd.currentOverall.toFixed(2) : '-';
+      const branchStr = sd.branchResult ? sd.branchResult.overallAverage.toFixed(2) : '-';
+      const paxStr = sd.paxResult ? sd.paxResult.overallAverage.toFixed(2) : '-';
+      const rampStr = sd.rampResult ? sd.rampResult.overallAverage.toFixed(2) : '-';
+      
+      const overallStyle = sd.currentOverall !== null ? Scoring.getBadgeStyle(sd.currentOverall) : '';
+      const branchStyle = sd.branchResult ? Scoring.getBadgeStyle(sd.branchResult.overallAverage) : '';
+      const paxStyle = sd.paxResult ? Scoring.getBadgeStyle(sd.paxResult.overallAverage) : '';
+      const rampStyle = sd.rampResult ? Scoring.getBadgeStyle(sd.rampResult.overallAverage) : '';
+      
+      // 직전 대비 변동
+      let deltaHtml = '';
+      if (sd.prevYear !== null && sd.prevOverall !== null && sd.currentOverall !== null) {
+        const delta = sd.currentOverall - sd.prevOverall;
+        const deltaStr = (delta >= 0 ? '+' : '') + delta.toFixed(2);
+        const deltaColor = delta > 0 ? '#22C55E' : delta < 0 ? '#D20015' : '#9EA2A1';
+        const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '–';
+        deltaHtml = '<div style="text-align:right;margin-top:4px;"><span style="font-size:11px;font-weight:600;color:' + deltaColor + ';">' + arrow + ' ' + deltaStr + ' vs ' + sd.prevYear + '</span></div>';
+      }
+      
+      // 프로그레스 바
+      const pctWidth = sd.currentOverall !== null ? Math.min((sd.currentOverall / 4.0) * 100, 100) : 0;
+      const barColor = sd.currentOverall !== null ? Scoring.getColor(sd.currentOverall) : '#C0CED1';
+      
+      // 심사기간 문자열
+      let dateStr = '';
+      if (sd.dateStart) {
+        const ds = sd.dateStart.replace(/-/g, '.');
+        const de = sd.dateEnd ? sd.dateEnd.replace(/-/g, '.') : '';
+        dateStr = de ? ds + ' ~ ' + de : ds;
+      }
+      
+      html += '<div class="apple-card maturity-card" style="padding:20px;animation-delay:' + delay + 'ms;" onclick="openStationDetail(' + year + ',&apos;' + sd.station + '&apos;)">';
+      // 상단: 지역배지 + 화살표
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+      html += '<span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:980px;background:' + rc.bg + ';color:' + rc.color + ';">' + regionName + '</span>';
+      html += '<svg style="width:16px;height:16px;color:#C0CED1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
+      html += '</div>';
+      // 지점명
+      html += '<div style="font-size:20px;font-weight:700;color:#303A3C;letter-spacing:-0.28px;margin-bottom:4px;">' + sd.station + '</div>';
+      // 메타 (심사원, 기간)
+      html += '<div style="font-size:12px;color:#9EA2A1;margin-bottom:16px;">' + (sd.auditor || '') + (dateStr ? ' &middot; ' + dateStr : '') + '</div>';
+      // 점수 4칸
+      html += '<div class="grid grid-cols-4 gap-2" style="margin-bottom:12px;">';
+      const scores = [
+        { label: '종합', val: overallStr, style: overallStyle },
+        { label: '항공사', val: branchStr, style: branchStyle },
+        { label: '여객', val: paxStr, style: paxStyle },
+        { label: '램프', val: rampStr, style: rampStyle }
+      ];
+      scores.forEach(s => {
+        html += '<div style="text-align:center;padding:8px 4px;border-radius:8px;' + (s.style || 'background:rgba(158,162,161,0.08);') + '">';
+        html += '<div style="font-size:10px;font-weight:500;opacity:0.7;margin-bottom:2px;">' + s.label + '</div>';
+        html += '<div style="font-size:18px;font-weight:700;">' + s.val + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      // 프로그레스 바
+      html += '<div style="height:4px;border-radius:2px;background:rgba(192,206,209,0.3);margin-bottom:4px;"><div style="height:100%;border-radius:2px;background:' + barColor + ';width:' + pctWidth + '%;transition:width 0.5s ease;"></div></div>';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;color:#C0CED1;">' + overallStr + ' / 4.00</span>' + deltaHtml + '</div>';
+      html += '</div>';
+      
+      cardIdx++;
+    });
+    
+    html += '</div>';
+  });
+  
+  container.innerHTML = html;
+}
+
 function renderAnalysis() {
   if (typeof analysisSubTab === 'undefined') window.analysisSubTab = 'branch';
+  if (analysisSubTab === 'maturityResult') { renderMaturityResultList(); return; }
   if (analysisSubTab === 'division') { renderDivisionAnalysis(); return; }
   if (analysisSubTab === 'outsourcing') { renderOutsourcingAnalysis(); return; }
   const year = parseInt(document.getElementById('analysisYear').value);
@@ -7271,7 +7402,7 @@ function renderAnalysis() {
 
 function switchAnalysisSubTab(tab) {
   window.analysisSubTab = tab;
-  const tabs = ['branch', 'division', 'outsourcing'];
+  const tabs = ['branch', 'maturityResult', 'division', 'outsourcing'];
   tabs.forEach(t => {
     const btn = document.getElementById('analysisSub' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) btn.className = t === tab ? 'sub-tab sub-tab-active' : 'sub-tab sub-tab-inactive';
@@ -10387,6 +10518,7 @@ function renderSDBarChart(d) {
   const datasets = [];
   if (hasPrev) {
     datasets.push({
+      type: 'line',
       label: `직전 심사(${d.prevYear || ''})`,
       data: [
         d.prevOverall !== null ? +d.prevOverall.toFixed(2) : 0,
@@ -10394,8 +10526,19 @@ function renderSDBarChart(d) {
         d.prevPaxResult ? +d.prevPaxResult.overallAverage.toFixed(2) : 0,
         d.prevRampResult ? +d.prevRampResult.overallAverage.toFixed(2) : 0
       ],
-      backgroundColor: 'rgba(86,90,91,0.7)',
-      borderRadius: 4, barPercentage: 0.7
+      borderColor: '#565A5B',
+      backgroundColor: 'rgba(86,90,91,0.15)',
+      borderWidth: 2,
+      borderDash: [5, 3],
+      pointBackgroundColor: '#565A5B',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      fill: false,
+      tension: 0.3,
+      order: 0,
+      datalabels: { display: true, color: '#565A5B', font: { size: 11, weight: '600' }, anchor: 'end', align: 'top', offset: 6, formatter: (v) => v ? v.toFixed(2) : '' }
     });
   }
   datasets.push({
@@ -10407,7 +10550,9 @@ function renderSDBarChart(d) {
       d.rampResult ? +d.rampResult.overallAverage.toFixed(2) : 0
     ],
     backgroundColor: 'rgba(210,0,21,0.8)',
-    borderRadius: 4, barPercentage: 0.7
+    borderRadius: 4, barPercentage: 0.7,
+    order: 1,
+    datalabels: { display: true, color: '#D20015', font: { size: 11, weight: '700' }, anchor: 'end', align: 'top', offset: 4, formatter: (v) => v ? v.toFixed(2) : '' }
   });
   chartInstances['sdBarChart'] = new Chart(ctx, {
     type: 'bar',
@@ -10421,9 +10566,10 @@ function renderSDBarChart(d) {
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
         tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(2) || '-'}` } },
-        datalabels: false
+        datalabels: { display: false }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 }
 
@@ -10439,8 +10585,10 @@ function renderSDCarChart(carData) {
     data: {
       labels: CAR_CATEGORIES,
       datasets: [
-        { label: '금번심사', data: currData, backgroundColor: 'rgba(210,0,21,0.8)', borderRadius: 4, barPercentage: 0.7 },
-        { label: '직전심사', data: prevData, backgroundColor: 'rgba(86,90,91,0.5)', borderRadius: 4, barPercentage: 0.7 }
+        { label: '금번심사', data: currData, backgroundColor: 'rgba(210,0,21,0.8)', borderRadius: 4, barPercentage: 0.7,
+          datalabels: { display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, color: '#D20015', font: { size: 10, weight: '700' }, anchor: 'end', align: 'right', offset: 4, formatter: (v) => v + '건' } },
+        { label: '직전심사', data: prevData, backgroundColor: 'rgba(86,90,91,0.5)', borderRadius: 4, barPercentage: 0.7,
+          datalabels: { display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, color: '#565A5B', font: { size: 10, weight: '600' }, anchor: 'end', align: 'right', offset: 4, formatter: (v) => v + '건' } }
       ]
     },
     options: {
@@ -10452,9 +10600,10 @@ function renderSDCarChart(carData) {
       },
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
-        datalabels: false
+        datalabels: { display: false }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 }
 
@@ -10488,9 +10637,16 @@ function renderSDRadarChart(d) {
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
         tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(2) || '-'}` } },
-        datalabels: false
+        datalabels: {
+          display: true,
+          color: (ctx) => ctx.datasetIndex === 0 ? '#D20015' : '#9EA2A1',
+          font: { size: 10, weight: '600' },
+          anchor: 'end', align: 'end', offset: 4,
+          formatter: (v) => v ? v.toFixed(2) : ''
+        }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 }
 
@@ -10507,11 +10663,15 @@ function renderSDDoughnutChart(d) {
       datasets: [{
         data: counts,
         backgroundColor: ['#D20015', '#F59E0B', '#22C55E', '#3B82F6'],
-        borderWidth: 0
+        borderWidth: 3,
+        borderColor: '#ffffff',
+        hoverOffset: 12,
+        offset: [6, 6, 6, 6],
+        spacing: 2
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false, cutout: '50%',
+      responsive: true, maintainAspectRatio: false, cutout: '45%',
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12,
           generateLabels: (chart) => {
@@ -10524,9 +10684,21 @@ function renderSDDoughnutChart(d) {
           }
         }},
         tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0; return `${ctx.label}: ${ctx.raw}건 (${pct}%)`; } } },
-        datalabels: false
+        datalabels: {
+          display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
+          color: '#303A3C',
+          font: { size: 11, weight: '700' },
+          anchor: 'center', align: 'center',
+          formatter: (value, ctx) => {
+            const t = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            if (t === 0) return '';
+            const pct = ((value / t) * 100).toFixed(0);
+            return value + '건, ' + pct + '%';
+          }
+        }
       }
-    }
+    },
+    plugins: [ChartDataLabels]
   });
 }
 
@@ -10620,7 +10792,7 @@ Object.assign(window, {
   // Stats tab
   switchStatsSubTab, renderStatsDashboard, toggleWeakDetail,
   // Analysis tab
-  switchAnalysisSubTab, renderAnalysis, toggleAnalysisDetail, closeAnalysisModal, switchInsightSegment, updateInsightSegment,
+  switchAnalysisSubTab, renderAnalysis, renderMaturityResultList, toggleAnalysisDetail, closeAnalysisModal, switchInsightSegment, updateInsightSegment,
   // Schedule tab
   renderSchedule, showScheduleStation, saveScheduleItem, setSchedulePhase, scheduleGoBack,
   showAddScheduleForm, saveNewSchedule, deleteScheduleItem,
