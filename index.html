@@ -8213,8 +8213,8 @@ function saveScheduleItem(scheduleId) {
 
   showToast('일정이 저장되었습니다.', 'success');
 
-  // Stay on Phase 2, re-render
-  showScheduleStation(scheduleId);
+  // 저장 후 상위 화면(일정 목록)으로 복귀
+  setSchedulePhase(1);
 }
 
 function showAddScheduleForm() {
