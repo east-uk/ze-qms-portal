@@ -580,6 +580,10 @@ select.apple-input {
 .maturity-card { opacity: 0; animation: fadeSlideUp 0.3s ease forwards; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .maturity-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
 .maturity-card:active { transform: scale(0.98); }
+@keyframes ddayPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.dday-pulse { animation: ddayPulse 1.5s ease-in-out infinite; }
+.dday-card { border-radius: 16px; padding: 16px; min-width: 140px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.dday-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important; }
 
 /* Compliance rate badge */
 .compliance-badge { display:inline-flex;align-items:center;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600; }
@@ -704,7 +708,7 @@ select.apple-input {
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span>v17.1</span>
+      <span>v17.2</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
@@ -730,7 +734,7 @@ select.apple-input {
         <div id="mobileUserMenu" class="hidden" style="position:absolute;right:0;top:38px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:12px 16px;min-width:180px;z-index:100;">
           <div style="font-size:13px;font-weight:600;color:#303A3C;" id="headerUserNameMobile"></div>
           <div style="font-size:11px;color:#D20015;font-weight:600;margin-top:2px;">안전기획팀</div>
-          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v17.1</div>
+          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v17.2</div>
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:8px 0;">
           <button onclick="doLogout()" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:0;">로그아웃</button>
         </div>
@@ -757,8 +761,9 @@ select.apple-input {
 
   <!-- Tab 0: Home (대시보드 우선) -->
   <div id="tab0" class="tab-content fade-in">
-    <!-- 교육 만료 알림 (최상단 배치) -->
-    <div id="homeTrainingAlerts" class="mb-4"></div>
+    <!-- 인사말 + 나의 심사 일정 (v17.2.0) -->
+    <div id="homeGreeting" class="mb-4"></div>
+    <div id="homeMySchedule" class="mb-6"></div>
 
     <!-- 빠른 실행 (최상단) -->
     <div class="mb-6">
@@ -1404,7 +1409,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v17.1 &middot; 2026
+  안전기획팀 &middot; v17.2 &middot; 2026
 </footer>
 
 <script>
@@ -1415,7 +1420,7 @@ select.apple-input {
 // CONFIG
 // ============================================================================
 const CONFIG = {
-  version: '17.1.0',
+  version: '17.2.0',
   storage: {
     data: 'eastar_maturity_data',
     auditors: 'eastar_auditors',
@@ -2978,6 +2983,7 @@ function initFirebase() {
         }
         if (userData) {
           currentUser = { uid: user.uid, empNo: emailToEmpNo(user.email), name: userData.name, role: userData.role };
+          window._myAuditorProfile = undefined; // v17.2.0: 캐시 초기화
           if (userData.mustChangePassword) {
             showForcePasswordChange();
           } else {
@@ -9700,13 +9706,6 @@ function renderHome() {
   });
   const overallAvg = totalCount > 0 ? (totalAvg / totalCount).toFixed(2) : '-';
 
-  // Training expiry alerts
-  const expiringAuditors = auditorList.filter(a => {
-    if (!a.trainingExpiry) return false;
-    const diff = (new Date(a.trainingExpiry) - new Date()) / (1000*60*60*24);
-    return diff < 90;
-  });
-
   // 실/본부 진행률 계산 — scheduleData 등록 기준
   const divisionData = yearData.filter(d => d.auditCategory === 'division');
   const completedDivisions = new Set(divisionData.map(d => d.division || d.station));
@@ -9875,21 +9874,189 @@ function renderHome() {
   }
   document.getElementById('homeUpcomingAudits').innerHTML = upcomingHtml;
 
-  // Training alerts
-  let alertHtml = '';
-  if (expiringAuditors.length > 0) {
-    alertHtml += '<div class="apple-card p-6">';
-    alertHtml += '<h3 style="font-size:17px;font-weight:600;color:#F59E0B;margin-bottom:12px;">교육 유효기간 만료 임박</h3>';
-    expiringAuditors.forEach(a => {
-      const ts = getTrainingStatus(a.trainingExpiry);
-      alertHtml += `<div class="flex justify-between items-center" style="padding:8px 0;border-bottom:1px solid rgba(192,206,209,0.2);">`;
-      alertHtml += `<div><span style="font-weight:600;">${a.name}</span><span style="font-size:12px;color:#9EA2A1;margin-left:8px;">${a.team}</span></div>`;
-      alertHtml += `<span class="badge-pill" style="${ts.style}">${ts.label}</span>`;
-      alertHtml += `</div>`;
-    });
-    alertHtml += '</div>';
+  // === v17.2.0: 인사말 + 나의 심사 일정 ===
+  renderHomeGreeting(currentYear, completedScheduledHome, totalStations);
+  renderHomeMySchedule(currentYear);
+}
+
+// ============================================================================
+// v17.2.0: 계정-심사원 매칭 + 개인화 홈
+// ============================================================================
+
+function getMyAuditorProfile() {
+  if (window._myAuditorProfile !== undefined) return window._myAuditorProfile;
+  if (!currentUser || !auditorList || auditorList.length === 0) {
+    window._myAuditorProfile = null;
+    return null;
   }
-  document.getElementById('homeTrainingAlerts').innerHTML = alertHtml;
+  // 1순위: 사번(empNo) 매칭
+  let match = currentUser.empNo ? auditorList.find(a => a.empNo && a.empNo === currentUser.empNo) : null;
+  // 2순위: 이름(name) 매칭
+  if (!match && currentUser.name) {
+    match = auditorList.find(a => a.name === currentUser.name);
+  }
+  window._myAuditorProfile = match || null;
+  return window._myAuditorProfile;
+}
+
+function getMySchedules(year) {
+  const profile = getMyAuditorProfile();
+  if (!profile) return [];
+  const myName = profile.name;
+  return scheduleData.filter(s => {
+    if (s.year != year) return false;
+    if (!s.auditors) return false;
+    const names = s.auditors.split(',').map(n => n.trim());
+    return names.includes(myName);
+  });
+}
+
+function renderHomeGreeting(currentYear, completedCount, totalCount) {
+  const el = document.getElementById('homeGreeting');
+  if (!el) return;
+  const h = new Date().getHours();
+  let greeting = '안녕하세요';
+  if (h >= 5 && h < 12) greeting = '좋은 아침이에요';
+  else if (h >= 12 && h < 18) greeting = '좋은 오후에요';
+  else greeting = '수고 많으셨어요';
+
+  const userName = currentUser ? currentUser.name : '';
+  const profile = getMyAuditorProfile();
+  const mySchedules = profile ? getMySchedules(currentYear) : [];
+
+  // 요약 문구
+  let summaryText = '';
+  if (profile && mySchedules.length > 0) {
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const upcoming = mySchedules.filter(s => {
+      if (!s.dateStart) return true;
+      const sd = new Date(s.dateStart);
+      sd.setHours(0,0,0,0);
+      return sd >= today;
+    });
+    const completedMy = mySchedules.length - upcoming.length;
+    // 가장 임박한 심사
+    let nextDday = '';
+    if (upcoming.length > 0) {
+      const sorted = upcoming.filter(s => s.dateStart).sort((a,b) => new Date(a.dateStart) - new Date(b.dateStart));
+      if (sorted.length > 0) {
+        const diff = Math.ceil((new Date(sorted[0].dateStart) - today) / (1000*60*60*24));
+        nextDday = diff === 0 ? '오늘 심사' : diff > 0 ? 'D-' + diff : 'D+' + Math.abs(diff);
+        summaryText = '다음 심사 ' + nextDday + ' \u00b7 ';
+      }
+    }
+    summaryText += '올해 완료 ' + completedMy + '건 / 예정 ' + upcoming.length + '건';
+  } else if (!profile) {
+    summaryText = '올해 심사 진행률 ' + (totalCount > 0 ? Math.round(completedCount/totalCount*100) : 0) + '% (' + completedCount + '/' + totalCount + ')';
+  } else {
+    summaryText = '올해 배정된 심사 일정이 없습니다';
+  }
+
+  el.innerHTML = '<div style="padding:20px 24px;background:linear-gradient(135deg,#303A3C 0%,#1a2122 100%);border-radius:16px;color:#fff;">' +
+    '<div style="font-size:20px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px;">' + greeting + ', ' + (userName || '사용자') + '님</div>' +
+    '<div style="font-size:13px;color:rgba(255,255,255,0.6);font-weight:400;">' + summaryText + '</div>' +
+    '</div>';
+}
+
+function renderHomeMySchedule(currentYear) {
+  const el = document.getElementById('homeMySchedule');
+  if (!el) return;
+
+  const profile = getMyAuditorProfile();
+  if (!profile) { el.innerHTML = ''; return; }
+
+  const mySchedules = getMySchedules(currentYear);
+  if (mySchedules.length === 0) { el.innerHTML = ''; return; }
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // D-day 계산 및 완료 여부 확인
+  const items = mySchedules.map(s => {
+    const hasData = allData.some(d => d.year == currentYear && d.station === s.station && d.auditCategory === 'branch');
+    const startDate = s.dateStart ? new Date(s.dateStart) : null;
+    let dday = null;
+    if (startDate) {
+      startDate.setHours(0,0,0,0);
+      dday = Math.ceil((startDate - today) / (1000*60*60*24));
+    }
+    // 완료 심사 점수
+    let avgScore = null;
+    if (hasData) {
+      const records = allData.filter(d => d.year == currentYear && d.station === s.station && d.auditCategory === 'branch' && getScoringMethod(d.type) === 'grade');
+      let sum = 0, cnt = 0;
+      records.forEach(d => {
+        const r = calculateScores(d.scores, getChecklist(d.type));
+        if (r.totalItems > 0 && !isNaN(r.overallAverage)) { sum += r.overallAverage; cnt++; }
+      });
+      if (cnt > 0) avgScore = sum / cnt;
+    }
+    return { ...s, dday, hasData, avgScore };
+  });
+
+  // 정렬: 미완료(D-day 임박순) → 완료(최근순)
+  const pending = items.filter(i => !i.hasData).sort((a,b) => (a.dday ?? 999) - (b.dday ?? 999));
+  const done = items.filter(i => i.hasData).sort((a,b) => {
+    const da = a.dateStart ? new Date(a.dateStart) : new Date(0);
+    const db = b.dateStart ? new Date(b.dateStart) : new Date(0);
+    return db - da;
+  });
+  const sorted = [...pending, ...done].slice(0, 4);
+
+  let html = '<div class="apple-card" style="padding:20px;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+  html += '<h3 style="font-size:17px;font-weight:600;color:#303A3C;margin:0;">나의 심사 일정</h3>';
+  html += '<span style="font-size:13px;color:#D20015;cursor:pointer;font-weight:500;" onclick="switchTab(5)">전체 보기 &rsaquo;</span>';
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">';
+
+  sorted.forEach(item => {
+    const isComplete = item.hasData;
+    let ddayLabel = '', ddayColor = '', extraClass = '';
+
+    if (isComplete) {
+      ddayLabel = '<svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" fill="#22C55E" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>완료';
+      ddayColor = '#9EA2A1';
+    } else if (item.dday !== null) {
+      if (item.dday <= 0) {
+        ddayLabel = item.dday === 0 ? 'D-Day' : 'D+' + Math.abs(item.dday);
+        ddayColor = '#D20015'; extraClass = ' dday-pulse';
+      } else if (item.dday <= 7) {
+        ddayLabel = 'D-' + item.dday;
+        ddayColor = '#D20015'; extraClass = ' dday-pulse';
+      } else if (item.dday <= 30) {
+        ddayLabel = 'D-' + item.dday;
+        ddayColor = '#F59E0B';
+      } else {
+        ddayLabel = 'D-' + item.dday;
+        ddayColor = '#22C55E';
+      }
+    } else {
+      ddayLabel = '일정 미정';
+      ddayColor = '#9EA2A1';
+    }
+
+    const bgColor = isComplete ? 'rgba(158,162,161,0.06)' : (item.dday !== null && item.dday <= 7 ? 'rgba(210,0,21,0.04)' : 'rgba(192,206,209,0.08)');
+    const dateStr = item.dateStart ? item.dateStart.substring(5).replace('-', '.') + (item.dateEnd ? '~' + item.dateEnd.substring(5).replace('-', '.') : '') : '미정';
+
+    html += '<div class="dday-card' + extraClass + '" style="background:' + bgColor + ';flex:0 0 auto;min-width:150px;" onclick="openStationDetail(' + currentYear + ',&apos;' + item.station + '&apos;)">';
+    html += '<div style="font-size:24px;font-weight:800;color:' + ddayColor + ';letter-spacing:-0.5px;margin-bottom:8px;">' + ddayLabel + '</div>';
+    html += '<div style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:4px;">' + item.station + '</div>';
+    html += '<div style="font-size:12px;color:#9EA2A1;margin-bottom:8px;">' + dateStr + '</div>';
+
+    if (isComplete && item.avgScore !== null) {
+      html += '<div class="badge-pill" style="' + Scoring.getBadgeStyle(item.avgScore) + 'font-size:12px;font-weight:600;">' + item.avgScore.toFixed(2) + '점</div>';
+    } else if (!isComplete) {
+      html += '<div style="font-size:12px;color:#D20015;font-weight:500;">상세 &rsaquo;</div>';
+    }
+
+    html += '</div>';
+  });
+
+  html += '</div></div>';
+  el.innerHTML = html;
 }
 
 // ============================================================================
@@ -10812,7 +10979,8 @@ Object.assign(window, {
   doLogin, doLogout, doAdminSetup, doPasswordChange, doForcePasswordChange, showPasswordChange, showLoginForm, showForcePasswordChange, toggleMobileUserMenu,
   createNewUser, changeUserRole, deleteUser, hasRole, requireRole,
   // Home
-  renderHome, renderInputPendingStations, renderViewRecentStations,
+  renderHome, renderHomeGreeting, renderHomeMySchedule, getMyAuditorProfile, getMySchedules,
+  renderInputPendingStations, renderViewRecentStations,
   // UI
   showToast, showLoading, hideLoading,
   // Schedule helpers exposed for onclick in dynamic HTML
