@@ -10926,13 +10926,13 @@ function renderDivBarChart(d) {
       data: [d.prevQaRate || 0, d.prevSafetyRate || 0, d.prevFsdsRate || 0],
       borderColor: '#565A5B', backgroundColor: 'rgba(86,90,91,0.15)', borderWidth: 2, borderDash: [5, 3],
       pointBackgroundColor: '#565A5B', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5, fill: false, tension: 0.3, order: 0,
-      datalabels: { display: true, color: '#565A5B', font: { size: 11, weight: '600' }, anchor: 'end', align: 'top', offset: 6, formatter: (v) => v ? v.toFixed(1) + '%' : '' }
+      datalabels: { display: true, color: '#fff', font: { size: 11, weight: '700' }, anchor: 'center', align: 'center', formatter: (v) => v ? v.toFixed(1) + '%' : '' }
     });
   }
   datasets.push({
     label: '금번(' + d.year + ')', data: currData,
     backgroundColor: 'rgba(210,0,21,0.8)', borderRadius: 4, barPercentage: 0.7, order: 1,
-    datalabels: { display: true, color: '#D20015', font: { size: 11, weight: '700' }, anchor: 'end', align: 'top', offset: 4, formatter: (v) => v ? v.toFixed(1) + '%' : '' }
+    datalabels: { display: true, color: '#fff', font: { size: 11, weight: '700' }, anchor: 'center', align: 'center', formatter: (v) => v ? v.toFixed(1) + '%' : '' }
   });
   chartInstances['sdBarChart'] = new Chart(ctx, {
     type: 'bar', data: { labels, datasets },
@@ -11023,8 +11023,12 @@ function renderDivRadarChart(d) {
   const ctx = document.getElementById('sdRadarChart');
   if (!ctx || !d.safetyResult) return;
   const cats = Object.keys(d.safetyResult.categoryResults);
-  const labels = cats.map(c => c.length > 10 ? c.substring(0, 10) + '..' : c);
   const currData = cats.map(c => d.safetyResult.categoryResults[c].complianceRate);
+  // pointLabels에 적합률 포함 (겹침 방지)
+  const labels = cats.map((c, i) => {
+    const shortName = c.length > 8 ? c.substring(0, 8) + '..' : c;
+    return shortName + ' ' + currData[i].toFixed(0) + '%';
+  });
   const datasets = [{
     label: '금번(' + d.year + ')', data: currData,
     backgroundColor: 'rgba(210,0,21,0.12)', borderColor: '#D20015',
@@ -11046,14 +11050,13 @@ function renderDivRadarChart(d) {
     type: 'radar', data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
-      scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, backdropColor: 'transparent', font: { size: 8 }, callback: v => v + '%' }, grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' }, padding: 8 } } },
+      layout: { padding: { top: 20, bottom: 10, left: 20, right: 20 } },
+      scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, backdropColor: 'transparent', font: { size: 8 }, callback: v => v + '%' }, grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' }, color: '#303A3C', padding: 12 } } },
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
-        datalabels: { display: (ctx) => ctx.datasetIndex === 0, color: '#D20015', font: { size: 10, weight: '700' }, anchor: 'end', align: 'end', offset: 6, formatter: v => v ? v.toFixed(0) + '%' : '' }
+        datalabels: false
       }
-    },
-    plugins: [ChartDataLabels]
+    }
   });
 }
 
