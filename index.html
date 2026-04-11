@@ -1374,9 +1374,9 @@ select.apple-input {
       </div>
     </div>
 
-    <!-- 분야별 성숙도 평점 표 -->
+    <!-- 분야별 성숙도 평점 표 / 실본부: 카테고리별 상세 -->
     <div class="apple-card p-6 mb-6">
-      <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">분야별 성숙도 평점</h3>
+      <h3 id="sdCategoryTitle" style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">분야별 성숙도 평점</h3>
       <div class="overflow-x-auto" id="sdCategoryTable"></div>
     </div>
   </div>
@@ -10785,6 +10785,9 @@ function gatherDivisionData(year, division) {
 }
 
 function renderDivisionDetail(year, division) {
+  // 원본 지점 HTML 저장 (최초 1회)
+  _saveStationDetailOriginalHTML();
+
   const d = gatherDivisionData(year, division);
   if (!d) return;
 
@@ -10831,6 +10834,10 @@ function renderDivisionDetail(year, division) {
       '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">S/U/NA 분포</h3><div style="height:220px;"><canvas id="sdDoughnutChart"></canvas></div></div>' +
       '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">안전감사 영역별</h3><div style="height:220px;"><canvas id="sdRadarChart"></canvas></div></div>';
   }
+
+  // 실/본부: 제목 숨김 (sdCategoryTable 안에 자체 헤딩 생성)
+  const catTitle = document.getElementById('sdCategoryTitle');
+  if (catTitle) catTitle.style.display = 'none';
 
   // 차트 1: 점검표별 적합률 (Bar + Line)
   renderDivBarChart(d);
@@ -11025,9 +11032,32 @@ function renderDivRadarChart(d) {
   });
 }
 
+// v17.3.0: 원본 지점 차트 HTML 저장 (최초 1회)
+let _sdChartGridOriginalHTML = null;
+let _sdCategoryAreaOriginalHTML = null;
+
+function _saveStationDetailOriginalHTML() {
+  const cg = document.getElementById('sdChartGrid');
+  const ca = cg?.closest('.tab-content, #tabStationDetail')?.querySelector('.apple-card.p-6.mb-6:last-of-type');
+  if (!_sdChartGridOriginalHTML && cg) _sdChartGridOriginalHTML = cg.innerHTML;
+  if (!_sdCategoryAreaOriginalHTML && ca) _sdCategoryAreaOriginalHTML = ca.innerHTML;
+}
+
+function _restoreStationDetailHTML() {
+  if (_sdChartGridOriginalHTML) {
+    const cg = document.getElementById('sdChartGrid');
+    if (cg) cg.innerHTML = _sdChartGridOriginalHTML;
+  }
+}
+
 function renderStationDetail(year, station) {
   // v17.3.0: 실/본부이면 전용 상세 페이지
   if (DIVISIONS[station]) { renderDivisionDetail(year, station); return; }
+
+  // 지점: 원본 차트 HTML 복원 (실/본부 뷰에서 돌아올 때)
+  _saveStationDetailOriginalHTML();
+  _restoreStationDetailHTML();
+
   const d = gatherStationData(year, station);
 
   // 제목
@@ -11067,6 +11097,10 @@ function renderStationDetail(year, station) {
       <div style="font-size:12px;color:#9EA2A1;">램프 협력사</div>
       <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.rampResult)}">${fmtAvg(d.rampResult)}</div>
     </div>`;
+
+  // 지점: 제목 복원 + 표시
+  const catTitle = document.getElementById('sdCategoryTitle');
+  if (catTitle) { catTitle.textContent = '분야별 성숙도 평점'; catTitle.style.display = ''; }
 
   // 차트 렌더
   renderSDBarChart(d);
