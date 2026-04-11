@@ -10038,43 +10038,44 @@ function renderHomeMySchedule(currentYear) {
     return;
   }
 
-  // 제목 행: 최근 완료 (더보기) | 다가오는 심사 (전체)
+  // 레이아웃: 완료 컬럼(제목+카드) + 구분선 + 다가오는 컬럼(제목+카드들)
   html += '<div class="apple-card" style="padding:20px;">';
-  html += '<div style="display:flex;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;">';
-  if (done.length > 0) {
-    html += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:980px;background:rgba(34,197,94,0.1);color:#22C55E;">최근 완료</span>';
-    html += '<span style="font-size:11px;color:#D20015;cursor:pointer;font-weight:500;" onclick="switchTab(2)">더보기 &rsaquo;</span>';
-  }
-  if (done.length > 0 && pending.length > 0) {
-    html += '<span style="color:#C0CED1;margin:0 4px;">|</span>';
-  }
-  if (pending.length > 0) {
-    html += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:980px;background:rgba(210,0,21,0.08);color:#D20015;">다가오는 심사</span>';
-    html += '<span style="font-size:11px;color:#D20015;cursor:pointer;font-weight:500;" onclick="switchTab(5)">전체 &rsaquo;</span>';
-  }
-  html += '</div>';
-
-  // 카드 행: 한 줄로 완료1건 + 구분선 + 다가오는 N건
   html += '<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;align-items:stretch;">';
 
-  // 최근 완료 1건
+  // ── 왼쪽 컬럼: 최근 완료 ──
   if (done.length > 0) {
+    html += '<div style="flex:0 0 auto;min-width:150px;display:flex;flex-direction:column;">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">';
+    html += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:980px;background:rgba(34,197,94,0.1);color:#22C55E;">최근 완료</span>';
+    html += '<span style="font-size:11px;color:#D20015;cursor:pointer;font-weight:500;" onclick="switchTab(2)">더보기 &rsaquo;</span>';
+    html += '</div>';
     html += renderDdayCard(done[0]);
+    html += '</div>';
   }
 
-  // 구분선 (데스크톱)
+  // 구분선
   if (done.length > 0 && pending.length > 0) {
     html += '<div class="hidden md:block" style="width:1px;background:rgba(192,206,209,0.3);flex:0 0 1px;margin:0 4px;"></div>';
   }
 
-  // 다가오는 심사 (모바일 1건, 데스크톱 최대 3건)
-  pending.slice(0, 3).forEach((item, idx) => {
-    if (idx === 0) {
-      html += renderDdayCard(item);
-    } else {
-      html += '<div class="hidden md:block" style="flex:0 0 auto;">' + renderDdayCard(item) + '</div>';
-    }
-  });
+  // ── 오른쪽 컬럼: 다가오는 심사 ──
+  if (pending.length > 0) {
+    html += '<div style="flex:1 1 auto;display:flex;flex-direction:column;min-width:0;">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">';
+    html += '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:980px;background:rgba(210,0,21,0.08);color:#D20015;">다가오는 심사</span>';
+    html += '<span style="font-size:11px;color:#D20015;cursor:pointer;font-weight:500;" onclick="switchTab(5)">전체 &rsaquo;</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;">';
+    pending.slice(0, 3).forEach((item, idx) => {
+      if (idx === 0) {
+        html += renderDdayCard(item);
+      } else {
+        html += '<div class="hidden md:block" style="flex:0 0 auto;">' + renderDdayCard(item) + '</div>';
+      }
+    });
+    html += '</div>';
+    html += '</div>';
+  }
 
   html += '</div></div>';
   el.innerHTML = html;
