@@ -10931,13 +10931,17 @@ function renderSDCategoryTable(d) {
       <th style="text-align:center;padding:10px 8px;font-weight:600;color:#303A3C;">램프협력사</th>
     </tr></thead><tbody>`;
 
+  // 카테고리 평균 수집 (항목의 평균의 총평균 계산용)
+  const branchCatAvgs = [], paxCatAvgs = [], rampCatAvgs = [];
+
   rows.forEach((row, idx) => {
     const [label, bKey, pKey, rKey] = row;
     const bVal = d.branchResult?.categoryAverages?.[bKey];
     const pVal = d.paxResult?.categoryAverages?.[pKey];
     const rVal = d.rampResult?.categoryAverages?.[rKey];
-    // 평균 계산 (해당 값만)
-    const vals = [bKey ? bVal : null, pKey ? pVal : null, rKey ? rVal : null].filter(v => v !== null && v !== undefined && !isNaN(v));
+    if (bKey && bVal !== undefined && bVal !== null && !isNaN(bVal)) branchCatAvgs.push(bVal);
+    if (pKey && pVal !== undefined && pVal !== null && !isNaN(pVal)) paxCatAvgs.push(pVal);
+    if (rKey && rVal !== undefined && rVal !== null && !isNaN(rVal)) rampCatAvgs.push(rVal);
     html += `<tr style="border-bottom:1px solid rgba(192,206,209,0.3);">
       <td style="padding:10px 8px;font-weight:500;color:#303A3C;">${idx + 1}. ${label}</td>
       ${fmt(d.branchResult, bKey)}
@@ -10946,12 +10950,20 @@ function renderSDCategoryTable(d) {
     </tr>`;
   });
 
-  // 평균 평점 행
+  // 평균 평점 행 — 카테고리 평균들의 총평균
+  const catAvg = (arr) => {
+    if (arr.length === 0) return null;
+    return arr.reduce((s, v) => s + v, 0) / arr.length;
+  };
+  const fmtCatAvg = (avg) => {
+    if (avg === null) return '<td style="text-align:center;color:#C0CED1;">-</td>';
+    return `<td style="text-align:center;"><span style="display:inline-block;padding:2px 10px;border-radius:8px;font-weight:700;font-size:13px;${avgBadgeStyle(avg)}">${avg.toFixed(2)}</span></td>`;
+  };
   html += `<tr style="border-top:2px solid #303A3C;background:#f5f5f7;">
     <td style="padding:10px 8px;font-weight:700;color:#D20015;">평균 평점</td>
-    ${fmtOverall(d.branchResult)}
-    ${fmtOverall(d.paxResult)}
-    ${fmtOverall(d.rampResult)}
+    ${fmtCatAvg(catAvg(branchCatAvgs))}
+    ${fmtCatAvg(catAvg(paxCatAvgs))}
+    ${fmtCatAvg(catAvg(rampCatAvgs))}
   </tr>`;
 
   html += '</tbody></table>';
