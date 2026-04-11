@@ -708,7 +708,7 @@ select.apple-input {
       <span id="headerUserName" style="color:rgba(255,255,255,0.8);font-weight:500;"></span>
       <span style="color:#D20015;font-weight:600;">안전기획팀</span>
       <span id="envBadge" style="display:inline-block;border-radius:980px;padding:1px 8px;font-size:10px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span>v17.3</span>
+      <span>v18.0</span>
       <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:980px;padding:2px 10px;font-size:11px;cursor:pointer;">로그아웃</button>
     </div>
@@ -734,7 +734,7 @@ select.apple-input {
         <div id="mobileUserMenu" class="hidden" style="position:absolute;right:0;top:38px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);padding:12px 16px;min-width:180px;z-index:100;">
           <div style="font-size:13px;font-weight:600;color:#303A3C;" id="headerUserNameMobile"></div>
           <div style="font-size:11px;color:#D20015;font-weight:600;margin-top:2px;">안전기획팀</div>
-          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v17.3</div>
+          <div style="font-size:10px;color:#6E7273;margin-top:4px;">v18.0</div>
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:8px 0;">
           <button onclick="doLogout()" style="background:none;border:none;color:#D20015;font-size:13px;cursor:pointer;padding:0;">로그아웃</button>
         </div>
@@ -747,11 +747,9 @@ select.apple-input {
 <nav class="desktop-tabs glass-nav sticky z-40" style="top:52px;">
   <div class="max-w-7xl mx-auto px-4 flex gap-0 overflow-x-auto">
     <button onclick="switchTab(0)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-active" data-tab="0" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">홈</button>
-    <button onclick="switchTab(1)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="1" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">점수 입력</button>
-    <button onclick="switchTab(2)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="2" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">점수 조회</button>
-    <button onclick="switchTab(3)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="3" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">통계</button>
-    <button onclick="switchTab(4)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="4" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">분석</button>
-    <button onclick="switchTab(5)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="5" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">심사 일정</button>
+    <button onclick="switchTab(1)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="1" data-tab-alt="2" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">점검</button>
+    <button onclick="switchTab(3)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="3" data-tab-alt="4" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">인사이트</button>
+    <button onclick="switchTab(5)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="5" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">일정</button>
     <button onclick="switchTab(6)" class="desktop-tab px-5 py-2.5 whitespace-nowrap tab-inactive" data-tab="6" style="font-size:13px;font-weight:400;letter-spacing:-0.224px;background:none;border:none;cursor:pointer;">관리</button>
   </div>
 </nav>
@@ -790,6 +788,14 @@ select.apple-input {
 
   <!-- Tab 1: Score Input (4-Phase Workflow) -->
   <div id="tab1" class="tab-content hidden fade-in">
+
+    <!-- v18.0.0: 점검 세그먼트 (입력/조회) -->
+    <div id="checkSegment1" class="mb-4">
+      <div style="display:inline-flex;background:rgba(17,17,17,0.06);border-radius:980px;padding:3px;">
+        <button id="checkSegInput1" onclick="switchCheckSegment('input')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;">입력</button>
+        <button id="checkSegView1" onclick="switchCheckSegment('view')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;">조회</button>
+      </div>
+    </div>
 
     <!-- Navigation Bar (hidden in Phase 1) -->
     <div id="inputNavBar" class="hidden flex items-center gap-3 mb-4">
@@ -918,6 +924,14 @@ select.apple-input {
   <!-- Tab 2: Score View (2-Phase: Filter → Results) -->
   <div id="tab2" class="tab-content hidden fade-in">
 
+    <!-- v18.0.0: 점검 세그먼트 (입력/조회) -->
+    <div id="checkSegment2" class="mb-4">
+      <div style="display:inline-flex;background:rgba(17,17,17,0.06);border-radius:980px;padding:3px;">
+        <button id="checkSegInput2" onclick="switchCheckSegment('input')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;">입력</button>
+        <button id="checkSegView2" onclick="switchCheckSegment('view')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;">조회</button>
+      </div>
+    </div>
+
     <!-- Navigation Bar (hidden in filter phase) -->
     <div id="viewNavBar" class="hidden flex items-center gap-3 mb-4">
       <button onclick="viewGoBack()" class="pill-btn pill-btn-outline" style="padding:6px 14px;font-size:13px;">
@@ -1010,7 +1024,7 @@ select.apple-input {
   <!-- Tab 3: Statistics -->
   <div id="tab3" class="tab-content hidden fade-in">
     <!-- 모바일 인사이트 세그먼트 (통계/분석 전환) -->
-    <div id="insightSegment" class="md:hidden mb-4" style="display:none;">
+    <div id="insightSegment" class="mb-4" style="display:none;">
       <div style="display:inline-flex;background:rgba(17,17,17,0.06);border-radius:980px;padding:3px;">
         <button id="insightSegStats" onclick="switchInsightSegment('stats')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;">통계</button>
         <button id="insightSegAnalysis" onclick="switchInsightSegment('analysis')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;">분석</button>
@@ -1085,7 +1099,7 @@ select.apple-input {
   <!-- Tab 4: Analysis -->
   <div id="tab4" class="tab-content hidden fade-in">
     <!-- 모바일 인사이트 세그먼트 (통계/분석 전환) -->
-    <div id="insightSegment2" class="md:hidden mb-4" style="display:none;">
+    <div id="insightSegment2" class="mb-4" style="display:none;">
       <div style="display:inline-flex;background:rgba(17,17,17,0.06);border-radius:980px;padding:3px;">
         <button id="insightSegStats2" onclick="switchInsightSegment('stats')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;">통계</button>
         <button id="insightSegAnalysis2" onclick="switchInsightSegment('analysis')" style="border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;">분석</button>
@@ -1389,13 +1403,9 @@ select.apple-input {
     <svg class="w-5 h-5" style="color:#D20015;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
     <span style="font-size:11px;margin-top:2px;color:#D20015;font-weight:600;letter-spacing:-0.224px;">홈</span>
   </button>
-  <button onclick="switchTab(1)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="1" style="background:none;border:none;cursor:pointer;min-height:44px;">
-    <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-    <span style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.45);letter-spacing:-0.224px;">입력</span>
-  </button>
-  <button onclick="switchTab(2)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="2" style="background:none;border:none;cursor:pointer;min-height:44px;">
-    <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-    <span style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.45);letter-spacing:-0.224px;">조회</span>
+  <button onclick="switchTab(1)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="1" data-tab-alt="2" style="background:none;border:none;cursor:pointer;min-height:44px;">
+    <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+    <span style="font-size:11px;margin-top:2px;color:rgba(255,255,255,0.45);letter-spacing:-0.224px;">점검</span>
   </button>
   <button onclick="switchTab(3)" class="mobile-tab flex flex-col items-center justify-center py-1 px-2 min-w-0 flex-1" data-tab="3" data-tab-alt="4" style="background:none;border:none;cursor:pointer;min-height:44px;">
     <svg class="w-5 h-5" style="color:rgba(255,255,255,0.45);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -1409,7 +1419,7 @@ select.apple-input {
 
 <!-- Footer (desktop) -->
 <footer class="hidden md:block text-center py-4" style="font-size:12px;color:#9EA2A1;letter-spacing:-0.224px;">
-  안전기획팀 &middot; v17.3 &middot; 2026
+  안전기획팀 &middot; v18.0 &middot; 2026
 </footer>
 
 <script>
@@ -1420,7 +1430,7 @@ select.apple-input {
 // CONFIG
 // ============================================================================
 const CONFIG = {
-  version: '17.3.0',
+  version: '18.0.0',
   storage: {
     data: 'eastar_maturity_data',
     auditors: 'eastar_auditors',
@@ -3857,12 +3867,15 @@ function switchTab(idx) {
   // Hide all
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.getElementById('tab' + idx).classList.remove('hidden');
-  // Desktop tabs
+  // Desktop tabs (v18.0.0: data-tab-alt 지원)
   document.querySelectorAll('.desktop-tab').forEach(btn => {
+    const tabId = parseInt(btn.dataset.tab);
+    const tabAlt = btn.dataset.tabAlt ? parseInt(btn.dataset.tabAlt) : -1;
+    const isActive = (tabId === idx) || (tabAlt === idx);
     btn.className = btn.className.replace(/tab-(active|inactive)/g, '');
-    btn.classList.add(btn.dataset.tab == idx ? 'tab-active' : 'tab-inactive');
+    btn.classList.add(isActive ? 'tab-active' : 'tab-inactive');
   });
-  // Mobile tabs (5탭: 인사이트=tab3+tab4 통합)
+  // Mobile tabs (v18.0.0: 점검+인사이트 data-tab-alt)
   document.querySelectorAll('.mobile-tab').forEach(btn => {
     const tabId = parseInt(btn.dataset.tab);
     const tabAlt = btn.dataset.tabAlt ? parseInt(btn.dataset.tabAlt) : -1;
@@ -3909,7 +3922,8 @@ function switchTab(idx) {
   if (idx === 4) renderAnalysis();
   if (idx === 5) { schedulePhase = 1; currentScheduleId = null; renderSchedule(); } // reset without history push (switchTab already records)
   if (idx === 6) renderDataManagement();
-  // 모바일 인사이트 세그먼트 업데이트
+  // v18.0.0: 세그먼트 업데이트
+  updateCheckSegment(idx);
   updateInsightSegment(idx);
 }
 
@@ -9626,30 +9640,37 @@ function switchInsightSegment(mode) {
   }
 }
 
-// 모바일에서 tab3/tab4 진입 시 인사이트 세그먼트 표시
+// v18.0.0: tab3/tab4 진입 시 인사이트 세그먼트 표시 (데스크톱+모바일)
 function updateInsightSegment(idx) {
-  const isMobile = window.innerWidth < 768;
   const seg1 = document.getElementById('insightSegment');
   const seg2 = document.getElementById('insightSegment2');
   if (!seg1 || !seg2) return;
-  if (isMobile && (idx === 3 || idx === 4)) {
+  if (idx === 3 || idx === 4) {
     seg1.style.display = (idx === 3) ? '' : 'none';
     seg2.style.display = (idx === 4) ? '' : 'none';
-    // 세그먼트 버튼 상태 업데이트
-    const statsBtn1 = document.getElementById('insightSegStats');
-    const analysisBtn1 = document.getElementById('insightSegAnalysis');
-    const statsBtn2 = document.getElementById('insightSegStats2');
-    const analysisBtn2 = document.getElementById('insightSegAnalysis2');
-    const activeStyle = 'background:#D20015;color:#fff;';
-    const inactiveStyle = 'background:transparent;color:#565A5B;';
-    if (statsBtn1) statsBtn1.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 3 ? activeStyle : inactiveStyle);
-    if (analysisBtn1) analysisBtn1.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 4 ? activeStyle : inactiveStyle);
-    if (statsBtn2) statsBtn2.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 3 ? activeStyle : inactiveStyle);
-    if (analysisBtn2) analysisBtn2.style.cssText = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;' + (idx === 4 ? activeStyle : inactiveStyle);
+    const activeStyle = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;';
+    const inactiveStyle = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;';
+    ['insightSegStats', 'insightSegStats2'].forEach(id => { const b = document.getElementById(id); if (b) b.style.cssText = idx === 3 ? activeStyle : inactiveStyle; });
+    ['insightSegAnalysis', 'insightSegAnalysis2'].forEach(id => { const b = document.getElementById(id); if (b) b.style.cssText = idx === 4 ? activeStyle : inactiveStyle; });
   } else {
     seg1.style.display = 'none';
     seg2.style.display = 'none';
   }
+}
+
+// v18.0.0: 점검 세그먼트 (입력/조회)
+function switchCheckSegment(mode) {
+  switchTab(mode === 'input' ? 1 : 2);
+}
+function updateCheckSegment(idx) {
+  const activeStyle = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:#D20015;color:#fff;';
+  const inactiveStyle = 'border:none;border-radius:980px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:#565A5B;';
+  const seg1 = document.getElementById('checkSegment1');
+  const seg2 = document.getElementById('checkSegment2');
+  if (seg1) seg1.style.display = (idx === 1 || idx === 2) ? '' : 'none';
+  if (seg2) seg2.style.display = (idx === 1 || idx === 2) ? '' : 'none';
+  ['checkSegInput1', 'checkSegInput2'].forEach(id => { const b = document.getElementById(id); if (b) b.style.cssText = idx === 1 ? activeStyle : inactiveStyle; });
+  ['checkSegView1', 'checkSegView2'].forEach(id => { const b = document.getElementById(id); if (b) b.style.cssText = idx === 2 ? activeStyle : inactiveStyle; });
 }
 
 // Mobile user menu toggle
@@ -11433,7 +11454,7 @@ Object.assign(window, {
   // Stats tab
   switchStatsSubTab, renderStatsDashboard, toggleWeakDetail,
   // Analysis tab
-  switchAnalysisSubTab, renderAnalysis, renderMaturityResultList, toggleAnalysisDetail, closeAnalysisModal, switchInsightSegment, updateInsightSegment,
+  switchAnalysisSubTab, renderAnalysis, renderMaturityResultList, toggleAnalysisDetail, closeAnalysisModal, switchInsightSegment, updateInsightSegment, switchCheckSegment, updateCheckSegment,
   // Schedule tab
   renderSchedule, showScheduleStation, saveScheduleItem, setSchedulePhase, scheduleGoBack,
   showAddScheduleForm, saveNewSchedule, deleteScheduleItem,
