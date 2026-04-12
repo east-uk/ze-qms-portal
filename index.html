@@ -9550,14 +9550,26 @@ function setupFirebaseListeners() {
   });
 
   // Listen for CAR data — Firebase 실시간 동기화
+  // Firebase 키(/_치환) → 원본 카테고리명 역변환
+  const _carSafeToOriginal = {};
+  if (typeof CAR_CATEGORIES !== 'undefined') CAR_CATEGORIES.forEach(c => { _carSafeToOriginal[c.replace(/[\/\.#$\[\]]/g, '_')] = c; });
   dbRef('car').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
       const local = SafeStorage.get(CAR_STORAGE_KEY, {});
       let updated = false;
-      for (const [key, val] of Object.entries(data)) {
-        if (!local[key] || JSON.stringify(local[key]) !== JSON.stringify(val)) {
-          local[key] = val;
+      for (const [key, fbVal] of Object.entries(data)) {
+        // Firebase 키를 원본으로 복원
+        const restored = {};
+        for (const [period, cats] of Object.entries(fbVal)) {
+          restored[period] = {};
+          for (const [safeCat, v] of Object.entries(cats)) {
+            const origCat = _carSafeToOriginal[safeCat] || safeCat;
+            restored[period][origCat] = v;
+          }
+        }
+        if (!local[key] || JSON.stringify(local[key]) !== JSON.stringify(restored)) {
+          local[key] = restored;
           updated = true;
         }
       }
@@ -10654,28 +10666,45 @@ function saveCarData(year, station, data) {
   const key = year + '_' + station;
   all[key] = data;
   SafeStorage.set(CAR_STORAGE_KEY, all);
-  // v19.1: Firebase 동기화
+  // v19.1: Firebase 동기화 — 카테고리명의 / . # $ [ ] 를 치환
   if (firebaseDb) {
     const ref = dbRef('car');
     if (ref) {
-      ref.child(key).set(data).then(() => {
+      const safeData = {};
+      for (const [period, cats] of Object.entries(data)) {
+        safeData[period] = {};
+        for (const [cat, val] of Object.entries(cats)) {
+          const safeCat = cat.replace(/[\/\.#$\[\]]/g, '_');
+          safeData[period][safeCat] = val;
+        }
+      }
+      ref.child(key).set(safeData).then(() => {
         console.log('CAR saved to Firebase:', key);
       }).catch(e => console.warn('CAR Firebase save failed:', e));
     }
   }
 }
 
-// v19.1: Firebase에서 CAR 데이터 로드
+// v19.1: Firebase에서 CAR 데이터 로드 (키 역변환 포함)
 function loadCarDataFromFirebase() {
   if (!firebaseDb) return;
+  const safeToOrig = {};
+  CAR_CATEGORIES.forEach(c => { safeToOrig[c.replace(/[\/\.#$\[\]]/g, '_')] = c; });
   dbRef('car').once('value').then(snap => {
     const fbData = snap.val();
     if (!fbData) return;
     const local = SafeStorage.get(CAR_STORAGE_KEY, {});
     let updated = false;
-    for (const [key, val] of Object.entries(fbData)) {
-      if (!local[key] || JSON.stringify(local[key]) !== JSON.stringify(val)) {
-        local[key] = val;
+    for (const [key, fbVal] of Object.entries(fbData)) {
+      const restored = {};
+      for (const [period, cats] of Object.entries(fbVal)) {
+        restored[period] = {};
+        for (const [safeCat, v] of Object.entries(cats)) {
+          restored[period][safeToOrig[safeCat] || safeCat] = v;
+        }
+      }
+      if (!local[key] || JSON.stringify(local[key]) !== JSON.stringify(restored)) {
+        local[key] = restored;
         updated = true;
       }
     }
@@ -10708,25 +10737,18 @@ function toggleCarEdit() {
 }
 
 function saveCarInputs() {
-  console.log('[CAR] saveCarInputs called');
   const carData = { current: {}, previous: {} };
-  const inputs = document.querySelectorAll('#sdCarInputRows input');
-  console.log('[CAR] found inputs:', inputs.length);
-  inputs.forEach(inp => {
+  document.querySelectorAll('#sdCarInputRows input').forEach(inp => {
     const cat = inp.dataset.carCat;
     const period = inp.dataset.carPeriod;
     carData[period][cat] = parseInt(inp.value) || 0;
   });
-  console.log('[CAR] saving:', JSON.stringify(carData));
   saveCarData(stationDetailYear, stationDetailStation, carData);
-  // 폼 닫기 → 차트 보이기
   toggleCarEdit();
   renderSDCarChart(carData);
-  // 차트 위치로 스크롤
   const chartEl = document.getElementById('sdCarChartArea');
   if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('저장 완료', 'success');
-  console.log('[CAR] save complete');
 }
 
 // --- Data Gathering ---
