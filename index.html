@@ -2999,7 +2999,7 @@ const AUTH_DOMAIN = '@eastar.local';
 function empNoToEmail(empNo) { return empNo + AUTH_DOMAIN; }
 function emailToEmpNo(email) { return email ? email.replace(AUTH_DOMAIN, '') : ''; }
 
-function initFirebase() {
+async function initFirebase() {
   try {
     const firebaseConfig = {
       apiKey: "AIzaSyAeEkx3K1ZWdqspcEkF8Bwfzc0ZnxZHtAU",
