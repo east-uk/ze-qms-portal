@@ -3025,17 +3025,20 @@ async function initFirebase() {
     });
 
     // Auth 상태 변경 리스너
+    let _authFirstCheck = true;
     firebaseAuth.onAuthStateChanged(async (user) => {
       if (_suppressAuthRedirect) return; // 사용자 생성 중에는 무시
       if (user) {
-        // v19.1: 세션 쿠키 체크 — 브라우저 종료 후 복원된 탭이면 로그아웃
-        const hasSessionCookie = document.cookie.includes('eastar_session=1');
-        if (!hasSessionCookie) {
-          // 세션 쿠키 없음 = 브라우저가 종료되었다가 탭이 복원된 것
-          await firebaseAuth.signOut();
-          currentUser = null;
-          showLoginScreen();
-          return;
+        // v19.1: 세션 쿠키 체크 — 최초 1회만 (브라우저 복원 감지)
+        if (_authFirstCheck) {
+          _authFirstCheck = false;
+          const hasSessionCookie = document.cookie.includes('eastar_session=1');
+          if (!hasSessionCookie) {
+            await firebaseAuth.signOut();
+            currentUser = null;
+            showLoginScreen();
+            return;
+          }
         }
         // 로그인 상태 — 사용자 역할 가져오기
         const snap = await dbRef('users/' + user.uid).once('value');
