@@ -587,7 +587,7 @@ select.apple-input {
 .maturity-card:active { transform: scale(0.98); }
 @keyframes ddayPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 .dday-pulse { animation: ddayPulse 1.5s ease-in-out infinite; }
-.dday-card { border-radius: 16px; padding: 16px; min-width: 140px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.dday-card { border-radius: 16px; padding: 16px; min-width: 140px; min-height: 180px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; display: flex; flex-direction: column; }
 .dday-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important; }
 .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
 
@@ -11171,22 +11171,22 @@ function renderStationDetail(year, station) {
   const overallStr = d.currentOverall !== null ? d.currentOverall.toFixed(2) : '-';
   const overallStyle = d.currentOverall !== null ? avgBadgeStyle(d.currentOverall) : 'color:#9EA2A1;';
   document.getElementById('sdChecklistOverview').innerHTML = `
-    <div class="apple-card" style="padding:16px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">종합 평균</div>
-      <div style="font-size:32px;font-weight:700;letter-spacing:-0.5px;${overallStyle}">${overallStr}</div>
-      <div style="font-size:11px;color:#9EA2A1;">${d.prevYear ? '직전(' + d.prevYear + ') ' + (d.prevOverall !== null ? d.prevOverall.toFixed(2) : '-') : ''}</div>
+    <div style="padding:20px;text-align:center;border-radius:16px;${overallStyle}">
+      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">종합 평균</div>
+      <div style="font-size:32px;font-weight:700;letter-spacing:-0.5px;">${overallStr}</div>
+      <div style="font-size:11px;opacity:0.6;margin-top:4px;">${d.prevYear ? '직전(' + d.prevYear + ') ' + (d.prevOverall !== null ? d.prevOverall.toFixed(2) : '-') : ''}</div>
     </div>
-    <div class="apple-card" style="padding:16px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">항공사</div>
-      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.branchResult)}">${fmtAvg(d.branchResult)}</div>
+    <div style="padding:20px;text-align:center;border-radius:16px;${fmtStyle(d.branchResult)}">
+      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">항공사</div>
+      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.branchResult)}</div>
     </div>
-    <div class="apple-card" style="padding:16px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">여객 협력사</div>
-      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.paxResult)}">${fmtAvg(d.paxResult)}</div>
+    <div style="padding:20px;text-align:center;border-radius:16px;${fmtStyle(d.paxResult)}">
+      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">여객 협력사</div>
+      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.paxResult)}</div>
     </div>
-    <div class="apple-card" style="padding:16px;text-align:center;">
-      <div style="font-size:12px;color:#9EA2A1;">램프 협력사</div>
-      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;${fmtStyle(d.rampResult)}">${fmtAvg(d.rampResult)}</div>
+    <div style="padding:20px;text-align:center;border-radius:16px;${fmtStyle(d.rampResult)}">
+      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">램프 협력사</div>
+      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.rampResult)}</div>
     </div>`;
 
   // 지점: 제목 복원 + 표시
