@@ -716,7 +716,7 @@ select.apple-input {
       <span id="headerUserName" style="color:#1a1c1d;font-weight:600;font-size:13px;"></span>
       <span style="color:#a4000e;font-weight:600;">안전기획팀</span>
       <span id="envBadge" style="display:none;"></span>
-      <span id="syncIndicator" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9EA2A1;vertical-align:middle;" title="동기화 상태"></span>
+      <span id="syncIndicator" style="display:none;"></span>
       <button onclick="doLogout()" style="background:none;border:1px solid rgba(0,0,0,0.12);color:#566062;border-radius:980px;padding:3px 12px;font-size:11px;cursor:pointer;font-weight:500;transition:all 0.15s;" onmouseover="this.style.borderColor='#a4000e';this.style.color='#a4000e'" onmouseout="this.style.borderColor='rgba(0,0,0,0.12)';this.style.color='#566062'">로그아웃</button>
     </div>
   </div>
@@ -727,8 +727,8 @@ select.apple-input {
       <span style="font-size:14px;font-weight:700;color:#1a1c1d;letter-spacing:-0.3px;">이스타항공 품질관리시스템 포털</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <span id="envBadgeMobile" style="display:inline-block;border-radius:980px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:0.5px;"></span>
-      <span id="syncIndicatorMobile" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#9EA2A1;" title="동기화 상태"></span>
+      <span id="envBadgeMobile" style="display:none;"></span>
+      <span id="syncIndicatorMobile" style="display:none;"></span>
       <!-- 관리 (기어 아이콘) — manager 이상만 표시 -->
       <button id="mobileGearBtn" onclick="switchTab(6)" style="background:none;border:none;cursor:pointer;padding:4px;display:none;">
         <svg class="w-4 h-4" style="color:#9EA2A1;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
