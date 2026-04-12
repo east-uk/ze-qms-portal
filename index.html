@@ -10614,14 +10614,14 @@ function saveCarData(year, station, data) {
   SafeStorage.set(CAR_STORAGE_KEY, all);
   // v19.1: Firebase 동기화
   if (firebaseConnected && firebaseDb) {
-    try { dbRef(ENV_PREFIX + 'car/' + key).set(data); } catch(e) { console.warn('CAR sync failed:', e); }
+    try { dbRef('car/' + key).set(data); } catch(e) { console.warn('CAR sync failed:', e); }
   }
 }
 
 // v19.1: Firebase에서 CAR 데이터 로드
 function loadCarDataFromFirebase() {
   if (!firebaseDb) return;
-  dbRef(ENV_PREFIX + 'car').once('value').then(snap => {
+  dbRef('car').once('value').then(snap => {
     const fbData = snap.val();
     if (!fbData) return;
     const local = SafeStorage.get(CAR_STORAGE_KEY, {});
