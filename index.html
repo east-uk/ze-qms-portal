@@ -3226,6 +3226,8 @@ function onLoginSuccess() {
   if (allData.length === 0) loadAllData();
   if (auditorList.length === 0) loadAuditors();
   if (scheduleData.length === 0) loadSchedule();
+  // v19.1: CAR 데이터 Firebase 동기화
+  loadCarDataFromFirebase();
   // 드롭다운은 항상 초기화
   populateStationDropdown();
   populateViewStationDropdown();
@@ -10607,8 +10609,31 @@ function loadCarData(year, station) {
 
 function saveCarData(year, station, data) {
   const all = SafeStorage.get(CAR_STORAGE_KEY, {});
-  all[year + '_' + station] = data;
+  const key = year + '_' + station;
+  all[key] = data;
   SafeStorage.set(CAR_STORAGE_KEY, all);
+  // v19.1: Firebase 동기화
+  if (firebaseConnected && firebaseDb) {
+    try { dbRef(ENV_PREFIX + 'car/' + key).set(data); } catch(e) { console.warn('CAR sync failed:', e); }
+  }
+}
+
+// v19.1: Firebase에서 CAR 데이터 로드
+function loadCarDataFromFirebase() {
+  if (!firebaseDb) return;
+  dbRef(ENV_PREFIX + 'car').once('value').then(snap => {
+    const fbData = snap.val();
+    if (!fbData) return;
+    const local = SafeStorage.get(CAR_STORAGE_KEY, {});
+    let updated = false;
+    for (const [key, val] of Object.entries(fbData)) {
+      if (!local[key] || JSON.stringify(local[key]) !== JSON.stringify(val)) {
+        local[key] = val;
+        updated = true;
+      }
+    }
+    if (updated) SafeStorage.set(CAR_STORAGE_KEY, local);
+  }).catch(e => console.warn('CAR load from Firebase failed:', e));
 }
 
 function toggleCarEdit() {
@@ -11579,7 +11604,7 @@ Object.assign(window, {
   updateScheduleStatuses, calcScheduleStatus,
   // Station Detail
   openStationDetail, closeStationDetail, stationLink, renderDivisionDetail, gatherDivisionData,
-  toggleCarEdit, saveCarInputs,
+  toggleCarEdit, saveCarInputs, loadCarDataFromFirebase,
   // Scoring/Utils (for dynamic HTML)
   getTypeLabel, getChecklistName, avgColor, avgBadgeStyle,
   getScheduleStatusLabels, getScheduleStatusBadgeStyle,
