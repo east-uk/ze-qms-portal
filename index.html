@@ -10645,8 +10645,13 @@ function saveCarData(year, station, data) {
   all[key] = data;
   SafeStorage.set(CAR_STORAGE_KEY, all);
   // v19.1: Firebase 동기화
-  if (firebaseConnected && firebaseDb) {
-    try { dbRef('car/' + key).set(data); } catch(e) { console.warn('CAR sync failed:', e); }
+  if (firebaseDb) {
+    const ref = dbRef('car');
+    if (ref) {
+      ref.child(key).set(data).then(() => {
+        console.log('CAR saved to Firebase:', key);
+      }).catch(e => console.warn('CAR Firebase save failed:', e));
+    }
   }
 }
 
