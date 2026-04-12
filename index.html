@@ -653,6 +653,10 @@ select.apple-input {
         <label style="font-size:13px;font-weight:500;color:#565A5B;display:block;margin-bottom:6px;">비밀번호</label>
         <input id="loginPassword" type="password" placeholder="비밀번호 입력" class="apple-input" style="font-size:16px;" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;">
+        <input type="checkbox" id="rememberEmpNo" style="width:16px;height:16px;accent-color:#a4000e;cursor:pointer;">
+        <label for="rememberEmpNo" style="font-size:12px;color:#9EA2A1;cursor:pointer;">아이디 저장</label>
+      </div>
       <button onclick="doLogin()" class="pill-btn pill-btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;">로그인</button>
       <div id="loginError" style="display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(210,0,21,0.1);color:#D20015;font-size:13px;text-align:center;"></div>
       <div style="text-align:center;margin-top:16px;">
@@ -3008,6 +3012,9 @@ function initFirebase() {
     firebaseDb = firebase.database();
     firebaseAuth = firebase.auth();
 
+    // v19.1: 세션 persistence — 브라우저/탭 닫으면 로그아웃
+    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
     // 연결 상태 모니터링
     firebase.database().ref('.info/connected').on('value', (snap) => {
       firebaseConnected = snap.val() === true;
@@ -3069,6 +3076,14 @@ function showLoginForm() {
   document.getElementById('pwChangeForm').style.display = 'none';
   document.getElementById('forcePasswordForm').style.display = 'none';
   document.getElementById('loginError').style.display = 'none';
+  // v19.1: 저장된 아이디 불러오기
+  const saved = localStorage.getItem('eastar_remember_empno');
+  if (saved) {
+    document.getElementById('loginEmpNo').value = saved;
+    const cb = document.getElementById('rememberEmpNo');
+    if (cb) cb.checked = true;
+    setTimeout(() => document.getElementById('loginPassword').focus(), 100);
+  }
 }
 
 function showPasswordChange() {
@@ -3088,6 +3103,13 @@ async function doLogin() {
   const errEl = document.getElementById('loginError');
   if (!empNo || !isValidLoginId(empNo)) { errEl.textContent = '사번 7자리 또는 admin을 입력해주세요.'; errEl.style.display = 'block'; return; }
   if (!pw) { errEl.textContent = '비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
+  // v19.1: 아이디 저장
+  const rememberCb = document.getElementById('rememberEmpNo');
+  if (rememberCb && rememberCb.checked) {
+    localStorage.setItem('eastar_remember_empno', empNo);
+  } else {
+    localStorage.removeItem('eastar_remember_empno');
+  }
   try {
     errEl.style.display = 'none';
     await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), pw);
