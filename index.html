@@ -911,20 +911,30 @@ select.apple-input {
 
     <!-- Sticky Bottom Bar - Glass -->
     <div id="inputBottomBar" class="hidden fixed bottom-0 left-0 right-0 glass-bottom z-40">
+      <!-- v19.1: 진행률 바 -->
+      <div style="padding:0 16px;">
+        <div style="background:rgba(0,0,0,0.06);border-radius:4px;height:4px;overflow:hidden;">
+          <div id="bottomProgressFill" style="background:linear-gradient(135deg,#D20015,#a4000e);height:100%;border-radius:4px;width:0%;transition:width 0.3s ease;"></div>
+        </div>
+      </div>
       <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-5 text-sm">
           <div>
-            <span id="bottomLabel1" style="color:rgba(255,255,255,0.55);font-size:12px;">총점</span>
-            <span id="totalScoreDisplay" class="font-semibold text-white text-lg ml-1">0</span>
-            <span style="color:rgba(255,255,255,0.35);font-size:12px;"> / <span id="maxScoreDisplay">0</span></span>
+            <span id="bottomLabel1" style="color:#9EA2A1;font-size:12px;">총점</span>
+            <span id="totalScoreDisplay" class="font-semibold text-lg ml-1" style="color:#1a1c1d;">0</span>
+            <span style="color:#C0CED1;font-size:12px;"> / <span id="maxScoreDisplay">0</span></span>
           </div>
           <div>
-            <span id="bottomLabel2" style="color:rgba(255,255,255,0.55);font-size:12px;">평균</span>
+            <span id="bottomLabel2" style="color:#9EA2A1;font-size:12px;">평균</span>
             <span id="avgScoreDisplay" style="color:#D20015;" class="font-semibold text-lg ml-1">0.00</span>
           </div>
           <div>
-            <span id="bottomLabel3" style="color:rgba(255,255,255,0.55);font-size:12px;">달성률</span>
+            <span id="bottomLabel3" style="color:#9EA2A1;font-size:12px;">달성률</span>
             <span id="achieveRateDisplay" style="color:#22C55E;" class="font-semibold text-lg ml-1">0%</span>
+          </div>
+          <div>
+            <span style="color:#9EA2A1;font-size:12px;">진행</span>
+            <span id="bottomProgressText" style="color:#a4000e;font-weight:600;font-size:13px;margin-left:2px;">0/0</span>
           </div>
         </div>
         <button onclick="saveAssessment()" class="pill-btn pill-btn-primary" style="font-weight:600;padding:10px 28px;">저장</button>
@@ -4680,6 +4690,11 @@ function updateChecklistProgress() {
   if (textEl) textEl.textContent = `${answeredItems} / ${totalItems} 항목`;
   if (fillEl) fillEl.style.width = pct + '%';
   if (pctEl) pctEl.textContent = pct + '%';
+  // v19.1: 하단 바 진행률 동기화
+  const bFill = document.getElementById('bottomProgressFill');
+  if (bFill) bFill.style.width = pct + '%';
+  const bText = document.getElementById('bottomProgressText');
+  if (bText) bText.textContent = answeredItems + '/' + totalItems;
 }
 
 function saveAssessment() {
