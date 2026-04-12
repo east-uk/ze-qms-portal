@@ -11174,7 +11174,6 @@ function renderStationDetail(year, station) {
     <div style="padding:12px 16px;text-align:center;border-radius:12px;${overallStyle}">
       <div style="font-size:11px;opacity:0.7;">종합 평균</div>
       <div style="font-size:28px;font-weight:700;letter-spacing:-0.5px;">${overallStr}</div>
-      <div style="font-size:10px;opacity:0.6;">${d.prevYear ? '직전(' + d.prevYear + ') ' + (d.prevOverall !== null ? d.prevOverall.toFixed(2) : '-') : ''}</div>
     </div>
     <div style="padding:12px 16px;text-align:center;border-radius:12px;${fmtStyle(d.branchResult)}">
       <div style="font-size:11px;opacity:0.7;">항공사</div>
@@ -11228,9 +11227,9 @@ function renderSDBarChart(d) {
       pointRadius: 5,
       pointHoverRadius: 7,
       fill: false,
-      tension: 0.3,
+      tension: 0,
       order: 0,
-      datalabels: { display: true, color: '#565A5B', font: { size: 11, weight: '600' }, anchor: 'end', align: 'top', offset: 6, formatter: (v) => v ? v.toFixed(2) : '' }
+      datalabels: { display: true, color: '#565A5B', font: { size: 11, weight: '600' }, anchor: 'start', align: 'bottom', offset: 6, formatter: (v) => v ? v.toFixed(2) : '' }
     });
   }
   datasets.push({
@@ -11317,28 +11316,23 @@ function renderSDRadarChart(d) {
       pointBackgroundColor: '#9EA2A1', pointRadius: 3, borderWidth: 1.5, fill: true, borderDash: [4, 4]
     });
   }
+  // pointLabels에 값 통합 (항목명 + 줄바꿈 + 값)
+  const radarLabelsWithValues = labels.map((l, i) => [l, d.radarCurrent[i] ? d.radarCurrent[i].toFixed(2) : '-']);
   chartInstances['sdRadarChart'] = new Chart(ctx, {
     type: 'radar',
-    data: { labels, datasets },
+    data: { labels: radarLabelsWithValues, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: {
         r: { min: 0, max: 4, ticks: { stepSize: 1, backdropColor: 'transparent', font: { size: 9 } },
-          grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' } } }
+          grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' }, color: (ctx) => { const v = d.radarCurrent[ctx.index]; return v !== undefined ? '#D20015' : '#303A3C'; } } }
       },
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
         tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(2) || '-'}` } },
-        datalabels: {
-          display: true,
-          color: (ctx) => ctx.datasetIndex === 0 ? '#D20015' : '#9EA2A1',
-          font: { size: 10, weight: '600' },
-          anchor: 'end', align: 'end', offset: 4,
-          formatter: (v) => v ? v.toFixed(2) : ''
-        }
+        datalabels: false
       }
-    },
-    plugins: [ChartDataLabels]
+    }
   });
 }
 
@@ -11365,7 +11359,7 @@ function renderSDDoughnutChart(d) {
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '45%',
       plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12,
+        legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12, padding: 10,
           generateLabels: (chart) => {
             const data = chart.data;
             return data.labels.map((label, i) => {
@@ -11377,15 +11371,15 @@ function renderSDDoughnutChart(d) {
         }},
         tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0; return `${ctx.label}: ${ctx.raw}건 (${pct}%)`; } } },
         datalabels: {
-          display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
-          color: '#303A3C',
-          font: { size: 11, weight: '700' },
+          display: (ctx) => { const t = ctx.dataset.data.reduce((a, b) => a + b, 0); return t > 0 && (ctx.dataset.data[ctx.dataIndex] / t * 100) >= 15; },
+          color: '#fff',
+          font: { size: 12, weight: '700' },
           anchor: 'center', align: 'center',
           formatter: (value, ctx) => {
             const t = ctx.dataset.data.reduce((a, b) => a + b, 0);
             if (t === 0) return '';
             const pct = ((value / t) * 100).toFixed(0);
-            return value + '건, ' + pct + '%';
+            return pct + '%';
           }
         }
       }
