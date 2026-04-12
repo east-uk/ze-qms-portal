@@ -10715,10 +10715,12 @@ function saveCarInputs() {
     carData[period][cat] = parseInt(inp.value) || 0;
   });
   saveCarData(stationDetailYear, stationDetailStation, carData);
-  toggleCarEdit(); // 폼 닫기
-  // 차트 재렌더
+  toggleCarEdit(); // 폼 닫기 → 차트 보이기
   renderSDCarChart(carData);
-  showToast('개선조치요구서 데이터 저장 완료', 'success');
+  // 차트 위치로 스크롤
+  const chartEl = document.getElementById('sdCarChartArea');
+  if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('저장 완료', 'success');
 }
 
 // --- Data Gathering ---
