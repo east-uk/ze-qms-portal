@@ -9523,6 +9523,22 @@ function setupFirebaseListeners() {
     }
   });
 
+  // Listen for CAR data — Firebase 실시간 동기화
+  dbRef('car').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const local = SafeStorage.get(CAR_STORAGE_KEY, {});
+      let updated = false;
+      for (const [key, val] of Object.entries(data)) {
+        if (!local[key] || JSON.stringify(local[key]) !== JSON.stringify(val)) {
+          local[key] = val;
+          updated = true;
+        }
+      }
+      if (updated) SafeStorage.set(CAR_STORAGE_KEY, local);
+    }
+  });
+
   // Listen for custom stations — Firebase 우선
   dbRef('customStations').on('value', (snapshot) => {
     const data = snapshot.val();
