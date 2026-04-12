@@ -3015,7 +3015,7 @@ async function initFirebase() {
     firebaseDb = firebase.database();
     firebaseAuth = firebase.auth();
 
-    // v19.1: 세션 persistence — 브라우저/탭 닫으면 로그아웃
+    // v19.1: SESSION persistence + 세션 쿠키로 브라우저 종료 감지
     await firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
     // 연결 상태 모니터링
@@ -3028,6 +3028,15 @@ async function initFirebase() {
     firebaseAuth.onAuthStateChanged(async (user) => {
       if (_suppressAuthRedirect) return; // 사용자 생성 중에는 무시
       if (user) {
+        // v19.1: 세션 쿠키 체크 — 브라우저 종료 후 복원된 탭이면 로그아웃
+        const hasSessionCookie = document.cookie.includes('eastar_session=1');
+        if (!hasSessionCookie) {
+          // 세션 쿠키 없음 = 브라우저가 종료되었다가 탭이 복원된 것
+          await firebaseAuth.signOut();
+          currentUser = null;
+          showLoginScreen();
+          return;
+        }
         // 로그인 상태 — 사용자 역할 가져오기
         const snap = await dbRef('users/' + user.uid).once('value');
         let userData = snap.val();
@@ -3205,12 +3214,16 @@ async function doForcePasswordChange() {
 
 async function doLogout() {
   if (!confirm('로그아웃하시겠습니까?')) return;
+  // v19.1: 세션 쿠키 삭제
+  document.cookie = 'eastar_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
   try { await firebaseAuth.signOut(); } catch(e) { console.warn(e); }
   currentUser = null;
   showLoginScreen();
 }
 
 function onLoginSuccess() {
+  // v19.1: 세션 쿠키 설정 (만료 없음 = 브라우저 종료 시 삭제)
+  document.cookie = 'eastar_session=1; path=/; SameSite=Lax';
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appWrapper').style.display = '';
   // 헤더에 사용자 이름 표시 (데스크톱 + 모바일)
