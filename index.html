@@ -10708,19 +10708,25 @@ function toggleCarEdit() {
 }
 
 function saveCarInputs() {
+  console.log('[CAR] saveCarInputs called');
   const carData = { current: {}, previous: {} };
-  document.querySelectorAll('#sdCarInputRows input').forEach(inp => {
+  const inputs = document.querySelectorAll('#sdCarInputRows input');
+  console.log('[CAR] found inputs:', inputs.length);
+  inputs.forEach(inp => {
     const cat = inp.dataset.carCat;
     const period = inp.dataset.carPeriod;
     carData[period][cat] = parseInt(inp.value) || 0;
   });
+  console.log('[CAR] saving:', JSON.stringify(carData));
   saveCarData(stationDetailYear, stationDetailStation, carData);
-  toggleCarEdit(); // 폼 닫기 → 차트 보이기
+  // 폼 닫기 → 차트 보이기
+  toggleCarEdit();
   renderSDCarChart(carData);
   // 차트 위치로 스크롤
   const chartEl = document.getElementById('sdCarChartArea');
   if (chartEl) chartEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   showToast('저장 완료', 'success');
+  console.log('[CAR] save complete');
 }
 
 // --- Data Gathering ---
