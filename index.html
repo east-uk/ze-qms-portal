@@ -577,7 +577,7 @@ select.apple-input {
 .binary-u-btn.selected { background: #D20015 !important; color: #fff !important; border-color: #D20015 !important; }
 
 /* Sub-tab styles */
-.sub-tab { padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+.sub-tab { padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; flex-shrink: 0; }
 .sub-tab-active { background: #303A3C; color: #fff; }
 .sub-tab-inactive { background: rgba(158,162,161,0.12); color: #6E7273; }
 .sub-tab-inactive:hover { background: rgba(158,162,161,0.2); color: #565A5B; }
@@ -1041,7 +1041,7 @@ select.apple-input {
       <h2 class="section-title">통계</h2>
       <p class="section-subtitle mt-1">성숙도 점검 통합 현황</p>
       <div id="statsYearSegment" style="display:inline-flex;background:#f9f9fb;border-radius:980px;padding:3px;margin-top:10px;"></div>
-      <div id="statsSubTabBar" class="flex gap-2 mt-3 overflow-x-auto flex-nowrap" style="-webkit-overflow-scrolling:touch;"
+      <div id="statsSubTabBar" class="flex gap-2 mt-3 overflow-x-auto flex-nowrap" style="-webkit-overflow-scrolling:touch;">
         <button class="sub-tab sub-tab-active" onclick="switchStatsSubTab('branch')" id="statsSubBranch">지점 성숙도</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('division')" id="statsSubDivision">실/본부 심사</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchStatsSubTab('outsourcing')" id="statsSubOutsourcing">외주협력업체</button>
@@ -1116,7 +1116,7 @@ select.apple-input {
       <h2 class="section-title">분석</h2>
       <p class="section-subtitle mt-1">QMS/SMS 관점 성숙도 데이터 분석</p>
       <div id="analysisYearSegment" style="display:inline-flex;background:#f9f9fb;border-radius:980px;padding:3px;margin-top:10px;"></div>
-      <div id="analysisSubTabBar" class="flex gap-2 mt-3 overflow-x-auto flex-nowrap" style="-webkit-overflow-scrolling:touch;"
+      <div id="analysisSubTabBar" class="flex gap-2 mt-3 overflow-x-auto flex-nowrap" style="-webkit-overflow-scrolling:touch;">
         <button class="sub-tab sub-tab-active" onclick="switchAnalysisSubTab('branch')" id="analysisSubBranch">지점 성숙도</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('maturityResult')" id="analysisSubMaturityResult">성숙도 평가 결과</button>
         <button class="sub-tab sub-tab-inactive" onclick="switchAnalysisSubTab('division')" id="analysisSubDivision">실/본부 심사</button>
