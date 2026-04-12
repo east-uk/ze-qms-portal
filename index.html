@@ -11171,22 +11171,22 @@ function renderStationDetail(year, station) {
   const overallStr = d.currentOverall !== null ? d.currentOverall.toFixed(2) : '-';
   const overallStyle = d.currentOverall !== null ? avgBadgeStyle(d.currentOverall) : 'color:#9EA2A1;';
   document.getElementById('sdChecklistOverview').innerHTML = `
-    <div style="padding:20px;text-align:center;border-radius:16px;${overallStyle}">
-      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">종합 평균</div>
-      <div style="font-size:32px;font-weight:700;letter-spacing:-0.5px;">${overallStr}</div>
-      <div style="font-size:11px;opacity:0.6;margin-top:4px;">${d.prevYear ? '직전(' + d.prevYear + ') ' + (d.prevOverall !== null ? d.prevOverall.toFixed(2) : '-') : ''}</div>
+    <div style="padding:12px 16px;text-align:center;border-radius:12px;${overallStyle}">
+      <div style="font-size:11px;opacity:0.7;">종합 평균</div>
+      <div style="font-size:28px;font-weight:700;letter-spacing:-0.5px;">${overallStr}</div>
+      <div style="font-size:10px;opacity:0.6;">${d.prevYear ? '직전(' + d.prevYear + ') ' + (d.prevOverall !== null ? d.prevOverall.toFixed(2) : '-') : ''}</div>
     </div>
-    <div style="padding:20px;text-align:center;border-radius:16px;${fmtStyle(d.branchResult)}">
-      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">항공사</div>
-      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.branchResult)}</div>
+    <div style="padding:12px 16px;text-align:center;border-radius:12px;${fmtStyle(d.branchResult)}">
+      <div style="font-size:11px;opacity:0.7;">항공사</div>
+      <div style="font-size:24px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.branchResult)}</div>
     </div>
-    <div style="padding:20px;text-align:center;border-radius:16px;${fmtStyle(d.paxResult)}">
-      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">여객 협력사</div>
-      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.paxResult)}</div>
+    <div style="padding:12px 16px;text-align:center;border-radius:12px;${fmtStyle(d.paxResult)}">
+      <div style="font-size:11px;opacity:0.7;">여객 협력사</div>
+      <div style="font-size:24px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.paxResult)}</div>
     </div>
-    <div style="padding:20px;text-align:center;border-radius:16px;${fmtStyle(d.rampResult)}">
-      <div style="font-size:12px;opacity:0.7;margin-bottom:4px;">램프 협력사</div>
-      <div style="font-size:28px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.rampResult)}</div>
+    <div style="padding:12px 16px;text-align:center;border-radius:12px;${fmtStyle(d.rampResult)}">
+      <div style="font-size:11px;opacity:0.7;">램프 협력사</div>
+      <div style="font-size:24px;font-weight:600;letter-spacing:-0.28px;">${fmtAvg(d.rampResult)}</div>
     </div>`;
 
   // 지점: 제목 복원 + 표시
