@@ -11316,35 +11316,42 @@ function renderSDRadarChart(d) {
       pointBackgroundColor: '#9EA2A1', pointRadius: 3, borderWidth: 1.5, fill: true, borderDash: [4, 4]
     });
   }
-  // pointLabels: 항목명만(검정), datalabels: 값만(빨강)
+  // 커스텀 플러그인: pointLabel 아래에 빨간색 값 텍스트 직접 그리기
+  const radarValuePlugin = {
+    id: 'radarValues',
+    afterDraw(chart) {
+      const r = chart.scales.r;
+      const ds = chart.data.datasets[0].data;
+      const ctx2 = chart.ctx;
+      ctx2.save();
+      ctx2.font = '700 11px Inter, sans-serif';
+      ctx2.fillStyle = '#D20015';
+      ctx2.textAlign = 'center';
+      for (let i = 0; i < ds.length; i++) {
+        const pos = r.getPointLabelPosition(i);
+        const val = ds[i] ? ds[i].toFixed(2) : '-';
+        ctx2.fillText(val, pos.x, pos.y + 14);
+      }
+      ctx2.restore();
+    }
+  };
   chartInstances['sdRadarChart'] = new Chart(ctx, {
     type: 'radar',
     data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
+      layout: { padding: { bottom: 8 } },
       scales: {
         r: { min: 0, max: 4, ticks: { stepSize: 1, backdropColor: 'transparent', font: { size: 9 } },
-          grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' },
-            color: (ctx) => {
-              // 배열 label의 두 번째 줄(값)에 빨간색 적용 — Chart.js는 줄별 색 미지원이므로 항목명 검정 통일
-              return '#303A3C';
-            }
-          }
-        }
+          grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' }, color: '#303A3C', padding: 6 } }
       },
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
         tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw?.toFixed(2) || '-'}` } },
-        datalabels: {
-          display: (ctx) => ctx.datasetIndex === 0,
-          color: '#D20015',
-          font: { size: 11, weight: '700' },
-          anchor: 'end', align: 'start', offset: 2,
-          formatter: (v) => v ? v.toFixed(2) : ''
-        }
+        datalabels: false
       }
     },
-    plugins: [ChartDataLabels]
+    plugins: [radarValuePlugin]
   });
 }
 
@@ -11377,13 +11384,13 @@ function renderSDDoughnutChart(d) {
             return data.labels.map((label, i) => {
               const val = data.datasets[0].data[i];
               const pct = total > 0 ? ((val / total) * 100).toFixed(0) : 0;
-              return { text: `${label}: ${val}건 (${pct}%)`, fillStyle: data.datasets[0].backgroundColor[i], strokeStyle: 'transparent', lineWidth: 0, index: i };
+              return { text: `${label}: ${val}건 (${pct}%)`, fillStyle: data.datasets[0].backgroundColor[i], fontColor: '#a4000e', strokeStyle: 'transparent', lineWidth: 0, index: i };
             });
           }
         }},
         tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0; return `${ctx.label}: ${ctx.raw}건 (${pct}%)`; } } },
         datalabels: {
-          display: (ctx) => { const t = ctx.dataset.data.reduce((a, b) => a + b, 0); return t > 0 && (ctx.dataset.data[ctx.dataIndex] / t * 100) >= 15; },
+          display: (ctx) => { const t = ctx.dataset.data.reduce((a, b) => a + b, 0); return t > 0 && (ctx.dataset.data[ctx.dataIndex] / t * 100) >= 5; },
           color: '#fff',
           font: { size: 12, weight: '700' },
           anchor: 'center', align: 'center',
