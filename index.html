@@ -3127,6 +3127,8 @@ async function doLogin() {
   }
   try {
     errEl.style.display = 'none';
+    // v19.1: signIn 전에 세션 쿠키 미리 설정 (onAuthStateChanged 쿠키 체크 통과용)
+    document.cookie = 'eastar_session=1; path=/; SameSite=Lax';
     await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), pw);
     // onAuthStateChanged가 처리
   } catch(e) {
@@ -3171,6 +3173,7 @@ async function doPasswordChange() {
   if (!oldPw) { errEl.textContent = '현재 비밀번호를 입력해주세요.'; errEl.style.display = 'block'; return; }
   if (!newPw || newPw.length < 6) { errEl.textContent = '새 비밀번호는 6자리 이상이어야 합니다.'; errEl.style.display = 'block'; return; }
   try {
+    document.cookie = 'eastar_session=1; path=/; SameSite=Lax';
     const cred = await firebaseAuth.signInWithEmailAndPassword(empNoToEmail(empNo), oldPw);
     await cred.user.updatePassword(newPw);
     await firebaseAuth.signOut();
