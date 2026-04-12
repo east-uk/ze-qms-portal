@@ -1416,8 +1416,10 @@ select.apple-input {
       <!-- 우하: 성숙도 등급별 비중 -->
       <div class="apple-card p-6">
         <h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">성숙도 등급별 비중</h3>
-        <div style="position:relative;height:280px;"><canvas id="sdDoughnutChart"></canvas></div>
-        <div id="sdDoughnutLegend" style="margin-top:8px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;">
+          <div style="position:relative;width:100%;max-width:320px;height:320px;"><canvas id="sdDoughnutChart"></canvas></div>
+          <div id="sdDoughnutLegend" style="margin-top:12px;"></div>
+        </div>
       </div>
     </div>
 
@@ -11338,8 +11340,8 @@ function renderSDRadarChart(d) {
   const legendEl = document.getElementById('sdRadarLegend');
   if (legendEl) {
     let lh = '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:6px;">';
-    lh += '<span style="font-size:10px;color:#9EA2A1;">● <span style="color:#D20015;">금번(' + d.year + ')</span></span>';
-    if (hasPrev) lh += '<span style="font-size:10px;color:#9EA2A1;">○ 직전(' + d.prevYear + ')</span>';
+    lh += '<span style="font-size:10px;"><span style="color:#D20015;">●</span> <span style="color:#D20015;font-weight:600;">금번(' + d.year + ')</span></span>';
+    if (hasPrev) lh += '<span style="font-size:10px;"><span style="color:#9EA2A1;">●</span> <span style="color:#9EA2A1;">직전(' + d.prevYear + ')</span></span>';
     lh += '</div>';
     lh += '<table style="width:100%;font-size:11px;border-collapse:collapse;">';
     labels.forEach((l, i) => {
@@ -11382,7 +11384,7 @@ function renderSDDoughnutChart(d) {
         legend: { display: false },
         tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0; return `${ctx.label}: ${ctx.raw}건 (${pct}%)`; } } },
         datalabels: {
-          display: (ctx) => { const t = ctx.dataset.data.reduce((a, b) => a + b, 0); return t > 0 && (ctx.dataset.data[ctx.dataIndex] / t * 100) >= 5; },
+          display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
           color: '#fff',
           font: { size: 12, weight: '700' },
           anchor: 'center', align: 'center',
