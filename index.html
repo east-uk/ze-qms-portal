@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>이스타항공 품질관리시스템 포털</title>
-<!-- Favicon + Apple Touch Icon (이스타항공 별 로고) -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='40' fill='%23D20015'/%3E%3Cpath d='M100 20C100 20 90 65 74 75C63 83 20 100 20 100C20 100 63 108 74 125C83 135 100 180 100 180C100 180 108 135 125 125C135 118 180 100 180 100C180 100 135 90 125 75C118 65 100 20 100 20Z' fill='white'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='40' fill='%23D20015'/%3E%3Cpath d='M100 20C100 20 90 65 74 75C63 83 20 100 20 100C20 100 63 108 74 125C83 135 100 180 100 180C100 180 108 135 125 125C135 118 180 100 180 100C180 100 135 90 125 75C118 65 100 20 100 20Z' fill='white'/%3E%3C/svg%3E">
+<!-- Favicon + Apple Touch Icon (이스타항공 공식 로고) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='36' fill='%23D20015'/%3E%3Cpath d='M100 15C101 82 118 99 185 100C118 101 101 118 100 185C99 118 82 101 15 100C82 99 99 82 100 15Z' fill='white'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='36' fill='%23D20015'/%3E%3Cpath d='M100 15C101 82 118 99 185 100C118 101 101 118 100 185C99 118 82 101 15 100C82 99 99 82 100 15Z' fill='white'/%3E%3C/svg%3E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="이스타 QMS">
@@ -646,7 +646,7 @@ select.apple-input {
 <div id="loginScreen" style="position:fixed;inset:0;z-index:9999;background:#f9f9fb;display:none;align-items:center;justify-content:center;">
   <div style="width:100%;max-width:380px;padding:24px;">
     <div style="text-align:center;margin-bottom:32px;">
-      <svg style="width:48px;height:48px;margin:0 auto 16px;" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
+      <svg style="width:48px;height:48px;margin:0 auto 16px;" viewBox="0 0 200 200"><rect width="200" height="200" rx="36" fill="#D20015"/><path d="M100 15C101 82 118 99 185 100C118 101 101 118 100 185C99 118 82 101 15 100C82 99 99 82 100 15Z" fill="white"/></svg>
       <h1 style="font-size:22px;font-weight:700;color:#303A3C;letter-spacing:-0.4px;">품질관리시스템 포털</h1>
       <p style="font-size:13px;color:#9EA2A1;margin-top:4px;">이스타항공 안전보안실</p>
     </div>
@@ -718,9 +718,7 @@ select.apple-input {
   <!-- 데스크톱 헤더 (md 이상) — Stitch 밝은 톤 -->
   <div class="hidden md:flex max-w-7xl mx-auto px-6 w-full items-center justify-between" style="height:56px;">
     <div class="flex items-center gap-3" style="cursor:pointer;" onclick="goToHome()">
-      <div style="width:32px;height:32px;background:linear-gradient(135deg,#a4000e,#d20015);border-radius:8px;display:flex;align-items:center;justify-content:center;">
-        <svg class="w-4 h-4" viewBox="0 0 200 200" fill="#fff"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
-      </div>
+      <svg style="width:32px;height:32px;" viewBox="0 0 200 200"><rect width="200" height="200" rx="36" fill="#D20015"/><path d="M100 15C101 82 118 99 185 100C118 101 101 118 100 185C99 118 82 101 15 100C82 99 99 82 100 15Z" fill="white"/></svg>
       <h1 style="font-size:16px;font-weight:700;letter-spacing:-0.3px;color:#1a1c1d;font-family:'Inter',sans-serif;">이스타항공 품질관리시스템 포털</h1>
     </div>
     <div style="font-size:12px;color:#566062;display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;">
@@ -734,7 +732,7 @@ select.apple-input {
   <!-- 모바일 헤더 (md 미만, 1줄 압축) -->
   <div class="md:hidden px-4 flex items-center justify-between" style="height:44px;">
     <div class="flex items-center gap-2" style="cursor:pointer;" onclick="goToHome()">
-      <svg class="w-5 h-5" viewBox="0 0 200 200" fill="#D20015"><path d="M100 0C100 0 88 55 68 68C55 78 0 100 0 100C0 100 55 112 68 132C78 145 100 200 100 200C100 200 112 145 132 132C145 122 200 100 200 100C200 100 145 88 132 68C122 55 100 0 100 0Z"/></svg>
+      <svg style="width:24px;height:24px;" viewBox="0 0 200 200"><rect width="200" height="200" rx="36" fill="#D20015"/><path d="M100 15C101 82 118 99 185 100C118 101 101 118 100 185C99 118 82 101 15 100C82 99 99 82 100 15Z" fill="white"/></svg>
       <span style="font-size:14px;font-weight:700;color:#1a1c1d;letter-spacing:-0.3px;">이스타항공 품질관리시스템 포털</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
