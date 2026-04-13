@@ -11033,7 +11033,7 @@ function renderDivisionDetail(year, division) {
       '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">점검표별 적합률</h3><div style="height:280px;"><canvas id="sdBarChart"></canvas></div></div>' +
       '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">카테고리별 적합률</h3><div style="height:' + catBarHeight + 'px;"><canvas id="sdCarChart"></canvas></div></div>' +
       '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">S/U/NA 분포</h3><div style="height:280px;"><canvas id="sdDoughnutChart"></canvas></div></div>' +
-      '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">안전감사 영역별</h3><div style="height:320px;"><canvas id="sdRadarChart"></canvas></div></div>';
+      '<div class="apple-card" style="padding:16px;"><h3 style="font-size:15px;font-weight:600;color:#303A3C;margin-bottom:16px;">안전감사 영역별</h3><div style="height:320px;"><canvas id="sdRadarChart"></canvas></div><div id="sdRadarLegend" style="margin-top:8px;"></div></div>';
   }
 
   // 실/본부: 제목 숨김 (sdCategoryTable 안에 자체 헤딩 생성)
@@ -11542,7 +11542,11 @@ function renderSDDoughnutChart(d) {
             const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
             return pct2 < 10 ? '#303A3C' : '#fff';
           },
-          font: { size: 11, weight: '700' },
+          font: (ctx) => {
+            const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
+            return { size: pct2 < 10 ? 10 : 11, weight: '700' };
+          },
           anchor: (ctx) => {
             const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
             const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
@@ -11553,7 +11557,11 @@ function renderSDDoughnutChart(d) {
             const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
             return pct2 < 10 ? 'end' : 'center';
           },
-          offset: 4,
+          offset: (ctx) => {
+            const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
+            return pct2 < 10 ? 14 : 0;
+          },
           formatter: (value, ctx) => {
             const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
             if (t2 === 0) return '';
