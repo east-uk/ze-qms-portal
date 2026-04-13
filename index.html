@@ -3951,8 +3951,12 @@ function findRecord(year, station, type, company) {
 // ============================================================================
 let activeTab = 0;
 
-function switchTab(idx) {
+function switchTab(idx, _fromPopstate) {
   activeTab = idx;
+  // History API: 뒤로가기 지원
+  if (!_fromPopstate) {
+    history.pushState({ type: 'tab', tab: idx }, '', '');
+  }
   // Hide all
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.getElementById('tab' + idx).classList.remove('hidden');
@@ -10618,10 +10622,14 @@ const CAR_CATEGORIES = [
 ];
 
 // --- Navigation ---
-function openStationDetail(year, station) {
+function openStationDetail(year, station, _fromPopstate) {
   stationDetailPreviousTab = activeTab;
   stationDetailYear = year;
   stationDetailStation = station;
+  // History API: 뒤로가기 지원
+  if (!_fromPopstate) {
+    history.pushState({ type: 'detail', year, station, prevTab: activeTab }, '', '');
+  }
   // 모든 탭 숨기기
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.getElementById('tabStationDetail').classList.remove('hidden');
@@ -10641,6 +10649,25 @@ function closeStationDetail() {
   if (mobileBar) mobileBar.style.display = '';
   switchTab(stationDetailPreviousTab);
 }
+
+// --- History API: 브라우저 뒤로가기/앞으로가기 지원 ---
+history.replaceState({ type: 'tab', tab: 0 }, '', '');
+window.addEventListener('popstate', (e) => {
+  const state = e.state;
+  if (!state) return;
+  if (state.type === 'tab') {
+    // 상세 페이지가 열려 있으면 먼저 닫기
+    const detailEl = document.getElementById('tabStationDetail');
+    if (detailEl && !detailEl.classList.contains('hidden')) {
+      detailEl.classList.add('hidden');
+      const mobileBar = document.getElementById('mobileTabBar');
+      if (mobileBar) mobileBar.style.display = '';
+    }
+    switchTab(state.tab, true);
+  } else if (state.type === 'detail') {
+    openStationDetail(state.year, state.station, true);
+  }
+});
 
 function stationLink(year, station, displayName) {
   const dn = displayName || station;
