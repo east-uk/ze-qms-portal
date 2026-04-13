@@ -11221,7 +11221,8 @@ function renderDivRadarChart(d) {
   if (!ctx || !d.safetyResult) return;
   const cats = Object.keys(d.safetyResult.categoryResults);
   const currData = cats.map(c => d.safetyResult.categoryResults[c].complianceRate);
-  // pointLabels에 적합률 포함 (겹침 방지)
+  const hasPrev = !!d.prevSafetyResult;
+  // pointLabels: 카테고리명 + 적합률
   const labels = cats.map((c, i) => {
     const shortName = c.length > 8 ? c.substring(0, 8) + '..' : c;
     return shortName + ' ' + currData[i].toFixed(0) + '%';
@@ -11231,9 +11232,10 @@ function renderDivRadarChart(d) {
     backgroundColor: 'rgba(210,0,21,0.12)', borderColor: '#D20015',
     pointBackgroundColor: '#D20015', pointRadius: 4, borderWidth: 2, fill: true
   }];
-  if (d.prevSafetyResult) {
+  let prevData = [];
+  if (hasPrev) {
     const prevCats = Object.keys(d.prevSafetyResult.categoryResults);
-    const prevData = cats.map(c => {
+    prevData = cats.map(c => {
       const pc = prevCats.includes(c) ? d.prevSafetyResult.categoryResults[c]?.complianceRate : 0;
       return pc || 0;
     });
@@ -11250,11 +11252,31 @@ function renderDivRadarChart(d) {
       layout: { padding: { top: 20, bottom: 10, left: 20, right: 20 } },
       scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, backdropColor: 'transparent', font: { size: 8 }, callback: v => v + '%' }, grid: { color: 'rgba(192,206,209,0.4)' }, pointLabels: { font: { size: 10, weight: '600' }, color: '#303A3C', padding: 12 } } },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        legend: { display: false },
         datalabels: false
       }
     }
   });
+  // HTML 범례: 지점 스타일 (색상 도트 + 테이블)
+  const legendEl = document.getElementById('sdRadarLegend');
+  if (legendEl) {
+    let lh = '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:6px;">';
+    lh += '<span style="font-size:10px;"><span style="color:#D20015;">●</span> <span style="color:#D20015;font-weight:600;">금번(' + d.year + ')</span></span>';
+    if (hasPrev) lh += '<span style="font-size:10px;"><span style="color:#9EA2A1;">●</span> <span style="color:#9EA2A1;">직전(' + d.prevYear + ')</span></span>';
+    lh += '</div>';
+    lh += '<table style="width:100%;font-size:11px;border-collapse:collapse;">';
+    cats.forEach((c, i) => {
+      const curr = currData[i] ? currData[i].toFixed(1) + '%' : '-';
+      const prev = hasPrev && prevData[i] ? prevData[i].toFixed(1) + '%' : '-';
+      lh += '<tr style="border-bottom:1px solid rgba(192,206,209,0.2);">';
+      lh += '<td style="padding:4px 6px;color:#303A3C;font-weight:500;">' + c + '</td>';
+      lh += '<td style="padding:4px 6px;text-align:right;color:#D20015;font-weight:700;">' + curr + '</td>';
+      if (hasPrev) lh += '<td style="padding:4px 6px;text-align:right;color:#9EA2A1;font-weight:500;">' + prev + '</td>';
+      lh += '</tr>';
+    });
+    lh += '</table>';
+    legendEl.innerHTML = lh;
+  }
 }
 
 // v17.3.0: 원본 지점 차트 HTML 저장 (최초 1회)
@@ -11363,7 +11385,7 @@ function renderSDBarChart(d) {
       fill: false,
       tension: 0,
       order: 0,
-      datalabels: { display: true, color: '#565A5B', font: { size: 11, weight: '600' }, anchor: 'start', align: 'bottom', offset: 6, formatter: (v) => v ? v.toFixed(2) : '' }
+      datalabels: { display: true, color: '#565A5B', font: { size: 11, weight: '600' }, anchor: 'end', align: 'top', offset: 4, formatter: (v) => v ? v.toFixed(2) : '' }
     });
   }
   datasets.push({
@@ -11377,7 +11399,7 @@ function renderSDBarChart(d) {
     backgroundColor: 'rgba(210,0,21,0.8)',
     borderRadius: 4, barPercentage: 0.7,
     order: 1,
-    datalabels: { display: true, color: '#D20015', font: { size: 11, weight: '700' }, anchor: 'end', align: 'top', offset: 4, formatter: (v) => v ? v.toFixed(2) : '' }
+    datalabels: { display: true, color: '#fff', font: { size: 11, weight: '700' }, anchor: 'center', align: 'center', formatter: (v) => v ? v.toFixed(2) : '' }
   });
   chartInstances['sdBarChart'] = new Chart(ctx, {
     type: 'bar',
@@ -11411,9 +11433,9 @@ function renderSDCarChart(carData) {
       labels: CAR_CATEGORIES,
       datasets: [
         { label: '금번심사', data: currData, backgroundColor: 'rgba(210,0,21,0.8)', borderRadius: 4, barPercentage: 0.7,
-          datalabels: { display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, color: '#D20015', font: { size: 10, weight: '700' }, anchor: 'end', align: 'right', offset: 4, formatter: (v) => v + '건' } },
+          datalabels: { display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, color: '#fff', font: { size: 10, weight: '700' }, anchor: 'center', align: 'center', formatter: (v) => v + '건' } },
         { label: '직전심사', data: prevData, backgroundColor: 'rgba(86,90,91,0.5)', borderRadius: 4, barPercentage: 0.7,
-          datalabels: { display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, color: '#565A5B', font: { size: 10, weight: '600' }, anchor: 'end', align: 'right', offset: 4, formatter: (v) => v + '건' } }
+          datalabels: { display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, color: '#fff', font: { size: 10, weight: '600' }, anchor: 'center', align: 'center', formatter: (v) => v + '건' } }
       ]
     },
     options: {
@@ -11515,14 +11537,28 @@ function renderSDDoughnutChart(d) {
         tooltip: { callbacks: { label: ctx => { const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0; return `${ctx.label}: ${ctx.raw}건 (${pct}%)`; } } },
         datalabels: {
           display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0,
-          color: '#fff',
-          font: { size: 12, weight: '700' },
-          anchor: 'center', align: 'center',
+          color: (ctx) => {
+            const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
+            return pct2 < 10 ? '#303A3C' : '#fff';
+          },
+          font: { size: 11, weight: '700' },
+          anchor: (ctx) => {
+            const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
+            return pct2 < 10 ? 'end' : 'center';
+          },
+          align: (ctx) => {
+            const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            const pct2 = t2 > 0 ? (ctx.dataset.data[ctx.dataIndex] / t2 * 100) : 0;
+            return pct2 < 10 ? 'end' : 'center';
+          },
+          offset: 4,
           formatter: (value, ctx) => {
-            const t = ctx.dataset.data.reduce((a, b) => a + b, 0);
-            if (t === 0) return '';
-            const pct = ((value / t) * 100).toFixed(0);
-            return pct + '%';
+            const t2 = ctx.dataset.data.reduce((a, b) => a + b, 0);
+            if (t2 === 0) return '';
+            const pct2 = ((value / t2) * 100).toFixed(0);
+            return value + '건, ' + pct2 + '%';
           }
         }
       }
